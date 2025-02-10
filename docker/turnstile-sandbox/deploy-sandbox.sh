@@ -17,12 +17,6 @@ cp sandbox-data.json $SANDBOX_DATA
 PXE_URL=http://aztec:8080
 RPC_URL=http://ethereum:8545
 
-# TODO: workaround for https://github.com/AztecProtocol/aztec-packages/issues/9384
-if [ "$(uname -m)" = "aarch64" ] ; then
-  echo "Running deploy-dev-aztec-test-accounts"
-  turnstile-deploy deploy-dev-aztec-test-accounts -p $PXE_URL
-fi
-
 echo "Running deploy-aztec-key"
 turnstile-deploy deploy-aztec-key -k $KEY_FILE -p $PXE_URL
 
