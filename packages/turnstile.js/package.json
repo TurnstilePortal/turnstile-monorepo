@@ -1,6 +1,6 @@
 {
   "name": "@turnstile-portal/turnstile.js",
-  "version": "0.0.33",
+  "version": "0.0.34",
   "description": "Turnstile Portal Library",
   "repository": {
     "type": "git",
@@ -26,8 +26,8 @@
     "@aztec/circuit-types": "0.74.0",
     "@aztec/foundation": "^0.74.0",
     "@aztec/l1-artifacts": "0.74.0",
-    "@turnstile-portal/aztec-artifacts": "^0.0.33",
-    "@turnstile-portal/l1-artifacts-abi": "^0.0.33",
+    "@turnstile-portal/aztec-artifacts": "^0.0.34",
+    "@turnstile-portal/l1-artifacts-abi": "^0.0.34",
     "viem": "^2.21.15"
   },
   "devDependencies": {

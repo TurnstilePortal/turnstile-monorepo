@@ -1,6 +1,6 @@
 {
   "name": "@turnstile-portal/deploy",
-  "version": "0.0.33",
+  "version": "0.0.34",
   "description": "Turnstile Deployment Tools",
   "type": "module",
   "bin": {
@@ -36,12 +36,12 @@
   "dependencies": {
     "@aztec/accounts": "^0.74.0",
     "@aztec/aztec.js": "0.74.0",
-    "@turnstile-portal/aztec-artifacts": "^0.0.33",
-    "@turnstile-portal/l1-artifacts-abi": "^0.0.33",
-    "@turnstile-portal/l1-artifacts-bytecode": "^0.0.33",
-    "@turnstile-portal/l1-artifacts-dev": "^0.0.33",
-    "@turnstile-portal/turnstile-dev": "^0.0.33",
-    "@turnstile-portal/turnstile.js": "^0.0.33",
+    "@turnstile-portal/aztec-artifacts": "^0.0.34",
+    "@turnstile-portal/l1-artifacts-abi": "^0.0.34",
+    "@turnstile-portal/l1-artifacts-bytecode": "^0.0.34",
+    "@turnstile-portal/l1-artifacts-dev": "^0.0.34",
+    "@turnstile-portal/turnstile-dev": "^0.0.34",
+    "@turnstile-portal/turnstile.js": "^0.0.34",
     "commander": "^12.1.0",
     "viem": "^2.21.15"
   },
