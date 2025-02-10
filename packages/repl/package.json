@@ -1,0 +1,33 @@
+{
+  "name": "@turnstile-portal/repl",
+  "description": "REPL environment for Turnstile portal",
+  "version": "0.0.33",
+  "type": "module",
+  "bin": {
+    "turnstile-repl": "./dist/repl.js"
+  },
+  "scripts": {
+    "repl": "tsx src/repl.ts",
+    "build": "tsc",
+    "clean": "rm -rf dist node_modules"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@aztec/accounts": "0.74.0",
+    "@aztec/aztec.js": "0.74.0",
+    "@turnstile-portal/aztec-artifacts": "workspace:^0.0.33",
+    "@turnstile-portal/turnstile-dev": "^0.0.33",
+    "@turnstile-portal/turnstile.js": "^0.0.33",
+    "repl": "^0.1.3",
+    "viem": "^2.21.15",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/yargs": "^17.0.33"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

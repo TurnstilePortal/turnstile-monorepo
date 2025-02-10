@@ -1,0 +1,26 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.0.5/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [
+    [
+      "@turnstile-portal/aztec-artifacts",
+      "@turnstile-portal/deploy",
+      "@turnstile-portal/l1-artifacts-abi",
+      "@turnstile-portal/l1-artifacts-bytecode",
+      "@turnstile-portal/l1-artifacts-dev",
+      "@turnstile-portal/repl",
+      "@turnstile-portal/turnstile-dev",
+      "@turnstile-portal/turnstile.js"
+    ]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": [
+    "@turnstile-portal/l1",
+    "@turnstile-portal/aztec",
+    "@turnstile-portal/examples"
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "name": "Turnstile Contracts",
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/turnstile-contracts,type=bind",
+  "workspaceFolder": "/home/vscode/turnstile-contracts",
+  "mounts": [
+    {
+      "target": "/home/vscode/.pnpm-store",
+      "type": "volume"
+    },
+    {
+      "target": "${containerWorkspaceFolder}/node_modules",
+      "type": "volume"
+    }
+  ],
+  "features": {
+    "ghcr.io/ClarifiedLabs/devcontainer-features/aztec-sandbox:2": {
+      "version": "0.74.0"
+    },
+    "ghcr.io/ClarifiedLabs/devcontainer-features/foundry:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [
+    8080,
+    8545
+  ],
+  "containerEnv": {
+    "npm_config_store_dir": "/home/vscode/.pnpm-store",
+    "COMPOSE_PROJECT_NAME": "sandbox",
+    "COMPOSE_FILE": "/home/vscode/.aztec/docker-compose.sandbox.yml",
+    "TURNSTILE_DEV_CONTAINER": "1"
+  },
+  "onCreateCommand": {
+    "mount_permissions": "mount | egrep '.pnpm-store|node_modules' | awk '{print $3}' | sudo xargs chown `id -u`:`id -g`"
+  },
+  "postCreateCommand": {
+    "setup": "make init && pnpm run build"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "biomejs.biome",
+        "juanblanco.solidity",
+        "noir-lang.vscode-noir",
+        "bierner.markdown-mermaid",
+        "ms-azuretools.vscode-docker",
+        "ms-vscode.makefile-tools"
+      ],
+      "dev.containers.mountWaylandSocket": false
+    }
+  }
+}

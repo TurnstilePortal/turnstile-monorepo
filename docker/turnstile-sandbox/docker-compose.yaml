@@ -1,0 +1,33 @@
+services:
+  ethereum:
+    image: ghcr.io/clarifiedlabs/foundry:stable
+    entrypoint: anvil -p 8545 --host 0.0.0.0 --chain-id 31337 --silent
+    ports:
+      - "8545:8545"
+  aztec:
+    image: aztecprotocol/aztec:0.74.0
+    ports:
+      - "8080:8080"
+    environment:
+      ETHEREUM_HOST: http://ethereum:8545
+      L1_CHAIN_ID: 31337
+      ARCHIVER_POLLING_INTERVAL_MS: 50
+      P2P_BLOCK_CHECK_INTERVAL_MS: 50
+      SEQ_TX_POLLING_INTERVAL_MS: 50
+      WS_BLOCK_CHECK_INTERVAL_MS: 50
+      PXE_BLOCK_POLLING_INTERVAL_MS: 50
+      ARCHIVER_VIEM_POLLING_INTERVAL_MS: 500
+      PXE_PORT: 8080
+      PORT: 8080
+      TEST_ACCOUNTS: "true"
+      LOG_LEVEL: verbose
+    depends_on:
+      - ethereum
+    command: "start --sandbox --node.deployAztecContractsSalt 0x01"
+  turnstile-sandbox-deployer:
+    image: ghcr.io/turnstileportal/turnstile-sandbox-deployer:v0.0.33
+    depends_on:
+      - ethereum
+      - aztec
+    volumes:
+      - ./sandbox-data:/sandbox-data

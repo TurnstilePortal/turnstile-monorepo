@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: Apache-2.0
+
+pragma solidity >=0.8.19;
+
+import {IMinimalAztecRollup} from "../../src/interfaces/IMinimalAztecRollup.sol";
+import {IMinimalAztecInbox} from "../../src/interfaces/IMinimalAztecInbox.sol";
+import {IMinimalAztecOutbox} from "../../src/interfaces/IMinimalAztecOutbox.sol";
+
+contract FakeAztecRollup is IMinimalAztecRollup {
+    IMinimalAztecInbox public inbox;
+    IMinimalAztecOutbox public outbox;
+
+    constructor(IMinimalAztecInbox _inbox, IMinimalAztecOutbox _outbox) {
+        inbox = _inbox;
+        outbox = _outbox;
+    }
+
+    function INBOX() external view override returns (IMinimalAztecInbox) {
+        return inbox;
+    }
+
+    function OUTBOX() external view override returns (IMinimalAztecOutbox) {
+        return outbox;
+    }
+}

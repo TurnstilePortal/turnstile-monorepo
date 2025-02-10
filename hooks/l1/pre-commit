@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -e
+set -x
+
+
+just l1/test fmt
+
+# Check for changes
+if ! git diff --quiet; then
+  echo "Changes detected. Please commit the changes before proceeding."
+  exit 1
+fi

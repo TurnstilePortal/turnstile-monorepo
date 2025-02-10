@@ -1,0 +1,25 @@
+{
+  "name": "@turnstile-portal/aztec-artifacts",
+  "version": "0.0.33",
+  "description": "Aztec artifacts for Turnstile Portal",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TurnstilePortal/turnstile-contracts.git"
+  },
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist node_modules"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@aztec/aztec.js": "0.74.0"
+  }
+}

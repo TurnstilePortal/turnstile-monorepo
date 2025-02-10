@@ -1,0 +1,14 @@
+[package]
+name = "shield_gateway"
+type = "contract"
+authors = [""]
+compiler_version = ">=0.36.0"
+
+[dependencies]
+aztec = { git="https://github.com/AztecProtocol/aztec-packages/", tag="aztec-packages-v0.74.0", directory="noir-projects/aztec-nr/aztec" }
+authwit = { git="https://github.com/AztecProtocol/aztec-packages/", tag="aztec-packages-v0.74.0", directory="noir-projects/aztec-nr/authwit" }
+uint253 = { git = "https://github.com/ClarifiedLabs/aztec-uint253/", tag = "aztec-packages-v0.74.0" }
+token = { path="../token" }
+beacon = { path="../beacon" }
+shield_gateway_storage = { path="../shield_gateway_storage" }
+test_common = { path="../../lib/test_common" }

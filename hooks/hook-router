@@ -1,0 +1,32 @@
+#!/bin/sh
+
+HOOK_TYPE=$(basename "$0")
+
+has_changes() {
+  git diff --cached --name-only | grep -q "^$1/"
+}
+
+run_global_hook() {
+  if [ -x "hooks/global/$HOOK_TYPE" ]; then
+    exec "hooks/global/$HOOK_TYPE"
+  fi
+}
+
+run_global_hook
+
+if has_changes "l1"; then
+  if [ -x "hooks/l1/$HOOK_TYPE" ]; then
+    exec "hooks/l1/$HOOK_TYPE"
+  fi
+elif has_changes "aztec"; then
+  if [ -x "hooks/aztec/$HOOK_TYPE" ]; then
+    exec "hooks/aztec/$HOOK_TYPE"
+  fi
+elif has_changes "packages"; then
+  if [ -x "hooks/packages/$HOOK_TYPE" ]; then
+    exec "hooks/packages/$HOOK_TYPE"
+  fi
+fi
+
+echo "No specific $HOOK_TYPE hook found for this project or no changes detected."
+exit 0

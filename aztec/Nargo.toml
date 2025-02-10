@@ -1,0 +1,10 @@
+[workspace]
+members = [
+    "contracts/token",
+    "contracts/portal",
+    "contracts/shield_gateway",
+    "contracts/shield_gateway_storage",
+    "contracts/dev_advance_block",
+    "contracts/beacon",
+    "lib/test_common",
+]

@@ -1,0 +1,54 @@
+{
+  "name": "@turnstile-portal/deploy",
+  "version": "0.0.33",
+  "description": "Turnstile Deployment Tools",
+  "type": "module",
+  "bin": {
+    "turnstile-deploy": "./dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./commands": {
+      "import": "./dist/commands/common.js",
+      "require": "./dist/commands/common.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TurnstilePortal/turnstile-contracts.git"
+  },
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist node_modules"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@aztec/accounts": "^0.74.0",
+    "@aztec/aztec.js": "0.74.0",
+    "@turnstile-portal/aztec-artifacts": "^0.0.33",
+    "@turnstile-portal/l1-artifacts-abi": "^0.0.33",
+    "@turnstile-portal/l1-artifacts-bytecode": "^0.0.33",
+    "@turnstile-portal/l1-artifacts-dev": "^0.0.33",
+    "@turnstile-portal/turnstile-dev": "^0.0.33",
+    "@turnstile-portal/turnstile.js": "^0.0.33",
+    "commander": "^12.1.0",
+    "viem": "^2.21.15"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

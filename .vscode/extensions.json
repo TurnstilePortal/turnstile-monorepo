@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "juanblanco.solidity",
+    "noir-lang.vscode-noir",
+    "biomejs.biome",
+    "bierner.markdown-mermaid",
+    "ms-azuretools.vscode-docker",
+    "ms-vscode.makefile-tools"
+  ]
+}

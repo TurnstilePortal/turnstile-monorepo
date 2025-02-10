@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -e
+
+if git diff --cached --name-only | egrep -q '\.(ts|json|md)$'; then
+  echo "Linting and formatting files..."
+  pnpm run lint:fix
+  pnpm run format:fix
+
+  if ! git diff --quiet; then
+    echo "Changes detected. Please commit the changes before proceeding."
+      exit 1
+  fi
+fi

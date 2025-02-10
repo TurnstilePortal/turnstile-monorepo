@@ -1,0 +1,32 @@
+{
+  "name": "turnstile-contracts",
+  "private": true,
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TurnstilePortal/turnstile-contracts.git"
+  },
+  "scripts": {
+    "build": "pnpm recursive run build",
+    "build-artifacts": "pnpm recursive run --filter \"@turnstile-portal/*artifacts*\" build",
+    "build-packages": "pnpm recursive run --filter \"@turnstile-portal/*\" build",
+    "changeset": "changeset",
+    "version": "changeset version && bash scripts/update-sandbox-version.sh && pnpm install --no-frozen-lockfile",
+    "publish-packages": "changeset publish",
+    "clean": "pnpm recursive run clean ; rm -rf node_modules/*",
+    "repl": "tsx packages/repl/src/repl.ts",
+    "lint": "biome lint",
+    "lint:fix": "biome lint --write",
+    "format": "biome format",
+    "format:fix": "biome format --write"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@changesets/cli": "^2.27.11",
+    "@types/node": "^22.9.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}
