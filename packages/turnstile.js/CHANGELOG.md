@@ -1,5 +1,14 @@
 # @turnstile-portal/turnstile.js
 
+## 0.0.34
+
+### Patch Changes
+
+- 001dcbd: repackage
+- Updated dependencies [001dcbd]
+  - @turnstile-portal/aztec-artifacts@0.0.34
+  - @turnstile-portal/l1-artifacts-abi@0.0.34
+
 ## 0.0.33
 
 ### Patch Changes

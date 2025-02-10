@@ -1,6 +1,6 @@
 {
   "name": "@turnstile-portal/l1-artifacts-dev",
-  "version": "0.0.33",
+  "version": "0.0.34",
   "description": "Dev artifacts for Turnstile Portal L1 contracts",
   "repository": {
     "type": "git",
