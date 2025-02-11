@@ -1,5 +1,18 @@
 # @turnstile-portal/deploy
 
+## 0.0.35
+
+### Patch Changes
+
+- 38f972d: aztec-packages -> v0.75.0
+- Updated dependencies [38f972d]
+  - @turnstile-portal/l1-artifacts-bytecode@0.0.35
+  - @turnstile-portal/l1-artifacts-dev@0.0.35
+  - @turnstile-portal/aztec-artifacts@0.0.35
+  - @turnstile-portal/turnstile-dev@0.0.35
+  - @turnstile-portal/turnstile.js@0.0.35
+  - @turnstile-portal/l1-artifacts-abi@0.0.35
+
 ## 0.0.34
 
 ### Patch Changes
