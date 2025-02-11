@@ -115,13 +115,13 @@ export class ShieldGatewayStorageContract extends ContractBase {
       slot: new Fr(1n),
     },
 authorized_caller: {
-      slot: new Fr(2n),
-    },
-channel_balances: {
       slot: new Fr(3n),
     },
-channel_thresholds: {
+channel_balances: {
       slot: new Fr(4n),
+    },
+channel_thresholds: {
+      slot: new Fr(5n),
     }
       } as ContractStorageLayout<'admin' | 'authorized_caller' | 'channel_balances' | 'channel_thresholds'>;
     }

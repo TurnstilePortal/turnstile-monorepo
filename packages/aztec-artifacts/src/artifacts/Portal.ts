@@ -136,16 +136,16 @@ export class PortalContract extends ContractBase {
       slot: new Fr(1n),
     },
 l1_tokens: {
-      slot: new Fr(2n),
-    },
-l2_tokens: {
       slot: new Fr(3n),
     },
-token_contract_class_id: {
+l2_tokens: {
       slot: new Fr(4n),
     },
-shield_gateway_beacon: {
+token_contract_class_id: {
       slot: new Fr(5n),
+    },
+shield_gateway_beacon: {
+      slot: new Fr(7n),
     }
       } as ContractStorageLayout<'l1_portal' | 'l1_tokens' | 'l2_tokens' | 'token_contract_class_id' | 'shield_gateway_beacon'>;
     }

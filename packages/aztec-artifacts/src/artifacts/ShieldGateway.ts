@@ -141,10 +141,10 @@ export class ShieldGatewayContract extends ContractBase {
       slot: new Fr(1n),
     },
 default_channel_threshold: {
-      slot: new Fr(2n),
+      slot: new Fr(3n),
     },
 shield_gateway_storage: {
-      slot: new Fr(3n),
+      slot: new Fr(4n),
     }
       } as ContractStorageLayout<'admin' | 'default_channel_threshold' | 'shield_gateway_storage'>;
     }

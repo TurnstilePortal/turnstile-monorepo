@@ -145,28 +145,28 @@ export class TokenContract extends ContractBase {
       slot: new Fr(1n),
     },
 shield_gateway_beacon: {
-      slot: new Fr(2n),
-    },
-private_balances: {
       slot: new Fr(3n),
     },
-public_balances: {
-      slot: new Fr(4n),
-    },
-total_supply: {
+private_balances: {
       slot: new Fr(5n),
     },
-shielded_supply: {
+public_balances: {
       slot: new Fr(6n),
     },
-name: {
+total_supply: {
       slot: new Fr(7n),
     },
-symbol: {
+shielded_supply: {
       slot: new Fr(8n),
     },
-decimals: {
+name: {
       slot: new Fr(9n),
+    },
+symbol: {
+      slot: new Fr(11n),
+    },
+decimals: {
+      slot: new Fr(13n),
     }
       } as ContractStorageLayout<'minter' | 'shield_gateway_beacon' | 'private_balances' | 'public_balances' | 'total_supply' | 'shielded_supply' | 'name' | 'symbol' | 'decimals'>;
     }
