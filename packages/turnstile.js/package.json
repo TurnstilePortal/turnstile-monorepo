@@ -21,11 +21,11 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@aztec/accounts": "^0.74.0",
-    "@aztec/aztec.js": "0.74.0",
-    "@aztec/circuit-types": "0.74.0",
-    "@aztec/foundation": "^0.74.0",
-    "@aztec/l1-artifacts": "0.74.0",
+    "@aztec/accounts": "^0.75.0",
+    "@aztec/aztec.js": "0.75.0",
+    "@aztec/circuit-types": "0.75.0",
+    "@aztec/foundation": "^0.75.0",
+    "@aztec/l1-artifacts": "0.75.0",
     "@turnstile-portal/aztec-artifacts": "^0.0.34",
     "@turnstile-portal/l1-artifacts-abi": "^0.0.34",
     "viem": "^2.21.15"
