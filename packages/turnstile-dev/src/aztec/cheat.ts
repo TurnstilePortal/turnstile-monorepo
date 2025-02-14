@@ -4,6 +4,7 @@ import {
   ExtendedNote,
   Note,
   TxStatus,
+  sleep,
 } from '@aztec/aztec.js';
 import type { Wallet, TxHash, AccountWallet, PXE } from '@aztec/aztec.js';
 import { TokenContract } from '@turnstile-portal/aztec-artifacts';
@@ -24,6 +25,7 @@ export async function advanceBlocksUntil(
     wallet,
   );
   while ((await pxe.getBlockNumber()) < endBlock) {
+    await sleep(100000);
     const tx = await devAdvanceBlock.methods.increment().send();
     const receipt = await tx.wait();
     if (receipt.status !== TxStatus.SUCCESS) {

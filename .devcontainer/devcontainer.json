@@ -15,7 +15,7 @@
   ],
   "features": {
     "ghcr.io/ClarifiedLabs/devcontainer-features/aztec-sandbox:2": {
-      "version": "0.75.0"
+      "version": "0.76.4"
     },
     "ghcr.io/ClarifiedLabs/devcontainer-features/foundry:1": {
       "version": "nightly"
@@ -33,7 +33,9 @@
     "npm_config_store_dir": "/home/vscode/.pnpm-store",
     "COMPOSE_PROJECT_NAME": "sandbox",
     "COMPOSE_FILE": "/home/vscode/.aztec/docker-compose.sandbox.yml",
-    "TURNSTILE_DEV_CONTAINER": "1"
+    "TURNSTILE_DEV_CONTAINER": "1",
+    "FOUNDRY_DISABLE_NIGHTLY_WARNING": "1",
+    "NODE_NO_WARNINGS": "1"
   },
   "onCreateCommand": {
     "mount_permissions": "mount | egrep '.pnpm-store|node_modules' | awk '{print $3}' | sudo xargs chown `id -u`:`id -g`"

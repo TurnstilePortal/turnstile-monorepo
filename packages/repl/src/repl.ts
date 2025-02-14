@@ -24,9 +24,8 @@ import {
 const RPC_URL = process.env.RPC_URL || 'http://localhost:8545';
 const PXE_URL = process.env.PXE_URL || 'http://localhost:8080';
 
-const noRetryFetch = makeFetch([], true);
-const pxe = createPXEClient(PXE_URL, noRetryFetch);
-const node = createAztecNodeClient(PXE_URL, noRetryFetch);
+const pxe = createPXEClient(PXE_URL);
+const node = createAztecNodeClient(PXE_URL);
 
 export const l1PublicClient = createPublicClient({
   chain: anvil,

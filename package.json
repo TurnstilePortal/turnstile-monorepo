@@ -18,13 +18,16 @@
     "lint": "biome lint",
     "lint:fix": "biome lint --write",
     "format": "biome format",
-    "format:fix": "biome format --write"
+    "format:fix": "biome format --write",
+    "update-aztec-version": "tsx scripts/update-aztec-deps.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@changesets/cli": "^2.27.11",
+    "@types/glob": "^8.1.0",
     "@types/node": "^22.9.0",
     "@vitest/coverage-v8": "^2.1.8",
+    "glob": "^11.0.1",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "vitest": "^2.1.8"

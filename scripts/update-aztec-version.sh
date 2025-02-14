@@ -10,21 +10,12 @@ fi
 
 new_version=$1
 
-echo "Updating aztec version to $new_version..."
-
-pkg_jsons=$(git ls-files | grep package.json | xargs grep -l @aztec/)
-
-for pkg_json in $pkg_jsons; do
-  echo "Updating $pkg_json..."
-
-  aztec_pkgs=$(grep @aztec/ $pkg_json | cut -d: -f 1 | tr -d '" ' | xargs -I% echo %@^$new_version)
-  pnpm add -C $(dirname $pkg_json) $aztec_pkgs
-done
-
+echo "Updating ts packages to $new_version..."
+pnpm update-aztec-version $new_version
 
 echo "Updating " aztec/{contracts,lib}/*/Nargo.toml "..."
 
-sed -i -e 's/tag="aztec-packages-v[^"/]*"/tag="aztec-packages-v'$new_version'"/' aztec/contracts/*/Nargo.toml aztec/lib/*/Nargo.toml
+sed -i -e 's/"aztec-packages-v[^"/]*"/"aztec-packages-v'$new_version'"/' aztec/contracts/*/Nargo.toml aztec/lib/*/Nargo.toml
 
 echo "Updating .devcontainer/devcontainer.json..."
 

@@ -163,7 +163,12 @@ export class AztecToken {
     amount: bigint,
     verifiedID: Fr[] & { length: 5 },
   ) {
-    this.wallet.addCapsule(verifiedID);
+    // TODO: Store the capsule in a specific slot
+    this.wallet.storeCapsule(
+      await this.getShieldGatewayAddress(),
+      Fr.random(),
+      verifiedID,
+    );
     return this.token.methods
       .transfer_private_to_private(
         this.wallet.getAddress(), // from,

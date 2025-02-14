@@ -144,7 +144,7 @@ default_channel_threshold: {
       slot: new Fr(3n),
     },
 shield_gateway_storage: {
-      slot: new Fr(4n),
+      slot: new Fr(8n),
     }
       } as ContractStorageLayout<'admin' | 'default_channel_threshold' | 'shield_gateway_storage'>;
     }

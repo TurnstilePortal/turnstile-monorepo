@@ -15,11 +15,11 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@aztec/accounts": "0.75.0",
-    "@aztec/aztec.js": "0.75.0",
-    "@turnstile-portal/aztec-artifacts": "workspace:^0.0.35",
-    "@turnstile-portal/turnstile-dev": "^0.0.35",
-    "@turnstile-portal/turnstile.js": "^0.0.35",
+    "@aztec/accounts": "0.76.4",
+    "@aztec/aztec.js": "0.76.4",
+    "@turnstile-portal/aztec-artifacts": "workspace:^",
+    "@turnstile-portal/turnstile-dev": "workspace:^",
+    "@turnstile-portal/turnstile.js": "workspace:^",
     "repl": "^0.1.3",
     "viem": "^2.21.15",
     "yargs": "^17.7.2"
