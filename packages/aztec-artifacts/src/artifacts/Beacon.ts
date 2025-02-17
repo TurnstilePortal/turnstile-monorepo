@@ -135,10 +135,10 @@ export class BeaconContract extends ContractBase {
       slot: new Fr(1n),
     },
 overrides: {
-      slot: new Fr(2n),
+      slot: new Fr(6n),
     },
 admin: {
-      slot: new Fr(3n),
+      slot: new Fr(7n),
     }
       } as ContractStorageLayout<'target' | 'overrides' | 'admin'>;
     }

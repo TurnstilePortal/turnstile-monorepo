@@ -118,10 +118,10 @@ authorized_caller: {
       slot: new Fr(3n),
     },
 channel_balances: {
-      slot: new Fr(4n),
+      slot: new Fr(8n),
     },
 channel_thresholds: {
-      slot: new Fr(5n),
+      slot: new Fr(9n),
     }
       } as ContractStorageLayout<'admin' | 'authorized_caller' | 'channel_balances' | 'channel_thresholds'>;
     }

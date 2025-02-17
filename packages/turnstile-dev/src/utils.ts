@@ -4,6 +4,7 @@ import {
   createPublicClient,
   createWalletClient,
   http,
+  defineChain,
   type Account,
   type Chain,
   type PublicClient,
@@ -118,12 +119,30 @@ export async function getL2Wallet(
   );
 }
 
+const devnet = defineChain({
+  id: 1337,
+  name: '',
+  nativeCurrency: {
+    name: '',
+    symbol: '',
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: [],
+      webSocket: undefined,
+    },
+  },
+});
+
 export function getChain(chain: string): Chain {
   switch (chain) {
     case 'mainnet':
       return mainnet;
     case 'anvil':
       return anvil;
+    case 'devnet':
+      return devnet;
     default:
       throw new Error(`Unsupported chain: ${chain}`);
   }
