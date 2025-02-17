@@ -1,6 +1,6 @@
 {
   "name": "@turnstile-portal/l1-artifacts-abi",
-  "version": "0.0.35",
+  "version": "0.0.36",
   "description": "L1 ABI artifacts for Turnstile Portal",
   "repository": {
     "type": "git",
