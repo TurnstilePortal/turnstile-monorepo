@@ -42,7 +42,11 @@ contract AllowListTest is Test {
         allowList.propose(propose);
         vm.expectRevert(
             abi.encodeWithSelector(
-                IAllowList.AllowList__BadStatus.selector, propose, 1, /* Status.PROPOSED*/ 0 /* Wanted Status.UNKNOWN */
+                IAllowList.AllowList__BadStatus.selector,
+                propose,
+                1,
+                /* Status.PROPOSED*/
+                0 /* Wanted Status.UNKNOWN */
             )
         );
         allowList.propose(propose);

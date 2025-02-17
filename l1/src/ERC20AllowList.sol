@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity >=0.8.19;
+pragma solidity >=0.8.24;
 
 import {IERC20Minimal} from "./interfaces/IERC20Minimal.sol";
 import {AllowList} from "./AllowList.sol";

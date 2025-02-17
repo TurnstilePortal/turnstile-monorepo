@@ -181,8 +181,8 @@ importers:
         specifier: ^1.0.8
         version: 1.0.10(hardhat@2.22.12(ts-node@10.9.2(@types/node@22.7.3)(typescript@5.6.2))(typescript@5.6.2))
       solhint:
-        specifier: ^5.0.3
-        version: 5.0.3(typescript@5.6.2)
+        specifier: ^5.0.5
+        version: 5.0.5(typescript@5.6.2)
       solidity-coverage:
         specifier: ^0.8.0
         version: 0.8.13(hardhat@2.22.12(ts-node@10.9.2(@types/node@22.7.3)(typescript@5.6.2))(typescript@5.6.2))
@@ -1418,6 +1418,9 @@ packages:
 
   '@solidity-parser/parser@0.18.0':
     resolution: {integrity: sha512-yfORGUIPgLck41qyN7nbwJRAx17/jAIXCTanHOJZhB6PJ1iAk/84b/xlsVKFSyNyLXIj0dhppoE0+CRws7wlzA==}
+
+  '@solidity-parser/parser@0.19.0':
+    resolution: {integrity: sha512-RV16k/qIxW/wWc+mLzV3ARyKUaMUTBy9tOLMzFhtNSKYeTAanQ3a5MudJKf/8arIFnA2L27SNjarQKmFg0w/jA==}
 
   '@szmarczak/http-timer@5.0.1':
     resolution: {integrity: sha512-+PmQX0PiAYPMeVYe237LJAYvOMYW1j2rH5YROyS3b4CTVJum34HfRvKvAzozHAQG0TnHNdUfY9nCeUyRAs//cw==}
@@ -3805,8 +3808,8 @@ packages:
     engines: {node: '>=10.0.0'}
     hasBin: true
 
-  solhint@5.0.3:
-    resolution: {integrity: sha512-OLCH6qm/mZTCpplTXzXTJGId1zrtNuDYP5c2e6snIv/hdRVxPfBBz/bAlL91bY/Accavkayp2Zp2BaDSrLVXTQ==}
+  solhint@5.0.5:
+    resolution: {integrity: sha512-WrnG6T+/UduuzSWsSOAbfq1ywLUDwNea3Gd5hg6PS+pLUm8lz2ECNr0beX609clBxmDeZ3676AiA9nPDljmbJQ==}
     hasBin: true
 
   solidity-coverage@0.8.13:
@@ -5895,6 +5898,8 @@ snapshots:
       antlr4ts: 0.5.0-alpha.4
 
   '@solidity-parser/parser@0.18.0': {}
+
+  '@solidity-parser/parser@0.19.0': {}
 
   '@szmarczak/http-timer@5.0.1':
     dependencies:
@@ -8576,9 +8581,9 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  solhint@5.0.3(typescript@5.6.2):
+  solhint@5.0.5(typescript@5.6.2):
     dependencies:
-      '@solidity-parser/parser': 0.18.0
+      '@solidity-parser/parser': 0.19.0
       ajv: 6.12.6
       antlr4: 4.13.2
       ast-parents: 0.0.1
