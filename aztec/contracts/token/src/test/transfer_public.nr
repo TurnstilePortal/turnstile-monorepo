@@ -1,14 +1,14 @@
 use crate::test::utils;
+use test_common;
 
 #[test]
 unconstrained fn transfer_public() {
-    let (env, accounts) = utils::setup::<4>();
+    let (env, accounts) = test_common::setup_env_and_accounts::<3>();
 
     let minter = accounts[0];
     let sender = accounts[1];
     let recipient = accounts[2];
-    let shield_gateway = accounts[3];
-    let token = utils::deploy_token(env, minter, shield_gateway);
+    let token = utils::deploy_token(env, minter);
     let amount = 1000000000000000000.to_field();
     utils::mint(env, token, minter, sender, amount);
 

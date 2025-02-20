@@ -39,30 +39,10 @@ import ShieldGatewayContractArtifactJson from './shield_gateway-ShieldGateway.js
 export const ShieldGatewayContractArtifact = loadContractArtifact(ShieldGatewayContractArtifactJson as NoirCompiledContract);
 
 
-      export type DefaultChannelThresholdChanged = {
-        new_threshold: FieldLike
-effective_block: FieldLike
-      }
-    
-
-      export type ChannelThresholdExceeded = {
-        from: AztecAddressLike
-to: AztecAddressLike
+      export type TransferEvent = {
+        serial: FieldLike
 token: AztecAddressLike
-      }
-    
-
-      export type ChannelThresholdChanged = {
-        new: FieldLike
-token: AztecAddressLike
-effective_block: FieldLike
-      }
-    
-
-      export type ChannelCreation = {
-        from: AztecAddressLike
-to: AztecAddressLike
-token: AztecAddressLike
+binnedAmount: FieldLike
       }
     
 
@@ -97,14 +77,14 @@ export class ShieldGatewayContract extends ContractBase {
   /**
    * Creates a tx to deploy a new instance of this contract.
    */
-  public static deploy(wallet: Wallet, admin: AztecAddressLike, shield_gateway_storage: AztecAddressLike, default_channel_threshold: FieldLike) {
+  public static deploy(wallet: Wallet, ) {
     return new DeployMethod<ShieldGatewayContract>(PublicKeys.default(), wallet, ShieldGatewayContractArtifact, ShieldGatewayContract.at, Array.from(arguments).slice(1));
   }
 
   /**
    * Creates a tx to deploy a new instance of this contract using the specified public keys hash to derive the address.
    */
-  public static deployWithPublicKeys(publicKeys: PublicKeys, wallet: Wallet, admin: AztecAddressLike, shield_gateway_storage: AztecAddressLike, default_channel_threshold: FieldLike) {
+  public static deployWithPublicKeys(publicKeys: PublicKeys, wallet: Wallet, ) {
     return new DeployMethod<ShieldGatewayContract>(publicKeys, wallet, ShieldGatewayContractArtifact, ShieldGatewayContract.at, Array.from(arguments).slice(2));
   }
 
@@ -135,20 +115,7 @@ export class ShieldGatewayContract extends ContractBase {
   }
   
 
-  public static get storage(): ContractStorageLayout<'admin' | 'default_channel_threshold' | 'shield_gateway_storage'> {
-      return {
-        admin: {
-      slot: new Fr(1n),
-    },
-default_channel_threshold: {
-      slot: new Fr(3n),
-    },
-shield_gateway_storage: {
-      slot: new Fr(8n),
-    }
-      } as ContractStorageLayout<'admin' | 'default_channel_threshold' | 'shield_gateway_storage'>;
-    }
-    
+  
 
   public static get notes(): ContractNotes<'U253Note'> {
     return {
@@ -162,35 +129,14 @@ shield_gateway_storage: {
   /** Type-safe wrappers for the public methods exposed by the contract. */
   public declare methods: {
     
-    /** channel_exists(from: struct, to: struct, token: struct) */
-    channel_exists: ((from: AztecAddressLike, to: AztecAddressLike, token: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** channel_key(from: struct, to: struct, token: struct) */
-    channel_key: ((from: AztecAddressLike, to: AztecAddressLike, token: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** channel_transfer(token: struct, from: struct, to: struct, amount: field, nonce: field) */
-    channel_transfer: ((token: AztecAddressLike, from: AztecAddressLike, to: AztecAddressLike, amount: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** check_transfer(sender: struct, recipient: struct, amount: struct) */
+    check_transfer: ((sender: AztecAddressLike, recipient: AztecAddressLike, amount: { value: FieldLike }) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** compute_note_hash_and_optionally_a_nullifier(contract_address: struct, nonce: field, storage_slot: field, note_type_id: field, compute_nullifier: boolean, packed_note_content: array) */
     compute_note_hash_and_optionally_a_nullifier: ((contract_address: AztecAddressLike, nonce: FieldLike, storage_slot: FieldLike, note_type_id: FieldLike, compute_nullifier: boolean, packed_note_content: FieldLike[]) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** get_channel_balance(from: struct, to: struct, token: struct) */
-    get_channel_balance: ((from: AztecAddressLike, to: AztecAddressLike, token: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** get_channel_threshold(token: struct) */
-    get_channel_threshold: ((token: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** get_default_channel_threshold() */
-    get_default_channel_threshold: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** get_storage_address() */
-    get_storage_address: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** init(admin: struct, shield_gateway_storage: struct, default_channel_threshold: field) */
-    init: ((admin: AztecAddressLike, shield_gateway_storage: AztecAddressLike, default_channel_threshold: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** initialize_channel(from: struct, to: struct, token: struct, nonce: field) */
-    initialize_channel: ((from: AztecAddressLike, to: AztecAddressLike, token: AztecAddressLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** init() */
+    init: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** process_log(log_plaintext: struct, tx_hash: field, unique_note_hashes_in_tx: struct, first_nullifier_in_tx: field, recipient: struct) */
     process_log: ((log_plaintext: { storage: FieldLike[], len: (bigint | number) }, tx_hash: FieldLike, unique_note_hashes_in_tx: { storage: FieldLike[], len: (bigint | number) }, first_nullifier_in_tx: FieldLike, recipient: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
@@ -198,108 +144,22 @@ shield_gateway_storage: {
     /** public_dispatch(selector: field) */
     public_dispatch: ((selector: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** set_channel_threshold(token: struct, new_threshold: field) */
-    set_channel_threshold: ((token: AztecAddressLike, new_threshold: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** set_default_channel_threshold(new_threshold: field) */
-    set_default_channel_threshold: ((new_threshold: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
     /** sync_notes() */
     sync_notes: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** verified_id_transfer(token: struct, from: struct, to: struct, amount: struct, nonce: field) */
-    verified_id_transfer: ((token: AztecAddressLike, from: AztecAddressLike, to: AztecAddressLike, amount: { value: FieldLike }, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** verify_id_private(verified_id: array) */
     verify_id_private: ((verified_id: FieldLike[]) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
   };
 
   
-    public static get events(): { DefaultChannelThresholdChanged: {abiType: AbiType, eventSelector: EventSelector, fieldNames: string[] }, ChannelThresholdExceeded: {abiType: AbiType, eventSelector: EventSelector, fieldNames: string[] }, ChannelThresholdChanged: {abiType: AbiType, eventSelector: EventSelector, fieldNames: string[] }, ChannelCreation: {abiType: AbiType, eventSelector: EventSelector, fieldNames: string[] } } {
+    public static get events(): { TransferEvent: {abiType: AbiType, eventSelector: EventSelector, fieldNames: string[] } } {
     return {
-      DefaultChannelThresholdChanged: {
+      TransferEvent: {
         abiType: {
     "kind": "struct",
     "fields": [
         {
-            "name": "new_threshold",
-            "type": {
-                "kind": "field"
-            }
-        },
-        {
-            "name": "effective_block",
-            "type": {
-                "kind": "field"
-            }
-        }
-    ],
-    "path": "ShieldGateway::DefaultChannelThresholdChanged"
-},
-        eventSelector: EventSelector.fromString("0xbf74129b"),
-        fieldNames: ["new_threshold","effective_block"],
-      },
-ChannelThresholdExceeded: {
-        abiType: {
-    "kind": "struct",
-    "fields": [
-        {
-            "name": "from",
-            "type": {
-                "kind": "struct",
-                "fields": [
-                    {
-                        "name": "inner",
-                        "type": {
-                            "kind": "field"
-                        }
-                    }
-                ],
-                "path": "authwit::aztec::protocol_types::address::aztec_address::AztecAddress"
-            }
-        },
-        {
-            "name": "to",
-            "type": {
-                "kind": "struct",
-                "fields": [
-                    {
-                        "name": "inner",
-                        "type": {
-                            "kind": "field"
-                        }
-                    }
-                ],
-                "path": "authwit::aztec::protocol_types::address::aztec_address::AztecAddress"
-            }
-        },
-        {
-            "name": "token",
-            "type": {
-                "kind": "struct",
-                "fields": [
-                    {
-                        "name": "inner",
-                        "type": {
-                            "kind": "field"
-                        }
-                    }
-                ],
-                "path": "authwit::aztec::protocol_types::address::aztec_address::AztecAddress"
-            }
-        }
-    ],
-    "path": "ShieldGateway::ChannelThresholdExceeded"
-},
-        eventSelector: EventSelector.fromString("0x7c6d8743"),
-        fieldNames: ["from","to","token"],
-      },
-ChannelThresholdChanged: {
-        abiType: {
-    "kind": "struct",
-    "fields": [
-        {
-            "name": "new",
+            "name": "serial",
             "type": {
                 "kind": "field"
             }
@@ -316,75 +176,20 @@ ChannelThresholdChanged: {
                         }
                     }
                 ],
-                "path": "authwit::aztec::protocol_types::address::aztec_address::AztecAddress"
+                "path": "aztec::protocol_types::address::aztec_address::AztecAddress"
             }
         },
         {
-            "name": "effective_block",
+            "name": "binnedAmount",
             "type": {
                 "kind": "field"
             }
         }
     ],
-    "path": "ShieldGateway::ChannelThresholdChanged"
+    "path": "ShieldGateway::TransferEvent"
 },
-        eventSelector: EventSelector.fromString("0xa0da52d1"),
-        fieldNames: ["new","token","effective_block"],
-      },
-ChannelCreation: {
-        abiType: {
-    "kind": "struct",
-    "fields": [
-        {
-            "name": "from",
-            "type": {
-                "kind": "struct",
-                "fields": [
-                    {
-                        "name": "inner",
-                        "type": {
-                            "kind": "field"
-                        }
-                    }
-                ],
-                "path": "authwit::aztec::protocol_types::address::aztec_address::AztecAddress"
-            }
-        },
-        {
-            "name": "to",
-            "type": {
-                "kind": "struct",
-                "fields": [
-                    {
-                        "name": "inner",
-                        "type": {
-                            "kind": "field"
-                        }
-                    }
-                ],
-                "path": "authwit::aztec::protocol_types::address::aztec_address::AztecAddress"
-            }
-        },
-        {
-            "name": "token",
-            "type": {
-                "kind": "struct",
-                "fields": [
-                    {
-                        "name": "inner",
-                        "type": {
-                            "kind": "field"
-                        }
-                    }
-                ],
-                "path": "authwit::aztec::protocol_types::address::aztec_address::AztecAddress"
-            }
-        }
-    ],
-    "path": "ShieldGateway::ChannelCreation"
-},
-        eventSelector: EventSelector.fromString("0x98a90c94"),
-        fieldNames: ["from","to","token"],
+        eventSelector: EventSelector.fromString("0x3923e022"),
+        fieldNames: ["serial","token","binnedAmount"],
       }
     };
   }

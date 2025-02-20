@@ -38,6 +38,7 @@ pub contract Token {
     };
 
     use beacon::Beacon;
+    use shield_gateway::ShieldGateway;
     use uint253::{uint253::U253, uint253_note::U253Note};
 
     use crate::types::balance_set::BalanceSet;
@@ -104,12 +105,7 @@ pub contract Token {
 
     #[public]
     #[initializer]
-    fn init(
-        minter: AztecAddress,
-        name: str<31>,
-        symbol: str<31>,
-        decimals: u8,
-    ) {
+    fn init(minter: AztecAddress, name: str<31>, symbol: str<31>, decimals: u8) {
         assert(!minter.is_zero(), "invalid minter");
         assert(name.as_bytes().len() > 0, "Name cannot be empty");
         assert(symbol.as_bytes().len() > 0, "Symbol cannot be empty");
@@ -123,7 +119,12 @@ pub contract Token {
     #[public]
     fn set_shield_gateway_beacon(beacon: AztecAddress) {
         assert(storage.minter.read().eq(context.msg_sender()), "caller is not minter");
+        aztec::oracle::debug_log::debug_log_format(
+            "set_shield_gateway_beacon: setting beacon to {0}",
+            [beacon.to_field()],
+        );
         storage.shield_gateway_beacon.initialize(beacon);
+        aztec::oracle::debug_log::debug_log("set_shield_gateway_beacon: beacon set...");
     }
 
     #[public]
@@ -237,27 +238,36 @@ pub contract Token {
         amount: Field,
         nonce: Field,
     ) {
-        assert_from_shield_gateway(&mut context, storage);
+        if (!from.eq(context.msg_sender())) {
+            assert_current_call_valid_authwit(&mut context, from);
+        } else {
+            assert(nonce == 0, "invalid nonce");
+        }
         assert_current_call_valid_authwit(&mut context, from);
 
         let amount = U253::from_integer(amount);
 
-        storage.private_balances.at(from).sub(from, amount).emit(
-            encode_and_encrypt_note(&mut context, from, from),
-        );
+        assert_shield_gateway_permitted(&mut context, storage, from, to, amount);
+
+        storage.private_balances.at(from).sub(from, amount).emit(encode_and_encrypt_note(
+            &mut context,
+            from,
+            from,
+        ));
         Token::at(context.this_address())._increase_public_balance(to, amount).enqueue(&mut context);
     }
 
     #[contract_library_method]
-    fn assert_from_shield_gateway(
+    fn assert_shield_gateway_permitted(
         context: &mut PrivateContext,
         storage: Storage<&mut PrivateContext>,
+        sender: AztecAddress,
+        recipient: AztecAddress,
+        amount: U253,
     ) {
-        let from = context.msg_sender();
-        assert(
-            from.eq(get_shield_gateway(context, storage)),
-            "Private transfer must be initiated from the shield gateway",
-        );
+        ShieldGateway::at(get_shield_gateway(context, storage))
+            .check_transfer(sender, recipient, amount)
+            .call(context);
     }
 
     #[contract_library_method]
@@ -330,14 +340,22 @@ pub contract Token {
         amount: Field,
         nonce: Field,
     ) {
-        assert_from_shield_gateway(&mut context, storage);
-        assert_current_call_valid_authwit(&mut context, from);
+        if (!from.eq(context.msg_sender())) {
+            assert_current_call_valid_authwit(&mut context, from);
+        } else {
+            assert(nonce == 0, "invalid nonce");
+        }
 
         let amount = U253::from_integer(amount);
 
-        storage.private_balances.at(from).sub(from, amount).emit(
-            encode_and_encrypt_note(&mut context, from, from),
-        );
+        // Ensure that the transfer is permitted by the shield gateway
+        assert_shield_gateway_permitted(&mut context, storage, from, to, amount);
+
+        storage.private_balances.at(from).sub(from, amount).emit(encode_and_encrypt_note(
+            &mut context,
+            from,
+            from,
+        ));
 
         storage.private_balances.at(to).add(to, amount).emit(encode_and_encrypt_note(
             &mut context,
@@ -356,9 +374,11 @@ pub contract Token {
 
         let amount = U253::from_integer(amount);
 
-        storage.private_balances.at(from).sub(from, amount).emit(
-            encode_and_encrypt_note(&mut context, from, from),
-        );
+        storage.private_balances.at(from).sub(from, amount).emit(encode_and_encrypt_note(
+            &mut context,
+            from,
+            from,
+        ));
         Token::at(context.this_address())._reduce_total_supply(amount).enqueue(&mut context);
     }
 
@@ -390,9 +410,11 @@ pub contract Token {
 
         let amount = U253::from_integer(amount);
 
-        storage.private_balances.at(from).sub(from, amount).emit(
-            encode_and_encrypt_note(&mut context, from, from),
-        );
+        storage.private_balances.at(from).sub(from, amount).emit(encode_and_encrypt_note(
+            &mut context,
+            from,
+            from,
+        ));
         Token::at(context.this_address())._increase_public_balance(from, amount).enqueue(
             &mut context,
         );
@@ -400,7 +422,6 @@ pub contract Token {
     }
 
     // Transfers token `amount` from public balance of message sender to a private balance of `to`.
-    // Requires a shield gateway check.
     #[private]
     fn transfer_public_to_private(
         from: AztecAddress,
@@ -408,7 +429,11 @@ pub contract Token {
         amount: Field,
         nonce: Field,
     ) {
-        assert_from_shield_gateway(&mut context, storage);
+        if (!from.eq(context.msg_sender())) {
+            assert_current_call_valid_authwit(&mut context, from);
+        } else {
+            assert(nonce == 0, "invalid nonce");
+        }
         assert_current_call_valid_authwit(&mut context, from);
 
         let amount = U253::from_integer(amount);
@@ -678,9 +703,11 @@ pub contract Token {
             U253::from_integer(funded_amount),
             INITIAL_TRANSFER_CALL_MAX_NOTES,
         );
-        storage.private_balances.at(user).add(user, change).emit(
-            encode_and_encrypt_note(&mut context, user, user),
-        );
+        storage.private_balances.at(user).add(user, change).emit(encode_and_encrypt_note(
+            &mut context,
+            user,
+            user,
+        ));
 
         // 4. We prepare the partial notes
         // TODO(#9887): In each `_prepare_private_balance_increase` call we fetch the user's ovpk_m 2 more times. This is

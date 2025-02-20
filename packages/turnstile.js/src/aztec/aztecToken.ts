@@ -1,13 +1,12 @@
-import { AztecAddress, Fr, TxStatus } from '@aztec/aztec.js';
+import { Fr } from '@aztec/aztec.js';
 import type {
   AuthWitness,
+  AztecAddress,
   FunctionCall,
-  SentTx,
   Wallet,
 } from '@aztec/aztec.js';
 import {
   ShieldGatewayContract,
-  ShieldGatewayStorageContract,
   TokenContract,
 } from '@turnstile-portal/aztec-artifacts';
 import { fieldCompressedStringToString } from './utils.js';
@@ -22,6 +21,12 @@ export const AztecTokenContract = TokenContract;
  */
 export const TURNSTILE_AZTEC_TOKEN_DEPLOYMENT_SALT =
   Fr.fromHexString('0x9876543210');
+
+/**
+ * The slot used for the verifiable presentation in the Shield Gateway Contract.
+ */
+export const VP_SLOT = Fr.fromHexString('0x1dfeed');
+export const BIN_AMOUNT = 1_000_000_000n;
 
 /**
  * Class representing an Aztec Token.
@@ -163,10 +168,9 @@ export class AztecToken {
     amount: bigint,
     verifiedID: Fr[] & { length: 5 },
   ) {
-    // TODO: Store the capsule in a specific slot
     this.wallet.storeCapsule(
       await this.getShieldGatewayAddress(),
-      Fr.random(),
+      VP_SLOT,
       verifiedID,
     );
     return this.token.methods
@@ -256,74 +260,6 @@ export class AztecToken {
     });
 
     return { authWitness, nonce };
-  }
-
-  /**
-   * Transfers tokens privately to an account using a public channel via the shield gateway.
-   *
-   * @param {AztecAddress} to - The address of the account to transfer tokens to.
-   * @param {bigint} amount - The amount of tokens to transfer.
-   * @param {Fr} nonce - The nonce for the auth witness, created using `createAuthWitnessForPrivateTransfer`.
-   * @param {AuthWitness} authWitness - The auth witness for the transfer, created using `createAuthWitnessForPrivateTransfer`.
-   */
-  async transferPrivateWithPublicChannel(
-    to: AztecAddress,
-    amount: bigint,
-    nonce: Fr,
-    authWitness: AuthWitness,
-  ): Promise<SentTx> {
-    if (!(await this.publicChannelExists(to))) {
-      console.log(
-        `Channel does not exist, initializing channel for ${this.wallet.getAddress()} -> ${to} token ${this.address()}`,
-      );
-      const sentTx = await this.initializePublicChannel(to);
-      const receipt = await sentTx.wait();
-      if (receipt.status !== TxStatus.SUCCESS) {
-        throw new Error(`Failed to initialize channel: ${receipt}`);
-      }
-    }
-
-    const shieldGateway = await this.getShieldGateway();
-    await this.wallet.addAuthWitness(authWitness);
-
-    const tokenAddr = AztecAddress.fromString(this.address());
-    const from = this.wallet.getAddress();
-    const provenTx = await shieldGateway.methods
-      .channel_transfer(tokenAddr, from, to, amount, nonce)
-      .prove();
-    return provenTx.send();
-  }
-
-  async publicChannelExists(to: AztecAddress): Promise<boolean> {
-    const shieldGateway = await this.getShieldGateway();
-    const storageAddressResult = await shieldGateway.methods
-      .get_storage_address()
-      .simulate();
-    const storageAddress = AztecAddress.fromBigInt(storageAddressResult);
-    const storage = await ShieldGatewayStorageContract.at(
-      storageAddress,
-      this.wallet,
-    );
-
-    const from = this.wallet.getAddress();
-    const tokenAddr = AztecAddress.fromString(this.address());
-    const key = await shieldGateway.methods
-      .channel_key(from, to, tokenAddr)
-      .simulate();
-    const frKey = Fr.fromString(`0x${key.toString('16')}`);
-    const result = await storage.methods
-      .is_channel_initialized_unconstrained(frKey)
-      .simulate();
-    return result;
-  }
-
-  async initializePublicChannel(to: AztecAddress): Promise<SentTx> {
-    const shieldGateway = await this.getShieldGateway();
-    const tokenAddr = AztecAddress.fromString(this.address());
-    const from = this.wallet.getAddress();
-    return await shieldGateway.methods
-      .initialize_channel(from, to, tokenAddr, Fr.ZERO /* nonce */)
-      .send();
   }
 
   /**
