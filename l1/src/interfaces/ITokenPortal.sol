@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity >=0.8.19;
+pragma solidity >=0.8.24;
 
 import {IMinimalAztecRegistry} from "./IMinimalAztecRegistry.sol";
 import {IMinimalAztecRollup} from "./IMinimalAztecRollup.sol";

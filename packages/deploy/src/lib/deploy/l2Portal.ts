@@ -7,7 +7,6 @@ import {
   ShieldGatewayContract,
   TokenContractArtifact,
   BeaconContract,
-  ShieldGatewayStorageContract,
 } from '@turnstile-portal/aztec-artifacts';
 
 export async function deployBeacon(
@@ -26,48 +25,13 @@ export async function deployBeacon(
 export async function deployShieldGateway(
   adminWallet: Wallet,
   defaultThreshold = 5_000_000_000_000_000_000n, // 5 & 18 zeros
-): Promise<{
-  storage: ShieldGatewayStorageContract;
-  shieldGateway: ShieldGatewayContract;
-}> {
-  const storage = await deployShieldGatewayStorage(
-    adminWallet,
-    adminWallet.getAddress(),
-  );
-
-  const shieldGateway = await ShieldGatewayContract.deploy(
-    adminWallet,
-    adminWallet.getAddress(),
-    storage.address,
-    defaultThreshold,
-  )
+): Promise<ShieldGatewayContract> {
+  const shieldGateway = await ShieldGatewayContract.deploy(adminWallet)
     .send()
     .deployed();
   console.log(`Shield Gateway deployed at ${shieldGateway.address.toString()}`);
 
-  // Set the shield gateway address in the storage contract
-  const sentTx = await storage.methods
-    .set_authorized_caller(shieldGateway.address)
-    .send();
-  const receipt = await sentTx.wait();
-  if (receipt.status !== TxStatus.SUCCESS) {
-    throw new Error(`Failed to set authorized caller: ${receipt}`);
-  }
-
-  return { storage, shieldGateway };
-}
-
-export async function deployShieldGatewayStorage(
-  wallet: Wallet,
-  adminAddr: AztecAddress,
-): Promise<ShieldGatewayStorageContract> {
-  const storage = await ShieldGatewayStorageContract.deploy(wallet, adminAddr)
-    .send()
-    .deployed();
-  console.log(
-    `Shield Gateway Storage deployed at ${storage.address.toString()}`,
-  );
-  return storage;
+  return shieldGateway;
 }
 
 export async function deployTurnstileTokenPortal(

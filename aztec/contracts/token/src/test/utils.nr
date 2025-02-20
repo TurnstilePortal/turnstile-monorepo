@@ -1,31 +1,14 @@
 use aztec::{
-    oracle::{execution::get_contract_address, random::random},
-    prelude::{AztecAddress, NoteHeader},
-    protocol_types::{
-        storage::map::derive_storage_slot_in_map,
-        traits::ToField,
-    },
+    oracle::{capsules, execution::get_contract_address, random::random},
+    prelude::AztecAddress,
     test::helpers::{cheatcodes, test_environment::TestEnvironment},
 };
 
 use std::mem::zeroed;
-use std::test::OracleMock;
 
 use crate::Token;
 use beacon::test::utils as beacon_utils;
-use uint253::uint253_note::U253Note;
-
-// Setup a test environment with N accounts
-pub unconstrained fn setup<let N: u32>() -> (&mut TestEnvironment, [AztecAddress; N]) {
-    let mut env = TestEnvironment::new();
-    let mut accounts = [AztecAddress::zero(); N];
-    for i in 0..N {
-        accounts[i] = env.create_account_contract(i.to_field());
-    }
-
-    env.advance_block_by(1);
-    (&mut env, accounts)
-}
+use shield_gateway::{ShieldGateway, test::utils as shield_gateway_utils};
 
 unconstrained fn nullPad<let N: u32, let M: u32>(input: str<M>) -> str<N> {
     assert(M <= N, "Input string is too long!");
@@ -42,15 +25,12 @@ unconstrained fn nullPad<let N: u32, let M: u32>(input: str<M>) -> str<N> {
     padded.as_str_unchecked()
 }
 
-pub unconstrained fn deploy_token(
-    env: &mut TestEnvironment,
-    minter: AztecAddress,
-    shield_gateway: AztecAddress,
-) -> AztecAddress {
+pub unconstrained fn deploy_token(env: &mut TestEnvironment, minter: AztecAddress) -> AztecAddress {
+    let shield_gateway = shield_gateway_utils::deploy_shield_gateway(env);
     let beacon = beacon_utils::deploy_beacon(env, AztecAddress::zero(), shield_gateway);
-    let init_call =
-        Token::interface().init(minter, nullPad("TestToken"), nullPad("TT"), 18);
+    let init_call = Token::interface().init(minter, nullPad("TestToken"), nullPad("TT"), 18);
     let token = env.deploy("./@token", "Token").with_public_void_initializer(init_call);
+    env.advance_block_by(1);
 
     // set the shield gateway
     env.impersonate(minter);
@@ -69,75 +49,7 @@ pub unconstrained fn mint(
 ) {
     env.impersonate(minter);
     Token::at(token).mint_public(recipient, amount).call(&mut env.public());
-}
-
-pub unconstrained fn prepare_private_balance_increase(
-    env: &mut TestEnvironment,
-    token: AztecAddress,
-    sender: AztecAddress,
-    recipient: AztecAddress,
-) -> (Field, Field) {
-    let note_randomness = random();
-    // Mock Oracle so that we can manually add the note
-    let mock = OracleMock::mock("getRandomField").returns(note_randomness);
-
-    let hiding_point_slot: Field = Token::at(token)
-        .prepare_private_balance_increase(sender, recipient)
-        .call(&mut env.private());
-
-    OracleMock::clear(mock);
-
-    (note_randomness, hiding_point_slot)
-}
-
-pub unconstrained fn mint_shielded(
-    env: &mut TestEnvironment,
-    token: AztecAddress,
-    minter: AztecAddress,
-    recipient: AztecAddress,
-    amount: Field,
-) {
-    env.impersonate(minter);
-    let (note_randomness, hiding_point_slot) =
-        prepare_private_balance_increase(env, token, minter, recipient);
-
-    Token::at(token).finalize_mint_shielded(recipient, amount, hiding_point_slot).call(
-        &mut env.public(),
-    );
-
-    // We need to manually add the note because #8771 has not yet been implemented
-    add_token_note(env, token, recipient, amount, note_randomness);
-}
-
-pub unconstrained fn shield(
-    env: &mut TestEnvironment,
-    token: AztecAddress,
-    sender: AztecAddress,
-    amount: Field,
-) {
-    env.impersonate(sender);
-    let (note_randomness, hiding_point_slot) =
-        prepare_private_balance_increase(env, token, sender, sender);
-
-    Token::at(token).finalize_transfer_public_to_private(amount, hiding_point_slot).call(
-        &mut env.public(),
-    );
-
-    // We need to manually add the note because #8771 has not yet been implemented
-    add_token_note(env, token, sender, amount, note_randomness);
-}
-
-pub unconstrained fn transfer(
-    env: &mut TestEnvironment,
-    token: AztecAddress,
-    sender: AztecAddress,
-    recipient: AztecAddress,
-    amount: Field,
-) {
-    env.impersonate(sender);
-    Token::at(token).transfer_public_to_public(sender, recipient, amount, 0.to_field()).call(
-        &mut env.public(),
-    );
+    env.advance_block_by(1);
 }
 
 pub unconstrained fn check_balance_public(
@@ -148,20 +60,6 @@ pub unconstrained fn check_balance_public(
 ) {
     let balance = Token::at(token).balance_of_public(account).view(&mut env.public());
     assert(balance.eq(amount), f"Public balance {balance} should be equal to {amount}");
-}
-
-pub unconstrained fn print_balance_private<let N: u32>(
-    msg: str<N>,
-    token: AztecAddress,
-    account: AztecAddress,
-) {
-    let current = get_contract_address();
-    cheatcodes::set_contract_address(token);
-    let balance = Token::balance_of_private(account);
-
-    let account = account.to_field();
-    std::println(f"{msg} Private balance {account}: {balance}");
-    cheatcodes::set_contract_address(current);
 }
 
 pub unconstrained fn check_balance_private(
@@ -177,26 +75,13 @@ pub unconstrained fn check_balance_private(
     cheatcodes::set_contract_address(current);
 }
 
-// TODO(#8771): We need to manually add the note because in the partial notes flow `notify_created_note_oracle`
-// is not called and we don't have a `NoteProcessor` in TXE.
-pub unconstrained fn add_token_note(
-    env: &mut TestEnvironment,
-    token_contract_address: AztecAddress,
-    owner: AztecAddress,
-    amount: Field,
-    note_randomness: Field,
-) {
-    let balances_owner_slot =
-        derive_storage_slot_in_map(Token::storage_layout().private_balances.slot, owner);
+pub unconstrained fn store_vp_capsule(env: &mut TestEnvironment, token: AztecAddress) {
+    let vp = [random(), random(), random(), random(), random()];
+    let shield_gateway = Token::at(token).get_shield_gateway_private().view(&mut env.private());
 
-    env.add_note(
-        &mut U253Note {
-            value: amount,
-            owner: owner,
-            randomness: note_randomness,
-            header: NoteHeader::empty(),
-        },
-        balances_owner_slot,
-        token_contract_address,
-    );
+    let current = get_contract_address();
+    cheatcodes::set_contract_address(shield_gateway);
+    capsules::store(shield_gateway, ShieldGateway::VP_SLOT, vp);
+
+    cheatcodes::set_contract_address(current);
 }

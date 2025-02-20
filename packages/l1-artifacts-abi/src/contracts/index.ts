@@ -1,4 +1,3 @@
-export * from './TokenPortal.js';
 export * from './AllowList.js';
 export * from './ERC20TokenPortal.js';
 export * from './ERC20AllowList.js';

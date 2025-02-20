@@ -3,17 +3,17 @@ export const ERC20TokenPortalABI = [
     "type": "constructor",
     "inputs": [
       {
-        "name": "aztecRegistry",
+        "name": "_aztecRegistry",
         "type": "address",
         "internalType": "contract IMinimalAztecRegistry"
       },
       {
-        "name": "allowList",
+        "name": "_allowList",
         "type": "address",
-        "internalType": "contract ERC20AllowList"
+        "internalType": "contract IAllowList"
       },
       {
-        "name": "l2PortalInitializer",
+        "name": "_l2PortalInitializer",
         "type": "address",
         "internalType": "address"
       }
@@ -436,16 +436,6 @@ export const ERC20TokenPortalABI = [
       }
     ],
     "anonymous": false
-  },
-  {
-    "type": "error",
-    "name": "ERC20TokenPortal__DataAlreadyDecoded",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "ERC20TokenPortal__DataNotDecoded",
-    "inputs": []
   },
   {
     "type": "error",

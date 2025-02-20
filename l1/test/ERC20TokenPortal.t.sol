@@ -9,7 +9,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IMinimalAztecRegistry} from "../src/interfaces/IMinimalAztecRegistry.sol";
 import {Hash} from "@aztec/core/libraries/crypto/Hash.sol";
 
-import {TokenPortal} from "../src/TokenPortal.sol";
 import {ERC20TokenPortal} from "../src/ERC20TokenPortal.sol";
 import {ERC20AllowList} from "../src/ERC20AllowList.sol";
 import {InsecurePortalTestToken} from "./InsecurePortalTestToken.sol";
@@ -20,11 +19,11 @@ contract ERC20TokenPortalHarness is ERC20TokenPortal {
         ERC20TokenPortal(_aztecRegistry, _allowList, _l2PortalInitializer)
     {}
 
-    function exposed_decodeDeposit(bytes calldata _data) external returns (address, bytes32) {
+    function exposed_decodeDeposit(bytes calldata _data) external pure returns (address, bytes32, uint256) {
         return _decodeDeposit(_data);
     }
 
-    function exposed_decodeWithdraw(bytes calldata _data) external returns (address, bytes32) {
+    function exposed_decodeWithdraw(bytes calldata _data) external pure returns (address, bytes32, address, uint256) {
         return _decodeWithdraw(_data);
     }
 
@@ -32,12 +31,12 @@ contract ERC20TokenPortalHarness is ERC20TokenPortal {
         return _tokenRegistrationContentHash(_token);
     }
 
-    function exposed_depositTransfer(address _token) external {
-        _depositTransfer(_token);
+    function exposed_depositTransfer(address _token, uint256 _amount) external {
+        _depositTransfer(_token, _amount);
     }
 
-    function exposed_withdrawTransfer(address _token) external {
-        _withdrawTransfer(_token);
+    function exposed_withdrawTransfer(address _token, address _recipient, uint256 _amount) external {
+        _withdrawTransfer(_token, _recipient, _amount);
     }
 
     function _sendL2Message(bytes32 _contentHash) internal override returns (bytes32 key, uint256 index) {
@@ -80,30 +79,30 @@ contract ERC20TokenPortalTest is Test {
 
     function test_decodeDeposit() public {
         bytes32 recipient = bytes32(uint256(0x123456789abcdef));
-        bytes memory data = abi.encodeWithSignature("deposit(address,bytes32,uint256)", address(token), recipient, 100);
+        uint256 amount = 100;
+        bytes memory data =
+            abi.encodeWithSignature("deposit(address,bytes32,uint256)", address(token), recipient, amount);
 
-        (address decodedToken, bytes32 contentHash) = tokenPortal.exposed_decodeDeposit(data);
+        (address decodedToken, bytes32 contentHash, uint256 decodedAmount) = tokenPortal.exposed_decodeDeposit(data);
 
         assertEq(decodedToken, address(token));
         assertEq(contentHash, Hash.sha256ToField(data));
-
-        // check the decode flag is set
-        vm.expectRevert(abi.encodeWithSelector(ERC20TokenPortal.ERC20TokenPortal__DataAlreadyDecoded.selector));
-        tokenPortal.exposed_decodeDeposit(data);
+        assertEq(decodedAmount, amount);
     }
 
     function test_decodeWithdraw() public {
-        bytes32 recipient = bytes32(uint256(0x123456789abcdef));
-        bytes memory data = abi.encodeWithSignature("withdraw(address,address,uint256)", address(token), recipient, 100);
+        address recipient = makeAddr("recipient");
+        uint256 amount = 100;
+        bytes memory data =
+            abi.encodeWithSignature("withdraw(address,address,uint256)", address(token), recipient, amount);
 
-        (address decodedToken, bytes32 contentHash) = tokenPortal.exposed_decodeWithdraw(data);
+        (address decodedToken, bytes32 contentHash, address decodedRecipient, uint256 decodedAmount) =
+            tokenPortal.exposed_decodeWithdraw(data);
 
         assertEq(decodedToken, address(token));
         assertEq(contentHash, Hash.sha256ToField(data));
-
-        // check the decode flag is set
-        vm.expectRevert(abi.encodeWithSelector(ERC20TokenPortal.ERC20TokenPortal__DataAlreadyDecoded.selector));
-        tokenPortal.exposed_decodeWithdraw(data);
+        assertEq(decodedRecipient, recipient);
+        assertEq(decodedAmount, amount);
     }
 
     function test_tokenRegistrationContentHash() public view {
@@ -125,29 +124,18 @@ contract ERC20TokenPortalTest is Test {
 
     function test_depositTransfer() public {
         address depositor = makeAddr("depositor");
-        token.mint(depositor, 100 ether);
+        uint256 amount = 100 ether;
+        token.mint(depositor, amount);
 
         vm.startPrank(depositor);
-        token.approve(address(tokenPortal), 100 ether);
-
-        bytes32 recipient = bytes32(uint256(0x123456789abcdef));
-        bytes memory data =
-            abi.encodeWithSignature("deposit(address,bytes32,uint256)", address(token), recipient, 100 ether);
-
-        // must call _decodeDeposit before _depositTransfer
-        vm.expectRevert(abi.encodeWithSelector(ERC20TokenPortal.ERC20TokenPortal__DataNotDecoded.selector));
-        tokenPortal.exposed_depositTransfer(address(token));
-
-        // decode the data
-        tokenPortal.exposed_decodeDeposit(data);
+        token.approve(address(tokenPortal), amount);
 
         // transfer the tokens
-        tokenPortal.exposed_depositTransfer(address(token));
+        tokenPortal.exposed_depositTransfer(address(token), amount);
 
         // check the token balances
         assertEq(token.balanceOf(address(depositor)), 0);
-
-        assertEq(token.balanceOf(address(tokenPortal)), 100 ether);
+        assertEq(token.balanceOf(address(tokenPortal)), amount);
 
         vm.stopPrank();
     }
@@ -156,40 +144,25 @@ contract ERC20TokenPortalTest is Test {
         address depositor = makeAddr("depositor");
         token.mint(depositor, type(uint256).max);
 
-        bytes32 recipient = bytes32(uint256(0x123456789abcdef));
-
-        // deposit DEPOSIT_LIMIT + 1 tokens
-        bytes memory data =
-            abi.encodeWithSignature("deposit(address,bytes32,uint256)", address(token), recipient, DEPOSIT_LIMIT + 1);
+        uint256 amount = DEPOSIT_LIMIT + 1;
 
         vm.startPrank(depositor);
         token.approve(address(tokenPortal), type(uint256).max);
-        tokenPortal.exposed_decodeDeposit(data);
 
         vm.expectRevert(abi.encodeWithSelector(ERC20TokenPortal.ERC20TokenPortal__DepositLimitExceeded.selector));
-        tokenPortal.exposed_depositTransfer(address(token));
+        tokenPortal.exposed_depositTransfer(address(token), amount);
     }
 
     function test_withdrawTransfer() public {
         address recipient = makeAddr("recipient");
-        token.mint(address(tokenPortal), 100 ether);
-
-        bytes memory data =
-            abi.encodeWithSignature("withdraw(address,address,uint256)", address(token), recipient, 100 ether);
-
-        // must call _decodeWithdraw before _withdrawTransfer
-        vm.expectRevert(abi.encodeWithSelector(ERC20TokenPortal.ERC20TokenPortal__DataNotDecoded.selector));
-        tokenPortal.exposed_withdrawTransfer(address(token));
-
-        // decode the data
-        tokenPortal.exposed_decodeWithdraw(data);
+        uint256 amount = 100 ether;
+        token.mint(address(tokenPortal), amount);
 
         // transfer the tokens
-        tokenPortal.exposed_withdrawTransfer(address(token));
+        tokenPortal.exposed_withdrawTransfer(address(token), recipient, amount);
 
         // check the token balances
         assertEq(token.balanceOf(address(tokenPortal)), 0);
-
-        assertEq(token.balanceOf(address(recipient)), 100 ether);
+        assertEq(token.balanceOf(address(recipient)), amount);
     }
 }

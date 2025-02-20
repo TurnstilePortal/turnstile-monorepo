@@ -11,7 +11,10 @@ pub contract Portal {
         hash::hash_args,
         macros::{
             events::event,
-            functions::{initializer, internal, private, public, initialization_utils::compute_initialization_hash},
+            functions::{
+                initialization_utils::compute_initialization_hash, initializer, internal, private,
+                public,
+            },
             storage::storage,
         },
         protocol_types::{
@@ -113,16 +116,13 @@ pub contract Portal {
         aztec::oracle::debug_log::debug_log_format("Register content hash: {0}", [content_hash]);
 
         // Set the shield gateway beacon
-        Token::at(aztec_token).set_shield_gateway_beacon(storage.shield_gateway_beacon.read()).enqueue(&mut context);
+        Token::at(aztec_token)
+            .set_shield_gateway_beacon(storage.shield_gateway_beacon.read())
+            .enqueue(&mut context);
 
         // Ensure the supplied token address matches the expected address. This ensures its deployed with
         // the correct code and initialization parameters.
-        let initializer = Token::interface().init(
-            context.this_address(),
-            name,
-            symbol,
-            decimals,
-        );
+        let initializer = Token::interface().init(context.this_address(), name, symbol, decimals);
         let args_hash = hash_args(initializer.args);
         let init_hash = compute_initialization_hash(initializer.selector, args_hash);
         let partial_address = PartialAddress::compute(

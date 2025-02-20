@@ -7,19 +7,8 @@ pub contract Beacon {
     use aztec::{
         context::PublicContext,
         event::event_interface::EventInterface,
-        macros::{
-            events::event,
-            functions::{initializer, private, public, view},
-            storage::storage,
-        },
-        protocol_types::{
-            address::AztecAddress,
-            traits::{
-                FromField,
-                ToField,
-                Serialize,
-            },
-        },
+        macros::{events::event, functions::{initializer, private, public, view}, storage::storage},
+        protocol_types::{address::AztecAddress, traits::{FromField, Serialize, ToField}},
         state_vars::{Map, PublicMutable, SharedMutable},
         unencrypted_logs::unencrypted_event_emission::encode_event,
     };

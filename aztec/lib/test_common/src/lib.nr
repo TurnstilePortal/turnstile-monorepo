@@ -1,8 +1,5 @@
 use aztec::{
-    protocol_types::{
-        address::AztecAddress,
-        traits::ToField,
-    },
+    protocol_types::{address::AztecAddress, traits::ToField},
     test::helpers::test_environment::TestEnvironment,
 };
 

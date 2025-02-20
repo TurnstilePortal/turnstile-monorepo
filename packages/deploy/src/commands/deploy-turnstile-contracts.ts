@@ -87,7 +87,6 @@ export function registerDeployTurnstileContracts(program: Command) {
         console.log('Deploying L2 Portal...');
         const {
           tokenContractClassID,
-          storage,
           shieldGateway,
           portal: aztecPortal,
         } = await deployL2Portal(l2Wallet, EthAddress.fromString(l1Portal));
@@ -97,7 +96,6 @@ export function registerDeployTurnstileContracts(program: Command) {
           tokenContractClassID.toString();
         deploymentData.aztecPortal = aztecPortal.address.toString();
         deploymentData.aztecShieldGateway = shieldGateway.address.toString();
-        deploymentData.aztecShieldGatewayStorage = storage.address.toString();
 
         // Register L2 Portal with L1 Portal
         console.log('Registering L2 Portal with L1 Portal...');
@@ -139,7 +137,7 @@ async function deployL1Portal(
 async function deployL2Portal(l2Wallet: AztecWallet, l1Portal: EthAddress) {
   const tokenContractClassID =
     await registerTurnstileTokenContractClass(l2Wallet);
-  const { storage, shieldGateway } = await deployShieldGateway(
+  const shieldGateway = await deployShieldGateway(
     l2Wallet /* this needs to be an admin wallet */,
   );
   const shieldGatewayBeacon = await deployBeacon(
@@ -155,5 +153,5 @@ async function deployL2Portal(l2Wallet: AztecWallet, l1Portal: EthAddress) {
     shieldGatewayBeacon.address,
   );
 
-  return { tokenContractClassID, storage, shieldGateway, portal };
+  return { tokenContractClassID, shieldGateway, portal };
 }
