@@ -1,5 +1,14 @@
 # @turnstile-portal/turnstile.js
 
+## 0.0.37
+
+### Patch Changes
+
+- a9f1e56: simplify contracts. On L1, combine to a single portal contract. On L2, remove public channels and only support verified ID style transfers
+- Updated dependencies [a9f1e56]
+  - @turnstile-portal/l1-artifacts-abi@0.0.37
+  - @turnstile-portal/aztec-artifacts@0.0.37
+
 ## 0.0.36
 
 ### Patch Changes
