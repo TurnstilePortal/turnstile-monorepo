@@ -1,17 +1,14 @@
 use aztec::{
-    oracle::{execution::get_contract_address, random::random},
-    prelude::{AztecAddress, NoteHeader},
-    protocol_types::{storage::map::derive_storage_slot_in_map, traits::ToField},
+    oracle::{capsules, execution::get_contract_address, random::random},
+    prelude::AztecAddress,
     test::helpers::{cheatcodes, test_environment::TestEnvironment},
 };
 
 use std::mem::zeroed;
-use std::test::OracleMock;
 
 use crate::Token;
 use beacon::test::utils as beacon_utils;
-use shield_gateway::test::utils as shield_gateway_utils;
-use uint253::uint253_note::U253Note;
+use shield_gateway::{ShieldGateway, test::utils as shield_gateway_utils};
 
 unconstrained fn nullPad<let N: u32, let M: u32>(input: str<M>) -> str<N> {
     assert(M <= N, "Input string is too long!");
@@ -33,12 +30,11 @@ pub unconstrained fn deploy_token(env: &mut TestEnvironment, minter: AztecAddres
     let beacon = beacon_utils::deploy_beacon(env, AztecAddress::zero(), shield_gateway);
     let init_call = Token::interface().init(minter, nullPad("TestToken"), nullPad("TT"), 18);
     let token = env.deploy("./@token", "Token").with_public_void_initializer(init_call);
+    env.advance_block_by(1);
 
     // set the shield gateway
     env.impersonate(minter);
-    aztec::oracle::debug_log::debug_log("deploy_token:  setting shield gateway...");
     Token::at(token.to_address()).set_shield_gateway_beacon(beacon).call(&mut env.public());
-    aztec::oracle::debug_log::debug_log("deploy_token:  shield gateway set...");
     env.advance_block_by(1);
 
     token.to_address()
@@ -53,69 +49,7 @@ pub unconstrained fn mint(
 ) {
     env.impersonate(minter);
     Token::at(token).mint_public(recipient, amount).call(&mut env.public());
-}
-
-pub unconstrained fn prepare_private_balance_increase(
-    env: &mut TestEnvironment,
-    token: AztecAddress,
-    sender: AztecAddress,
-    recipient: AztecAddress,
-) -> (Field, Field) {
-    let note_randomness = random();
-    // Mock Oracle so that we can manually add the note
-    let mock = OracleMock::mock("getRandomField").returns(note_randomness);
-
-    let hiding_point_slot: Field = Token::at(token)
-        .prepare_private_balance_increase(sender, recipient)
-        .call(&mut env.private());
-
-    OracleMock::clear(mock);
-
-    (note_randomness, hiding_point_slot)
-}
-
-pub unconstrained fn mint_shielded(
-    env: &mut TestEnvironment,
-    token: AztecAddress,
-    minter: AztecAddress,
-    recipient: AztecAddress,
-    amount: Field,
-) {
-    env.impersonate(minter);
-    let (note_randomness, hiding_point_slot) =
-        prepare_private_balance_increase(env, token, minter, recipient);
-
-    Token::at(token).finalize_mint_shielded(recipient, amount, hiding_point_slot).call(
-        &mut env.public(),
-    );
-}
-
-pub unconstrained fn shield(
-    env: &mut TestEnvironment,
-    token: AztecAddress,
-    sender: AztecAddress,
-    amount: Field,
-) {
-    env.impersonate(sender);
-    let (note_randomness, hiding_point_slot) =
-        prepare_private_balance_increase(env, token, sender, sender);
-
-    Token::at(token).finalize_transfer_public_to_private(amount, hiding_point_slot).call(
-        &mut env.public(),
-    );
-}
-
-pub unconstrained fn transfer(
-    env: &mut TestEnvironment,
-    token: AztecAddress,
-    sender: AztecAddress,
-    recipient: AztecAddress,
-    amount: Field,
-) {
-    env.impersonate(sender);
-    Token::at(token).transfer_public_to_public(sender, recipient, amount, 0.to_field()).call(
-        &mut env.public(),
-    );
+    env.advance_block_by(1);
 }
 
 pub unconstrained fn check_balance_public(
@@ -128,20 +62,6 @@ pub unconstrained fn check_balance_public(
     assert(balance.eq(amount), f"Public balance {balance} should be equal to {amount}");
 }
 
-pub unconstrained fn print_balance_private<let N: u32>(
-    msg: str<N>,
-    token: AztecAddress,
-    account: AztecAddress,
-) {
-    let current = get_contract_address();
-    cheatcodes::set_contract_address(token);
-    let balance = Token::balance_of_private(account);
-
-    let account = account.to_field();
-    std::println(f"{msg} Private balance {account}: {balance}");
-    cheatcodes::set_contract_address(current);
-}
-
 pub unconstrained fn check_balance_private(
     token: AztecAddress,
     account: AztecAddress,
@@ -152,5 +72,16 @@ pub unconstrained fn check_balance_private(
     let balance = Token::balance_of_private(account);
 
     assert(balance == amount, f"Private balance {balance} should be equal to amount {amount}");
+    cheatcodes::set_contract_address(current);
+}
+
+pub unconstrained fn store_vp_capsule(env: &mut TestEnvironment, token: AztecAddress) {
+    let vp = [random(), random(), random(), random(), random()];
+    let shield_gateway = Token::at(token).get_shield_gateway_private().view(&mut env.private());
+
+    let current = get_contract_address();
+    cheatcodes::set_contract_address(shield_gateway);
+    capsules::store(shield_gateway, ShieldGateway::VP_SLOT, vp);
+
     cheatcodes::set_contract_address(current);
 }

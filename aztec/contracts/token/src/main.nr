@@ -119,12 +119,7 @@ pub contract Token {
     #[public]
     fn set_shield_gateway_beacon(beacon: AztecAddress) {
         assert(storage.minter.read().eq(context.msg_sender()), "caller is not minter");
-        aztec::oracle::debug_log::debug_log_format(
-            "set_shield_gateway_beacon: setting beacon to {0}",
-            [beacon.to_field()],
-        );
         storage.shield_gateway_beacon.initialize(beacon);
-        aztec::oracle::debug_log::debug_log("set_shield_gateway_beacon: beacon set...");
     }
 
     #[public]

@@ -3,6 +3,7 @@ use aztec::{
 };
 
 use crate::test::utils;
+use crate::Token;
 use test_common;
 
 #[test]
@@ -28,6 +29,8 @@ unconstrained fn mint_shielded() {
     let token = utils::deploy_token(env, minter);
     let amount = 1000000000000000000;
 
-    utils::mint_shielded(env, token, minter, recipient, amount);
+    env.impersonate(minter);
+    Token::at(token).mint_shielded(recipient, amount).call(&mut env.private());
+    env.advance_block_by(1);
     utils::check_balance_private(token, recipient, amount);
 }

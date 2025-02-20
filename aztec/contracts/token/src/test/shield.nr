@@ -36,11 +36,15 @@ unconstrained fn unshield() {
     let token = utils::deploy_token(env, minter);
     let amount = 1000000000000000000;
 
-    utils::mint_shielded(env, token, minter, recipient, amount);
+    env.impersonate(minter);
+    Token::at(token).mint_shielded(recipient, amount).call(&mut env.private());
+    env.advance_block_by(2);
+
     utils::check_balance_private(token, recipient, amount);
 
     env.impersonate(recipient);
     Token::at(token).unshield(recipient, amount, 0).call(&mut env.private());
+    env.advance_block_by(1);
 
     // Public balance should be `amount`
     utils::check_balance_public(env, token, recipient, amount);
