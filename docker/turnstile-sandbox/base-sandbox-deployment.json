@@ -1,8 +1,8 @@
 {
   "rollupAddress": "0xb7f8bc63bbcad18155201308c8f3540b07f84f5e",
   "registryAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
-  "inboxAddress": "0x7e2d5fcc5e02cbf2b9f860052c0226104e23f9c7",
-  "outboxAddress": "0x35dd738e306d32f2709824b6f744f188da01d3c5",
+  "inboxAddress": "0x3ca8f9c04c7e3e1624ac2008f92f6f366a869444",
+  "outboxAddress": "0x7e2d5fcc5e02cbf2b9f860052c0226104e23f9c7",
   "feeJuiceAddress": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
   "stakingAssetAddress": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
   "feeJuicePortalAddress": "0xa513e6e4b8f2a923d98304ec87f64353c4d5c853",
