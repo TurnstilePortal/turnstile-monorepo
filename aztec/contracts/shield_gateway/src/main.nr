@@ -14,17 +14,15 @@ pub contract ShieldGateway {
         unencrypted_logs::unencrypted_event_emission::encode_event,
     };
 
-    use uint253::uint253::U253;
-
     pub global VP_SLOT: Field = 0x1dfeed;
-    pub global BIN_AMOUNT: U253 = U253::new_unchecked(1_000_000_000);
+    pub global BIN_AMOUNT: u128 = 1_000_000_000;
 
     #[derive(Serialize)]
     #[event]
     struct TransferEvent {
         serial: Field,
         token: AztecAddress,
-        binnedAmount: Field,
+        binnedAmount: u128,
     }
 
     #[public]
@@ -32,7 +30,7 @@ pub contract ShieldGateway {
     fn init() {}
 
     #[private]
-    fn check_transfer(sender: AztecAddress, recipient: AztecAddress, amount: U253) {
+    fn check_transfer(sender: AztecAddress, recipient: AztecAddress, amount: u128) {
         let token: AztecAddress = context.msg_sender();
 
         aztec::oracle::debug_log::debug_log_format(
@@ -53,18 +51,18 @@ pub contract ShieldGateway {
 
         // Publicly log Verified ID Serial & Token & binned value (Amount / BIN_AMOUNT)
         ShieldGateway::at(context.this_address())
-            ._log_transfer(verified_id[0], token, _binned(amount).to_field())
+            ._log_transfer(verified_id[0], token, _binned(amount))
             .enqueue(&mut context);
     }
 
     #[contract_library_method]
-    fn _binned(amount: U253) -> U253 {
+    fn _binned(amount: u128) -> u128 {
         amount / BIN_AMOUNT
     }
 
     #[public]
     #[internal]
-    fn _log_transfer(serial: Field, token: AztecAddress, binnedAmount: Field) {
+    fn _log_transfer(serial: Field, token: AztecAddress, binnedAmount: u128) {
         TransferEvent { serial, token, binnedAmount }.emit(encode_event(&mut context));
     }
 

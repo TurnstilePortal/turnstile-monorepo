@@ -1,5 +1,8 @@
-use dep::aztec::prelude::EthAddress;
-use dep::aztec::protocol_types::hash::sha256_to_field;
+use aztec::protocol_types::{
+    address::EthAddress,
+    hash::sha256_to_field,
+    traits::{FromField, ToField},
+};
 
 // bytes4(keccak256("withdraw(address,address,uint256)")) = 0xd9caed12
 global WITHDRAW_SIGNATURE: [u8; 4] = [0xd9, 0xca, 0xed, 0x12];

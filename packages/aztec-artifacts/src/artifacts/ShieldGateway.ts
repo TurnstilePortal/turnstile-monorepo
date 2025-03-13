@@ -25,12 +25,12 @@ import {
   type FunctionSelectorLike,
   L1EventPayload,
   loadContractArtifact,
+  loadContractArtifactForPublic,
   type NoirCompiledContract,
   NoteSelector,
   Point,
   type PublicKey,
   PublicKeys,
-  type UnencryptedL2Log,
   type Wallet,
   type U128Like,
   type WrappedFieldLike,
@@ -42,7 +42,7 @@ export const ShieldGatewayContractArtifact = loadContractArtifact(ShieldGatewayC
       export type TransferEvent = {
         serial: FieldLike
 token: AztecAddressLike
-binnedAmount: FieldLike
+binnedAmount: (bigint | number)
       }
     
 
@@ -113,27 +113,31 @@ export class ShieldGatewayContract extends ContractBase {
   public static get artifact(): ContractArtifact {
     return ShieldGatewayContractArtifact;
   }
+
+  /**
+   * Returns this contract's artifact with public bytecode.
+   */
+  public static get artifactForPublic(): ContractArtifact {
+    return loadContractArtifactForPublic(ShieldGatewayContractArtifactJson as NoirCompiledContract);
+  }
   
 
   
 
-  public static get notes(): ContractNotes<'U253Note'> {
+  public static get notes(): ContractNotes<'UintNote'> {
     return {
-      U253Note: {
+      UintNote: {
           id: new NoteSelector(0),
         }
-    } as ContractNotes<'U253Note'>;
+    } as ContractNotes<'UintNote'>;
   }
   
 
   /** Type-safe wrappers for the public methods exposed by the contract. */
   public declare methods: {
     
-    /** check_transfer(sender: struct, recipient: struct, amount: struct) */
-    check_transfer: ((sender: AztecAddressLike, recipient: AztecAddressLike, amount: { value: FieldLike }) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** compute_note_hash_and_optionally_a_nullifier(contract_address: struct, nonce: field, storage_slot: field, note_type_id: field, compute_nullifier: boolean, packed_note_content: array) */
-    compute_note_hash_and_optionally_a_nullifier: ((contract_address: AztecAddressLike, nonce: FieldLike, storage_slot: FieldLike, note_type_id: FieldLike, compute_nullifier: boolean, packed_note_content: FieldLike[]) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** check_transfer(sender: struct, recipient: struct, amount: integer) */
+    check_transfer: ((sender: AztecAddressLike, recipient: AztecAddressLike, amount: (bigint | number)) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** init() */
     init: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
@@ -182,13 +186,15 @@ export class ShieldGatewayContract extends ContractBase {
         {
             "name": "binnedAmount",
             "type": {
-                "kind": "field"
+                "kind": "integer",
+                "sign": "unsigned",
+                "width": 128
             }
         }
     ],
     "path": "ShieldGateway::TransferEvent"
 },
-        eventSelector: EventSelector.fromString("0x3923e022"),
+        eventSelector: EventSelector.fromString("0x473594f3"),
         fieldNames: ["serial","token","binnedAmount"],
       }
     };

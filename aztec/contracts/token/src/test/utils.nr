@@ -45,7 +45,7 @@ pub unconstrained fn mint(
     token: AztecAddress,
     minter: AztecAddress,
     recipient: AztecAddress,
-    amount: Field,
+    amount: u128,
 ) {
     env.impersonate(minter);
     Token::at(token).mint_public(recipient, amount).call(&mut env.public());
@@ -56,7 +56,7 @@ pub unconstrained fn check_balance_public(
     env: &mut TestEnvironment,
     token: AztecAddress,
     account: AztecAddress,
-    amount: Field,
+    amount: u128,
 ) {
     let balance = Token::at(token).balance_of_public(account).view(&mut env.public());
     assert(balance.eq(amount), f"Public balance {balance} should be equal to {amount}");
@@ -65,7 +65,7 @@ pub unconstrained fn check_balance_public(
 pub unconstrained fn check_balance_private(
     token: AztecAddress,
     account: AztecAddress,
-    amount: Field,
+    amount: u128,
 ) {
     let current = get_contract_address();
     cheatcodes::set_contract_address(token);

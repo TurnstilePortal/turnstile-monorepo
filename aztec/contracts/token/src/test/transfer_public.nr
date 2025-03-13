@@ -10,7 +10,7 @@ unconstrained fn transfer_public() {
     let sender = accounts[1];
     let recipient = accounts[2];
     let token = utils::deploy_token(env, minter);
-    let amount = 1000000000000000000.to_field();
+    let amount: u128 = 1_000_000_000_000_000_000;
     utils::mint(env, token, minter, sender, amount);
 
     utils::check_balance_public(env, token, sender, amount);

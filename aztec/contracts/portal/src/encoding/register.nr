@@ -1,8 +1,13 @@
-use aztec::prelude::EthAddress;
-use aztec::protocol_types::hash::sha256_to_field;
+use aztec::{
+    protocol_types::{
+        address::EthAddress,
+        hash::sha256_to_field,
+        traits::{FromField, ToField},
+    },
+};
 
 // bytes4(keccak256(register(address,string,string,uint8))) = 0x611a7a19
-global REGISTER_SIGNATURE: [u8; 4] = [0x61, 0x1a, 0x7a, 0x19];
+comptime global REGISTER_SIGNATURE: [u8; 4] = [0x61, 0x1a, 0x7a, 0x19];
 
 pub fn register_content_hash(
     eth_token: EthAddress,

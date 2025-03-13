@@ -21,6 +21,11 @@
     "format:fix": "biome format --write",
     "update-aztec-version": "tsx scripts/update-aztec-deps.ts"
   },
+  "pnpm": {
+    "overrides": {
+      "@aztec/*": "0.80.0"
+    }
+  },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@changesets/cli": "^2.27.11",

@@ -1,5 +1,10 @@
-use dep::aztec::prelude::{AztecAddress, EthAddress};
-use dep::aztec::protocol_types::hash::sha256_to_field;
+use aztec::{
+    protocol_types::{
+        address::{AztecAddress, EthAddress},
+        hash::sha256_to_field,
+        traits::{FromField, ToField},
+    },
+};
 
 // bytes4(keccak256("deposit(address,bytes32,uint256)")) = 0xeb2243f8
 global DEPOSIT_SIGNATURE: [u8; 4] = [0xeb, 0x22, 0x43, 0xf8];

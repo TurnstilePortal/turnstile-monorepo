@@ -1,7 +1,3 @@
-use aztec::{
-    protocol_types::address::AztecAddress, test::helpers::test_environment::TestEnvironment,
-};
-
 use crate::test::utils;
 use crate::Token;
 use test_common;

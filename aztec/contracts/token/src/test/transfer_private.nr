@@ -1,9 +1,6 @@
 use crate::test::utils;
 use crate::Token;
-use shield_gateway::ShieldGateway;
 use test_common;
-
-use aztec::oracle::{capsules, random::random};
 
 #[test]
 unconstrained fn transfer_private_to_private() {
@@ -14,7 +11,7 @@ unconstrained fn transfer_private_to_private() {
     let recipient = accounts[2];
 
     let token = utils::deploy_token(env, minter);
-    let amount = 1000000000000000000.to_field();
+    let amount: u128 = 1_000_000_000_000_000_000;
 
     env.impersonate(minter);
     Token::at(token).mint_shielded(sender, amount).call(&mut env.private());
@@ -44,7 +41,7 @@ unconstrained fn transfer_private_to_private_twice() {
     let sender = accounts[1];
     let recipient = accounts[2];
     let token = utils::deploy_token(env, minter);
-    let amount = 1000000000000000000.to_field();
+    let amount: u128 = 1_000_000_000_000_000_000;
     let half = amount / 2;
 
     env.impersonate(minter);

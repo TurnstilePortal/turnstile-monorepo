@@ -11,7 +11,7 @@ import {
 import type {
   EventMetadataDefinition,
   GetPublicLogsResponse,
-} from '@aztec/circuit-types';
+} from '@aztec/stdlib';
 import { sha256ToField } from '@aztec/foundation/crypto';
 import { PortalContract } from '@turnstile-portal/aztec-artifacts';
 import { encodeFunctionData } from 'viem';
