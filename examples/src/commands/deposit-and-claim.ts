@@ -131,12 +131,7 @@ export function registerDepositAndClaim(program: Command) {
       // We need to wait for the L2 block to be mined so that the L1ToL2Message is available on the L2 chain.
       // In a real scenario, we would wait for the L2 blocks to be mined naturally, but for testing purposes
       // we will advance the blocks ourselves.
-      await advanceBlocksUntil(
-        pxe,
-        l2Wallet,
-        deploymentData.devAdvanceBlock,
-        l2BlockNumber,
-      );
+      await advanceBlocksUntil(pxe, l2Wallet, l2BlockNumber);
 
       const aztecPortal = new AztecTokenPortal(
         deploymentData.aztecPortal,

@@ -91,7 +91,7 @@ export class AztecRollup {
     if (!this.inbox) {
       if (!this.inboxAddr) {
         const rollup = await this.getRollup();
-        this.inboxAddr = await rollup.read.INBOX();
+        this.inboxAddr = await rollup.read.getInbox();
       }
       this.inbox = await getAztecInboxContract(this.inboxAddr, this.publicClient);
     }
@@ -102,7 +102,7 @@ export class AztecRollup {
     if (!this.outbox) {
       if (!this.outboxAddr) {
         const rollup = await this.getRollup();
-        this.outboxAddr = await rollup.read.OUTBOX();
+        this.outboxAddr = await rollup.read.getOutbox();
       }
       this.outbox = await getAztecOutboxContract(this.outboxAddr, this.publicClient);
     }

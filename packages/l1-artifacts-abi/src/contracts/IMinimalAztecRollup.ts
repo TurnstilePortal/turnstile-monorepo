@@ -1,7 +1,7 @@
 export const IMinimalAztecRollupABI = [
   {
     "type": "function",
-    "name": "INBOX",
+    "name": "getInbox",
     "inputs": [],
     "outputs": [
       {
@@ -14,7 +14,7 @@ export const IMinimalAztecRollupABI = [
   },
   {
     "type": "function",
-    "name": "OUTBOX",
+    "name": "getOutbox",
     "inputs": [],
     "outputs": [
       {

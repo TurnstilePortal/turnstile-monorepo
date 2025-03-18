@@ -7,11 +7,10 @@ import {
   type PXE,
   type SentTx,
 } from '@aztec/aztec.js';
-
 import type {
   EventMetadataDefinition,
   GetPublicLogsResponse,
-} from '@aztec/stdlib';
+} from '@aztec/stdlib/interfaces/client';
 import { sha256ToField } from '@aztec/foundation/crypto';
 import { PortalContract } from '@turnstile-portal/aztec-artifacts';
 import { encodeFunctionData } from 'viem';
@@ -95,7 +94,7 @@ export class AztecTokenPortal {
       .claim_public(
         EthAddress.fromString(l1TokenAddr),
         AztecAddress.fromString(l2RecipientAddr),
-        Fr.fromHexString(`0x${amount.toString(16)}`),
+        amount,
         Fr.fromHexString(`0x${index.toString(16)}`),
       )
       .send();
@@ -124,7 +123,7 @@ export class AztecTokenPortal {
       .claim_shielded(
         EthAddress.fromString(l1TokenAddr),
         AztecAddress.fromString(l2RecipientAddr),
-        Fr.fromHexString(`0x${amount.toString(16)}`),
+        amount,
         Fr.fromHexString(`0x${index.toString(16)}`),
       )
       .send();
@@ -222,7 +221,7 @@ export class AztecTokenPortal {
         EthAddress.fromString(l1TokenAddr),
         from,
         EthAddress.fromString(l1RecipientAddr),
-        Fr.fromHexString(`0x${amount.toString(16)}`),
+        amount,
         Fr.ZERO, // withdrawNonce
         burnNonce,
       )

@@ -3,7 +3,6 @@ members = [
     "contracts/token",
     "contracts/portal",
     "contracts/shield_gateway",
-    "contracts/dev_advance_block",
     "contracts/beacon",
     "lib/test_common",
 ]

@@ -15,11 +15,11 @@ contract FakeAztecRollup is IMinimalAztecRollup {
         outbox = _outbox;
     }
 
-    function INBOX() external view override returns (IMinimalAztecInbox) {
+    function getInbox() external view override returns (IMinimalAztecInbox) {
         return inbox;
     }
 
-    function OUTBOX() external view override returns (IMinimalAztecOutbox) {
+    function getOutbox() external view override returns (IMinimalAztecOutbox) {
         return outbox;
     }
 }

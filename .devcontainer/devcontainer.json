@@ -15,7 +15,7 @@
   ],
   "features": {
     "ghcr.io/ClarifiedLabs/devcontainer-features/aztec-sandbox:2": {
-      "version": "0.80.0"
+      "version": "0.81.0"
     },
     "ghcr.io/ClarifiedLabs/devcontainer-features/foundry:1": {
       "version": "nightly"

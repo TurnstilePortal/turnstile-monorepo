@@ -11,6 +11,9 @@ import type {
   Account,
 } from 'viem';
 import { RollupAbi } from '@aztec/l1-artifacts';
+import { RollupCheatCodes } from '@aztec/aztec.js/testing';
+import { EthCheatCodes } from '@aztec/ethereum/eth-cheatcodes';
+import { EthAddress } from '@aztec/aztec.js';
 
 export type AztecRollupContract = GetContractReturnType<
   typeof RollupAbi,
@@ -40,37 +43,7 @@ export async function setAssumeProven(
   rollupAddr: Address,
   l2BlockNumber: bigint,
 ) {
-  // This is the private key of the account that deployed the Aztec Sandbox Rollup contracts
-  const anvilKey = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
-  console.warn(
-    `CHEATING: Setting assumeProvenThroughBlockNumber to ${l2BlockNumber}`,
-  );
-
-  const anvilAccount = privateKeyToAccount(anvilKey);
-  const anvilWallet = createWalletClient({
-    account: anvilAccount,
-    chain: anvil,
-    transport: http(anvilURL),
-  });
-
-  const rollup = await getAztecRollupContract(rollupAddr, anvilWallet);
-
-  const tx = await rollup.write.setAssumeProvenThroughBlockNumber(
-    [l2BlockNumber],
-    {
-      account: anvilWallet.account,
-      chain: anvilWallet.chain,
-    },
-  );
-  console.debug(
-    `setAssumeProvenUntilBlockNumber(${l2BlockNumber}) tx hash:`,
-    tx,
-  );
-  const receipt = await anvilWallet
-    .extend(publicActions)
-    .waitForTransactionReceipt({ hash: tx });
-  if (receipt.status !== 'success') {
-    throw new Error(`Failed assumeProvenUntilBlockNumber(${l2BlockNumber})`);
-  }
-  return tx;
+  const ethCheatCodes = new EthCheatCodes([anvilURL]);
+  const rollupCheatCodes = new RollupCheatCodes(ethCheatCodes, { rollupAddress: EthAddress.fromString(rollupAddr) });
+  await rollupCheatCodes.markAsProven(l2BlockNumber);
 }

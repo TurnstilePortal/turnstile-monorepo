@@ -2,7 +2,7 @@ import { Fr } from '@aztec/aztec.js';
 import type {
   AuthWitness,
   AztecAddress,
-  FunctionCall,
+  ContractFunctionInteraction,
   Wallet,
 } from '@aztec/aztec.js';
 import {
@@ -150,7 +150,7 @@ export class AztecToken {
       .transfer_public_to_public(
         this.wallet.getAddress(), // from
         to,
-        Fr.fromHexString(`0x${amount.toString(16)}`),
+        amount,
         Fr.ZERO, // nonce
       )
       .send();
@@ -177,7 +177,7 @@ export class AztecToken {
       .transfer_private_to_private(
         this.wallet.getAddress(), // from,
         to,
-        Fr.fromHexString(`0x${amount.toString(16)}`),
+        amount,
         Fr.ZERO, // nonce
       )
       .send();
@@ -187,7 +187,7 @@ export class AztecToken {
    * Generates an `action` for use in a burn AuthWitness. Used when withdrawing tokens from the L2 chain.
    * @param {AztecAddress} from - The account to burn tokens from.
    * @param {bigint} amount - The amount of tokens to burn.
-   * @returns {{ action: FunctionCall, nonce: Fr }} - The action and nonce.
+   * @returns {{ action: ContractFunctionInteraction, nonce: Fr }} - The action and nonce.
    * @example const { action, nonce } = token.burnAuthWitAction(from, amount);
    * @example // Set the public AuthWitness for the caller to allow the burn action
    * @example await wallet.setPublicAuthWit({ caller: portalAddr, action }, true).send().wait();
@@ -195,11 +195,9 @@ export class AztecToken {
   async burnAuthWitAction(
     from: AztecAddress,
     amount: bigint,
-  ): Promise<{ action: FunctionCall; nonce: Fr }> {
+  ): Promise<{ action: ContractFunctionInteraction; nonce: Fr }> {
     const nonce = Fr.random();
-    const action = await this.token.methods
-      .burn_public(from, Fr.fromHexString(`0x${amount.toString(16)}`), nonce)
-      .request();
+    const action = await this.token.methods.burn_public(from, amount, nonce);
     return { action, nonce };
   }
 
@@ -244,14 +242,12 @@ export class AztecToken {
     const nonce = Fr.random();
 
     const from = this.wallet.getAddress();
-    const action = await this.token.methods
-      .transfer_private_to_private(
-        from,
-        to,
-        Fr.fromHexString(`0x${amount.toString(16)}`),
-        nonce,
-      )
-      .request();
+    const action = await this.token.methods.transfer_private_to_private(
+      from,
+      to,
+      amount,
+      nonce,
+    );
 
     const shieldGatewayAddr = await this.getShieldGatewayAddress();
     const authWitness = await this.wallet.createAuthWit({

@@ -15,8 +15,8 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@aztec/accounts": "0.80.0",
-    "@aztec/aztec.js": "0.80.0",
+    "@aztec/accounts": "0.81.0",
+    "@aztec/aztec.js": "0.81.0",
     "@turnstile-portal/aztec-artifacts": "workspace:^",
     "@turnstile-portal/turnstile-dev": "workspace:^",
     "@turnstile-portal/turnstile.js": "workspace:^",

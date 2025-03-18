@@ -19,7 +19,9 @@ import {
   type Wallet as AztecWallet,
 } from '@aztec/aztec.js';
 import { getSchnorrAccount, getSchnorrWallet } from '@aztec/accounts/schnorr';
+import { getDeployedTestAccountsWallets } from '@aztec/accounts/testing';
 import type { AccountWallet, PXE } from '@aztec/aztec.js';
+import { deriveSigningKey } from '@aztec/stdlib/keys';
 
 import { readKeyData, type KeyData } from './keyData.js';
 
@@ -41,7 +43,7 @@ export async function generateAztecAccountSchnorr(
 ): Promise<{ salt: Fr; encKey: Fr; signingKey: Fq }> {
   const salt = Fr.random();
   const encKey = Fr.random();
-  const signingKey = Fq.random();
+  const signingKey = deriveSigningKey(encKey);
   return {
     salt,
     encKey,
@@ -55,8 +57,9 @@ export async function deployAztecAccountSchnorr(
   signingKey: Fq,
   salt: Fr,
 ): Promise<AztecWallet> {
+  const deployWallet = (await getDeployedTestAccountsWallets(pxe))[0];
   const accountManager = await getSchnorrAccount(pxe, encKey, signingKey, salt);
-  const wallet = await accountManager.deploy().getWallet();
+  const wallet = await accountManager.deploy({ deployWallet }).getWallet();
   console.log(`Account deployed at ${wallet.getAddress()}`);
   return wallet;
 }

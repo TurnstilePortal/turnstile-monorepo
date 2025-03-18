@@ -130,12 +130,12 @@ contract ERC20TokenPortal is ITokenPortal {
 
     /// @inheritdoc ITokenPortal
     function aztecInbox() public view override returns (IMinimalAztecInbox) {
-        return AZTEC_REGISTRY.getRollup().INBOX();
+        return AZTEC_REGISTRY.getRollup().getInbox();
     }
 
     /// @inheritdoc ITokenPortal
     function aztecOutbox() public view override returns (IMinimalAztecOutbox) {
-        return AZTEC_REGISTRY.getRollup().OUTBOX();
+        return AZTEC_REGISTRY.getRollup().getOutbox();
     }
 
     /// @inheritdoc ITokenPortal

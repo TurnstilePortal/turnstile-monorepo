@@ -1,13 +1,11 @@
 #!/bin/bash
 
 if [ ! -z "$TURNSTILE_DEV_CONTAINER" ] ; then
-  # COMPOSE_PROJECT_NAME and COMPOSE_FILE are set in the dev container
-
   echo "Resetting the sandbox..."
-  docker-compose down
+  docker stop aztec-sandbox
 
   echo "Starting the sandbox..."
-  docker-compose up -d
+  FORCE_COLOR=0 aztec start --sandbox > /dev/null 2>&1 &
 
   echo -n "Waiting for the sandbox to start..."
   count=0
@@ -21,14 +19,14 @@ if [ ! -z "$TURNSTILE_DEV_CONTAINER" ] ; then
     sleep 2
   done
   echo
-elif ! docker-compose ls | grep -q sandbox ; then
+elif [ -z "$(docker ps -q -f name=aztec-sandbox)" ] ; then
   echo 'Please run `aztec start --sandbox` first'
   exit 1
 fi
 
 
 echo "Initializing sandbox_deployment.json file..."
-docker-compose logs aztec | grep 'Aztec L1 contracts initialized' | grep -o '{.*}' | jq -r 'del(.severity)' > sandbox_deployment.json
+docker logs aztec-sandbox 2>&1 | grep 'Aztec L1 contracts initialized' | grep -o '{.*}' | jq -r 'del(.severity)' > sandbox_deployment.json
 echo "Using sandbox_deployment.json:"
 jq . sandbox_deployment.json
 

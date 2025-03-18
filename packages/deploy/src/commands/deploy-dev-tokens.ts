@@ -181,12 +181,7 @@ export function registerDeployDevTokens(program: Command) {
         }
 
         // cheatcode to advance blocks
-        await advanceBlocksUntil(
-          pxe,
-          l2Wallet,
-          deploymentData.devAdvanceBlock,
-          Number(advanceToL2Block),
-        );
+        await advanceBlocksUntil(pxe, l2Wallet, Number(advanceToL2Block));
 
         // Register with L2 Portal
         for (const [symbol, { index, hash }] of Object.entries(registerLog)) {
