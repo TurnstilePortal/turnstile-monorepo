@@ -7,3 +7,6 @@
 [submodule "l1/lib/l1-contracts"]
 	path = l1/lib/l1-contracts
 	url = https://github.com/AztecProtocol/l1-contracts
+[submodule "l1/l1/l1/lib/l1-contracts"]
+	path = l1/l1/l1/lib/l1-contracts
+	url = https://github.com/AztecProtocol/l1-contracts

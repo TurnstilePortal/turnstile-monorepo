@@ -23,6 +23,10 @@ tmpfile=$(mktemp)
 jq -r '.features."ghcr.io/ClarifiedLabs/devcontainer-features/aztec-sandbox:2".version = "'$new_version'"' .devcontainer/devcontainer.json > $tmpfile
 mv $tmpfile .devcontainer/devcontainer.json
 
-echo "Updating docker/turnstile-sandbox/docker-compose.yaml..."
+echo "Updating AztecProtocol/l1-contracts dependency to v$new_version..."
+cd l1
+forge install --root l1 AztecProtocol/l1-contracts@tag=v$new_version
+cd -
 
+echo "Updating docker/turnstile-sandbox/docker-compose.yaml..."
 sed -i -e "s;image: aztecprotocol/aztec:.*$;image: aztecprotocol/aztec:${new_version};" docker/turnstile-sandbox/docker-compose.yaml
