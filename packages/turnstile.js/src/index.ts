@@ -1,7 +1,12 @@
-export * from './aztec/aztecTokenPortal.js';
-export * from './aztec/aztecToken.js';
+// Error handling
+export * from './errors.js';
 
-export * from './l1/l1AllowList.js';
-export * from './l1/l1Token.js';
-export * from './l1/l1TokenPortal.js';
-export * from './l1/l1AztecRollup.js';
+// L1 (Ethereum) components
+export * from './l1/client.js';
+export * from './l1/token.js';
+export * from './l1/portal.js';
+
+// L2 (Aztec) components
+export * from './l2/client.js';
+export * from './l2/token.js';
+export * from './l2/portal.js';

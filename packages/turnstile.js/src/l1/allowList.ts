@@ -45,6 +45,8 @@ export class L1AllowList {
   approver: WalletClient<Transport, Chain, Account> | undefined;
   pc: PublicClient;
   allowListAddr: Address;
+  // Make contract public for easy mocking in tests
+  contract: AllowListContract;
 
   /**
    * Constructor
@@ -63,6 +65,12 @@ export class L1AllowList {
     this.wc = wc;
     this.pc = pc;
     this.approver = approver;
+
+    // Initialize the contract instance
+    this.contract = getL1AllowListContract(this.allowListAddr, {
+      public: this.pc,
+      wallet: this.wc,
+    });
   }
 
   /**
@@ -70,13 +78,10 @@ export class L1AllowList {
    * @param wallet Wallet client instance
    * @returns AllowList contract instance
    */
-  async allowListContract(
+  allowListContract(
     wallet: WalletClient<Transport, Chain, Account> = this.wc,
-  ): Promise<AllowListContract> {
-    return getL1AllowListContract(this.allowListAddr, {
-      public: this.pc,
-      wallet,
-    });
+  ): AllowListContract {
+    return this.contract;
   }
 
   /**
@@ -85,7 +90,7 @@ export class L1AllowList {
    * @returns Transaction receipt
    */
   async propose(address: Address): Promise<TransactionReceipt> {
-    const allowList = await this.allowListContract();
+    const allowList = this.contract;
 
     console.debug(`Proposing ${address} to allowlist`);
     const hash = await allowList.write.propose([address], {
@@ -122,7 +127,7 @@ export class L1AllowList {
       approver = this.approver;
     }
 
-    const allowList = await this.allowListContract(approver);
+    const allowList = this.contract;
 
     console.debug(`Accepting ${address} to allowlist`);
     const hash = await allowList.write.accept([address], {

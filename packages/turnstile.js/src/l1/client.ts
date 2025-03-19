@@ -1,0 +1,94 @@
+import type {
+  Account,
+  Address,
+  Chain,
+  Client,
+  PublicClient,
+  Transport,
+  WalletClient,
+} from 'viem';
+
+/**
+ * Interface for L1 client operations
+ */
+export interface L1Client {
+  /**
+   * Gets the public client for read operations
+   * @returns The public client
+   */
+  getPublicClient(): PublicClient;
+
+  /**
+   * Gets the wallet client for write operations
+   * @returns The wallet client
+   */
+  getWalletClient(): WalletClient;
+
+  /**
+   * Gets the chain ID
+   * @returns The chain ID
+   */
+  getChainId(): Promise<number>;
+
+  /**
+   * Gets the account address
+   * @returns The account address
+   */
+  getAddress(): Address;
+}
+
+/**
+ * Implementation of L1Client using Viem
+ */
+export class ViemL1Client implements L1Client {
+  private publicClient: PublicClient;
+  private walletClient: WalletClient<Transport, Chain, Account>;
+
+  /**
+   * Creates a new ViemL1Client
+   * @param publicClient The public client
+   * @param walletClient The wallet client
+   */
+  constructor(
+    publicClient: PublicClient,
+    walletClient: WalletClient<Transport, Chain, Account>
+  ) {
+    this.publicClient = publicClient;
+    this.walletClient = walletClient;
+  }
+
+  /**
+   * Gets the public client for read operations
+   * @returns The public client
+   */
+  getPublicClient(): PublicClient {
+    return this.publicClient;
+  }
+
+  /**
+   * Gets the wallet client for write operations
+   * @returns The wallet client
+   */
+  getWalletClient(): WalletClient {
+    return this.walletClient;
+  }
+
+  /**
+   * Gets the chain ID
+   * @returns The chain ID
+   */
+  async getChainId(): Promise<number> {
+    return this.publicClient.getChainId();
+  }
+
+  /**
+   * Gets the account address
+   * @returns The account address
+   */
+  getAddress(): Address {
+    if (!this.walletClient.account) {
+      throw new Error('No account connected to wallet client');
+    }
+    return this.walletClient.account.address;
+  }
+}
