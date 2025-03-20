@@ -61,184 +61,55 @@ const result = await portal.deposit(tokenAddress, l2RecipientAddr, amount);
 import { 
   AztecL2Client, 
   L2TokenImpl, 
-  L2TokenPortal 
+  L2TokenPortal
 } from '@turnstile-portal/turnstile.js';
-import { 
-  createPXEClient, 
-  getSandboxAccountsWallets, 
-  AztecAddress 
-} from '@aztec/aztec.js';
+import { createPXE, Fr } from '@aztec/aztec.js';
+import { createAccount } from '@aztec/accounts';
 
 // Create L2 client
-const pxe = createPXEClient('http://localhost:8080');
-const wallets = await getSandboxAccountsWallets(pxe);
-const l2Client = new AztecL2Client(pxe, wallets[0]);
+const pxe = createPXE({ url: 'http://localhost:8080' });
+const wallet = await createAccount(pxe);
+const l2Client = new AztecL2Client(pxe, wallet);
 
-// Interact with Aztec token
-const tokenAddress = AztecAddress.fromString('0xYOUR_L2_TOKEN_ADDRESS');
-const token = await L2TokenImpl.fromAddress(tokenAddress, l2Client);
+// Interact with L2 token
+const l2TokenAddress = '0xYOUR_L2_TOKEN_ADDRESS';
+const l2Token = await L2TokenImpl.fromAddress(l2TokenAddress, l2Client);
 
 // Get token details
-const symbol = await token.getSymbol();
-const publicBalance = await token.balanceOfPublic(l2Client.getAddress());
-const privateBalance = await token.balanceOfPrivate(l2Client.getAddress());
+const symbol = await l2Token.getSymbol();
+const publicBalance = await l2Token.balanceOfPublic(l2Client.getAddress());
+const privateBalance = await l2Token.balanceOfPrivate(l2Client.getAddress());
 
-// Shield tokens (convert public to private)
-await token.shield(1000000000n);
+// Transfer tokens publicly
+const recipient = 'YOUR_RECIPIENT_AZTEC_ADDRESS';
+const amount = 1000000000n; // 1 token with 9 decimals
+await l2Token.transferPublic(recipient, amount);
 
-// Interact with portal
-const portalAddress = AztecAddress.fromString('0xYOUR_L2_PORTAL_ADDRESS');
+// Shield tokens (convert public balance to private)
+await l2Token.shield(amount);
+
+// Unshield tokens (convert private balance to public)
+await l2Token.unshield(amount);
+
+// Interact with L2 Portal
+const portalAddress = 'YOUR_L2_PORTAL_ADDRESS';
 const portal = new L2TokenPortal(portalAddress, l2Client);
 
+// Claim a deposit from L1
+const l1TokenAddress = '0xYOUR_L1_TOKEN_ADDRESS';
+const l2RecipientAddress = l2Client.getAddress().toString();
+const index = 5n; // Message index from L1 deposit
+await portal.claimDeposit(l1TokenAddress, l2RecipientAddress, amount, index);
+
 // Withdraw tokens to L1
-const l1TokenAddr = '0xYOUR_L1_TOKEN_ADDRESS';
-const l1RecipientAddr = '0xYOUR_L1_RECIPIENT_ADDRESS';
-const amount = 1000000000n; // 1 token with 9 decimals
-
-// First burn the tokens
-const { action, nonce } = await token.createBurnAction(l2Client.getAddress(), amount);
-
-// Then withdraw
-const result = await portal.withdrawPublic(l1TokenAddr, l1RecipientAddr, amount, nonce);
-```
-
-## Documentation
-
-For more detailed documentation, see the [TypeDoc generated documentation](https://turnstile-portal.github.io/turnstile.js/).
-
-## Examples
-
-See the [examples](https://github.com/TurnstilePortal/turnstile-contracts/tree/main/examples/src) for more examples of how to use this library.
-
-## Core Utility Systems
-
-### Error Handling
-
-The library uses a single `TurnstileError` class with numeric error codes:
-
-```typescript
-import { ErrorCode, TurnstileError, createL1Error } from '@turnstile-portal/turnstile.js';
-
-// Throwing errors with contextual information
-try {
-  // Operation that might fail
-} catch (error) {
-  throw new TurnstileError(
-    ErrorCode.L1_TOKEN_OPERATION,
-    `Failed to transfer tokens`,
-    { tokenAddress: '0x1234...', amount: '1000' },
-    error // Original cause
-  );
-}
-
-// Using helper functions for domain-specific errors
-try {
-  // L1 operation that might fail
-} catch (error) {
-  throw createL1Error(
-    ErrorCode.L1_INSUFFICIENT_BALANCE,
-    'Insufficient balance for transfer',
-    { tokenAddress: '0x1234...', amount: '1000' },
-    error
-  );
-}
-
-// Handling errors
-try {
-  await token.transfer(recipient, amount);
-} catch (error) {
-  if (error instanceof TurnstileError) {
-    // Check specific error code
-    if (error.code === ErrorCode.L1_INSUFFICIENT_BALANCE) {
-      console.error('Not enough balance:', error.message);
-      console.log('Context:', error.context);
-    } else {
-      console.error(`Error (${error.code}): ${error.message}`);
-    }
-  } else {
-    console.error('Unknown error:', error);
-  }
-}
-```
-
-### Validation
-
-The library provides a flexible validation system using predicates:
-
-```typescript
-import { 
-  validate, 
-  validateWallet, 
-  validatePositiveAmount, 
-  predicates 
-} from '@turnstile-portal/turnstile.js';
-
-// Validate wallet has connected account
-const wallet = validateWallet(walletClient);
-
-// Validate amount is positive
-const amount = validatePositiveAmount(userAmount);
-
-// Validate a value with a custom predicate
-const value = validate(
-  input,
-  (n) => n > 10 && n < 100,
-  ErrorCode.VALIDATION_RANGE,
-  'Value must be between 10 and 100'
+const l1RecipientAddress = '0xYOUR_L1_RECIPIENT_ADDRESS';
+const burnNonce = Fr.random();
+const { tx, leaf } = await portal.withdrawPublic(
+  l1TokenAddress,
+  l1RecipientAddress,
+  amount,
+  burnNonce
 );
 
-// Using predicate combinators
-const isValidId = predicates.and(
-  predicates.isNotEmpty,
-  predicates.matchesPattern(/^[a-zA-Z0-9]{8,12}$/)
-);
-
-// Validate with the predicate
-const id = validate(
-  input,
-  isValidId,
-  ErrorCode.VALIDATION_FORMAT,
-  'ID must be 8-12 alphanumeric characters'
-);
-```
-
-### Utilities
-
-The library includes generic utility functions:
-
-```typescript
-import { 
-  formatTokenOperation, 
-  safeAccess, 
-  safeCall, 
-  safePromise 
-} from '@turnstile-portal/turnstile.js';
-
-// Format error messages for token operations
-const errorMessage = formatTokenOperation({
-  operation: 'transfer',
-  tokenAddress: '0x1234...',
-  amount: 1000n,
-  recipient: '0x5678...'
-});
-// "Failed to transfer amount 1000 to 0x5678... for token 0x1234..."
-
-// Safely access nested properties
-const value = safeAccess(
-  obj,
-  ['deeply', 'nested', 'property'],
-  'default'
-);
-
-// Safely call functions with fallback value
-const result = safeCall(
-  () => JSON.parse(input),
-  {} // Default if parsing fails
-);
-
-// Safely await promises
-const data = await safePromise(
-  fetch('https://api.example.com/data'),
-  null // Default if fetch fails
-);
+// The leaf can be used later for the L1 withdrawal proof
 ```
