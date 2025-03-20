@@ -7,6 +7,8 @@ import type {
   Transport,
   WalletClient,
 } from 'viem';
+import { ErrorCode, createL1Error } from '../errors.js';
+import { validateWallet } from '../validator.js';
 
 /**
  * Interface for L1 client operations
@@ -86,9 +88,9 @@ export class ViemL1Client implements L1Client {
    * @returns The account address
    */
   getAddress(): Address {
-    if (!this.walletClient.account) {
-      throw new Error('No account connected to wallet client');
-    }
-    return this.walletClient.account.address;
+    validateWallet(this.walletClient, 'Cannot get address: No account connected to wallet client');
+
+    // Since validateWallet checks that account exists, we can safely use non-null assertion
+    return this.walletClient.account!.address;
   }
 }

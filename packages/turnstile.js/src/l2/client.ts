@@ -1,5 +1,4 @@
 import type { AztecAddress, PXE, Wallet } from '@aztec/aztec.js';
-import { L2Error } from '../errors.js';
 
 /**
  * Interface for L2 client operations

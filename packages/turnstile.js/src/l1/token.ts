@@ -3,18 +3,10 @@ import type {
   TransactionReceipt,
   TransactionRequest,
 } from 'viem';
-import { L1Error } from '../errors.js';
-import {
-  tokenErrorMessage,
-  balanceErrorMessage,
-  allowanceErrorMessage,
-  approvalErrorMessage,
-  transferErrorMessage,
-  walletErrorMessage
-} from '../utils.js';
-import { validateAccount, validatePositiveAmount } from '../validator.js';
+import { ErrorCode, createL1Error } from '../errors.js';
+import { validateWallet, validatePositiveAmount } from '../validator.js';
 import { L1Client } from './client.js';
-import { TOKEN_ABIS } from './abis.js';
+import { TOKEN_ABIS } from './abi.js';
 
 /**
  * Interface for L1 token operations
@@ -63,26 +55,22 @@ export interface L1Token {
    * Approves a spender to spend tokens
    * @param spender The spender address
    * @param amount The amount to approve
-   * @param options Transaction options
    * @returns The transaction receipt
    */
   approve(
     spender: Address,
-    amount: bigint,
-    options?: Omit<TransactionRequest, 'to' | 'data'>
+    amount: bigint
   ): Promise<TransactionReceipt>;
 
   /**
    * Transfers tokens to a recipient
    * @param to The recipient address
    * @param amount The amount to transfer
-   * @param options Transaction options
    * @returns The transaction receipt
    */
   transfer(
     to: Address,
-    amount: bigint,
-    options?: Omit<TransactionRequest, 'to' | 'data'>
+    amount: bigint
   ): Promise<TransactionReceipt>;
 }
 
@@ -123,7 +111,12 @@ export class ERC20Token implements L1Token {
         functionName: 'symbol',
       }) as string;
     } catch (error) {
-      throw new L1Error(tokenErrorMessage('get symbol', this.address), error);
+      throw createL1Error(
+        ErrorCode.L1_TOKEN_OPERATION,
+        `Failed to get symbol for token ${this.address}`,
+        { tokenAddress: this.address },
+        error
+      );
     }
   }
 
@@ -139,7 +132,12 @@ export class ERC20Token implements L1Token {
         functionName: 'name',
       }) as string;
     } catch (error) {
-      throw new L1Error(tokenErrorMessage('get name', this.address), error);
+      throw createL1Error(
+        ErrorCode.L1_TOKEN_OPERATION,
+        `Failed to get name for token ${this.address}`,
+        { tokenAddress: this.address },
+        error
+      );
     }
   }
 
@@ -155,7 +153,12 @@ export class ERC20Token implements L1Token {
         functionName: 'decimals',
       }));
     } catch (error) {
-      throw new L1Error(tokenErrorMessage('get decimals', this.address), error);
+      throw createL1Error(
+        ErrorCode.L1_TOKEN_OPERATION,
+        `Failed to get decimals for token ${this.address}`,
+        { tokenAddress: this.address },
+        error
+      );
     }
   }
 
@@ -173,7 +176,12 @@ export class ERC20Token implements L1Token {
         args: [address],
       }) as bigint;
     } catch (error) {
-      throw new L1Error(balanceErrorMessage(address, this.address), error);
+      throw createL1Error(
+        ErrorCode.L1_TOKEN_OPERATION,
+        `Failed to get balance for token ${this.address} for address ${address}`,
+        { tokenAddress: this.address, userAddress: address },
+        error
+      );
     }
   }
 
@@ -192,7 +200,12 @@ export class ERC20Token implements L1Token {
         args: [owner, spender],
       }) as bigint;
     } catch (error) {
-      throw new L1Error(allowanceErrorMessage(owner, spender, this.address), error);
+      throw createL1Error(
+        ErrorCode.L1_TOKEN_OPERATION,
+        `Failed to get allowance for token ${this.address} for owner ${owner} and spender ${spender}`,
+        { tokenAddress: this.address, owner, spender },
+        error
+      );
     }
   }
 
@@ -205,13 +218,12 @@ export class ERC20Token implements L1Token {
    */
   async approve(
     spender: Address,
-    amount: bigint,
-    options?: Omit<TransactionRequest, 'to' | 'data'>
+    amount: bigint
   ): Promise<TransactionReceipt> {
     try {
       const walletClient = this.client.getWalletClient();
-      validateAccount(walletClient, L1Error, walletErrorMessage('approve'));
-      validatePositiveAmount(amount, L1Error, `Cannot approve amount ${amount}: amount must be positive`);
+      validateWallet(walletClient, 'Cannot approve: No account connected to wallet');
+      validatePositiveAmount(amount, `Cannot approve amount ${amount}: amount must be positive`);
 
       // Use the ABI for the approve function from constants
       const abi = TOKEN_ABIS.approve;
@@ -228,7 +240,12 @@ export class ERC20Token implements L1Token {
 
       return await this.client.getPublicClient().waitForTransactionReceipt({ hash });
     } catch (error) {
-      throw new L1Error(approvalErrorMessage(amount, spender, this.address), error);
+      throw createL1Error(
+        ErrorCode.L1_TOKEN_OPERATION,
+        `Failed to approve ${amount} tokens for spender ${spender} for token ${this.address}`,
+        { tokenAddress: this.address, amount: amount.toString(), spender },
+        error
+      );
     }
   }
 
@@ -241,13 +258,12 @@ export class ERC20Token implements L1Token {
    */
   async transfer(
     to: Address,
-    amount: bigint,
-    options?: Omit<TransactionRequest, 'to' | 'data'>
+    amount: bigint
   ): Promise<TransactionReceipt> {
     try {
       const walletClient = this.client.getWalletClient();
-      validateAccount(walletClient, L1Error, walletErrorMessage('transfer'));
-      validatePositiveAmount(amount, L1Error, `Cannot transfer amount ${amount}: amount must be positive`);
+      validateWallet(walletClient, 'Cannot transfer: No account connected to wallet');
+      validatePositiveAmount(amount, `Cannot transfer amount ${amount}: amount must be positive`);
 
       // Use the ABI for the transfer function from constants
       const abi = TOKEN_ABIS.transfer;
@@ -264,7 +280,12 @@ export class ERC20Token implements L1Token {
 
       return await this.client.getPublicClient().waitForTransactionReceipt({ hash });
     } catch (error) {
-      throw new L1Error(transferErrorMessage(amount, to, this.address), error);
+      throw createL1Error(
+        ErrorCode.L1_TOKEN_OPERATION,
+        `Failed to transfer ${amount} tokens to ${to} for token ${this.address}`,
+        { tokenAddress: this.address, amount: amount.toString(), recipient: to },
+        error
+      );
     }
   }
 }

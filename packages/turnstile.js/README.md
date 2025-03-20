@@ -2,14 +2,6 @@
 
 `@turnstile-portal/turnstile.js` is a TypeScript/JavaScript library for interacting with the Turnstile Portal and related Aztec Token contracts.
 
-## Features
-
-- **Type-safe interfaces**: Well-defined TypeScript interfaces for all components
-- **Error handling**: Comprehensive error handling with specific error types
-- **L1 (Ethereum) support**: Interact with Ethereum contracts using Viem
-- **L2 (Aztec) support**: Interact with Aztec contracts using Aztec.js
-- **Bridging operations**: Easily move tokens between L1 and L2
-
 ## Installation
 
 ```bash
@@ -118,6 +110,135 @@ For more detailed documentation, see the [TypeDoc generated documentation](https
 
 See the [examples](https://github.com/TurnstilePortal/turnstile-contracts/tree/main/examples/src) for more examples of how to use this library.
 
-## License
+## Core Utility Systems
 
-Apache-2.0
+### Error Handling
+
+The library uses a single `TurnstileError` class with numeric error codes:
+
+```typescript
+import { ErrorCode, TurnstileError, createL1Error } from '@turnstile-portal/turnstile.js';
+
+// Throwing errors with contextual information
+try {
+  // Operation that might fail
+} catch (error) {
+  throw new TurnstileError(
+    ErrorCode.L1_TOKEN_OPERATION,
+    `Failed to transfer tokens`,
+    { tokenAddress: '0x1234...', amount: '1000' },
+    error // Original cause
+  );
+}
+
+// Using helper functions for domain-specific errors
+try {
+  // L1 operation that might fail
+} catch (error) {
+  throw createL1Error(
+    ErrorCode.L1_INSUFFICIENT_BALANCE,
+    'Insufficient balance for transfer',
+    { tokenAddress: '0x1234...', amount: '1000' },
+    error
+  );
+}
+
+// Handling errors
+try {
+  await token.transfer(recipient, amount);
+} catch (error) {
+  if (error instanceof TurnstileError) {
+    // Check specific error code
+    if (error.code === ErrorCode.L1_INSUFFICIENT_BALANCE) {
+      console.error('Not enough balance:', error.message);
+      console.log('Context:', error.context);
+    } else {
+      console.error(`Error (${error.code}): ${error.message}`);
+    }
+  } else {
+    console.error('Unknown error:', error);
+  }
+}
+```
+
+### Validation
+
+The library provides a flexible validation system using predicates:
+
+```typescript
+import { 
+  validate, 
+  validateWallet, 
+  validatePositiveAmount, 
+  predicates 
+} from '@turnstile-portal/turnstile.js';
+
+// Validate wallet has connected account
+const wallet = validateWallet(walletClient);
+
+// Validate amount is positive
+const amount = validatePositiveAmount(userAmount);
+
+// Validate a value with a custom predicate
+const value = validate(
+  input,
+  (n) => n > 10 && n < 100,
+  ErrorCode.VALIDATION_RANGE,
+  'Value must be between 10 and 100'
+);
+
+// Using predicate combinators
+const isValidId = predicates.and(
+  predicates.isNotEmpty,
+  predicates.matchesPattern(/^[a-zA-Z0-9]{8,12}$/)
+);
+
+// Validate with the predicate
+const id = validate(
+  input,
+  isValidId,
+  ErrorCode.VALIDATION_FORMAT,
+  'ID must be 8-12 alphanumeric characters'
+);
+```
+
+### Utilities
+
+The library includes generic utility functions:
+
+```typescript
+import { 
+  formatTokenOperation, 
+  safeAccess, 
+  safeCall, 
+  safePromise 
+} from '@turnstile-portal/turnstile.js';
+
+// Format error messages for token operations
+const errorMessage = formatTokenOperation({
+  operation: 'transfer',
+  tokenAddress: '0x1234...',
+  amount: 1000n,
+  recipient: '0x5678...'
+});
+// "Failed to transfer amount 1000 to 0x5678... for token 0x1234..."
+
+// Safely access nested properties
+const value = safeAccess(
+  obj,
+  ['deeply', 'nested', 'property'],
+  'default'
+);
+
+// Safely call functions with fallback value
+const result = safeCall(
+  () => JSON.parse(input),
+  {} // Default if parsing fails
+);
+
+// Safely await promises
+const data = await safePromise(
+  fetch('https://api.example.com/data'),
+  null // Default if fetch fails
+);
+```

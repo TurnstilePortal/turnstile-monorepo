@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Address, PublicClient, WalletClient, Chain, Account, Transport } from 'viem';
 import { L1Token, ERC20Token } from './token.js';
-import { L1Error } from '../errors.js';
+import { TurnstileError } from '../errors.js';
 
 // Mock the readContract and writeContract functions
 const mockReadContract = vi.fn();
@@ -75,13 +75,13 @@ describe('ERC20Token', () => {
       }));
     });
 
-    it('should throw an L1Error on failure', async () => {
+    it('should throw a TurnstileError on failure', async () => {
       // Setup mock to throw an error
       const mockError = new Error('Name read error');
       mockReadContract.mockRejectedValue(mockError);
 
       // Call the method and expect it to throw
-      await expect(token.getName()).rejects.toThrow(L1Error);
+      await expect(token.getName()).rejects.toThrow(TurnstileError);
     });
   });
 
@@ -103,13 +103,13 @@ describe('ERC20Token', () => {
       }));
     });
 
-    it('should throw an L1Error on failure', async () => {
+    it('should throw a TurnstileError on failure', async () => {
       // Setup mock to throw an error
       const mockError = new Error('Symbol read error');
       mockReadContract.mockRejectedValue(mockError);
 
       // Call the method and expect it to throw
-      await expect(token.getSymbol()).rejects.toThrow(L1Error);
+      await expect(token.getSymbol()).rejects.toThrow(TurnstileError);
     });
   });
 
@@ -131,13 +131,13 @@ describe('ERC20Token', () => {
       }));
     });
 
-    it('should throw an L1Error on failure', async () => {
+    it('should throw a TurnstileError on failure', async () => {
       // Setup mock to throw an error
       const mockError = new Error('Decimals read error');
       mockReadContract.mockRejectedValue(mockError);
 
       // Call the method and expect it to throw
-      await expect(token.getDecimals()).rejects.toThrow(L1Error);
+      await expect(token.getDecimals()).rejects.toThrow(TurnstileError);
     });
   });
 
@@ -160,13 +160,13 @@ describe('ERC20Token', () => {
       }));
     });
 
-    it('should throw an L1Error on failure', async () => {
+    it('should throw a TurnstileError on failure', async () => {
       // Setup mock to throw an error
       const mockError = new Error('Balance read error');
       mockReadContract.mockRejectedValue(mockError);
 
       // Call the method and expect it to throw
-      await expect(token.balanceOf(mockAccount.address)).rejects.toThrow(L1Error);
+      await expect(token.balanceOf(mockAccount.address)).rejects.toThrow(TurnstileError);
     });
   });
 
@@ -189,13 +189,13 @@ describe('ERC20Token', () => {
       }));
     });
 
-    it('should throw an L1Error on failure', async () => {
+    it('should throw a TurnstileError on failure', async () => {
       // Setup mock to throw an error
       const mockError = new Error('Allowance read error');
       mockReadContract.mockRejectedValue(mockError);
 
       // Call the method and expect it to throw
-      await expect(token.allowance(mockAccount.address, mockSpender)).rejects.toThrow(L1Error);
+      await expect(token.allowance(mockAccount.address, mockSpender)).rejects.toThrow(TurnstileError);
     });
   });
 
@@ -221,16 +221,16 @@ describe('ERC20Token', () => {
       expect(mockWaitForTransactionReceipt).toHaveBeenCalledWith({ hash: mockTxHash });
     });
 
-    it('should throw an L1Error on failure', async () => {
+    it('should throw a TurnstileError on failure', async () => {
       // Setup mock to throw an error
       const mockError = new Error('Approve error');
       mockWriteContract.mockRejectedValue(mockError);
 
       // Call the method and expect it to throw
-      await expect(token.approve(mockSpender, mockAmount)).rejects.toThrow(L1Error);
+      await expect(token.approve(mockSpender, mockAmount)).rejects.toThrow(TurnstileError);
     });
 
-    it('should throw an L1Error when no account is connected to wallet client', async () => {
+    it('should throw a TurnstileError when no account is connected to wallet client', async () => {
       // Create a wallet client with no account
       const walletClientWithoutAccount = {
         ...mockWalletClient,
@@ -247,7 +247,7 @@ describe('ERC20Token', () => {
       const tokenWithoutAccount = new ERC20Token(mockTokenAddress, clientWithoutAccount);
 
       // Call the method and expect it to throw
-      await expect(tokenWithoutAccount.approve(mockSpender, mockAmount)).rejects.toThrow(L1Error);
+      await expect(tokenWithoutAccount.approve(mockSpender, mockAmount)).rejects.toThrow(TurnstileError);
       // Verify that the error message contains the expected text about failing to approve
       await expect(tokenWithoutAccount.approve(mockSpender, mockAmount)).rejects.toThrow(/Failed to approve/);
     });
@@ -275,16 +275,16 @@ describe('ERC20Token', () => {
       expect(mockWaitForTransactionReceipt).toHaveBeenCalledWith({ hash: mockTxHash });
     });
 
-    it('should throw an L1Error on failure', async () => {
+    it('should throw a TurnstileError on failure', async () => {
       // Setup mock to throw an error
       const mockError = new Error('Transfer error');
       mockWriteContract.mockRejectedValue(mockError);
 
       // Call the method and expect it to throw
-      await expect(token.transfer(mockSpender, mockAmount)).rejects.toThrow(L1Error);
+      await expect(token.transfer(mockSpender, mockAmount)).rejects.toThrow(TurnstileError);
     });
 
-    it('should throw an L1Error when no account is connected to wallet client', async () => {
+    it('should throw a TurnstileError when no account is connected to wallet client', async () => {
       // Create a wallet client with no account
       const walletClientWithoutAccount = {
         ...mockWalletClient,
@@ -301,7 +301,7 @@ describe('ERC20Token', () => {
       const tokenWithoutAccount = new ERC20Token(mockTokenAddress, clientWithoutAccount);
 
       // Call the method and expect it to throw
-      await expect(tokenWithoutAccount.transfer(mockSpender, mockAmount)).rejects.toThrow(L1Error);
+      await expect(tokenWithoutAccount.transfer(mockSpender, mockAmount)).rejects.toThrow(TurnstileError);
       // Verify that the error message contains the expected text about failing to transfer
       await expect(tokenWithoutAccount.transfer(mockSpender, mockAmount)).rejects.toThrow(/Failed to transfer/);
     });

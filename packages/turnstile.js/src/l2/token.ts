@@ -6,17 +6,12 @@ import {
 } from '@aztec/aztec.js';
 import { TokenContract } from '@turnstile-portal/aztec-artifacts';
 import { readFieldCompressedString } from '@aztec/aztec.js';
-import { L2Error } from '../errors.js';
-import {
-  l2TokenErrorMessage,
-  l2BalanceErrorMessage,
-  l2TransferErrorMessage,
-  shieldOperationErrorMessage,
-  burnErrorMessage,
-  tokenFromAddressErrorMessage,
-  tokenDeployErrorMessage,
-} from '../utils.js';
+import { ErrorCode, createL2Error } from '../errors.js';
 import type { L2Client } from './client.js';
+
+// Constants
+const VP_SLOT = Fr.fromHexString('0x1dfeed');
+const CONTRACT_ADDRESS_SALT = Fr.fromHexString('0x9876543210');
 
 /**
  * Interface for L2 token operations
@@ -141,8 +136,10 @@ export class L2TokenImpl implements L2Token {
       const symbol = await this.token.methods.public_get_symbol().simulate();
       return readFieldCompressedString(symbol);
     } catch (error) {
-      throw new L2Error(
-        l2TokenErrorMessage('get symbol', this.token.address),
+      throw createL2Error(
+        ErrorCode.L2_TOKEN_OPERATION,
+        `Failed to get symbol for token ${this.token.address}`,
+        { tokenAddress: this.token.address.toString() },
         error,
       );
     }
@@ -157,8 +154,10 @@ export class L2TokenImpl implements L2Token {
       const name = await this.token.methods.public_get_name().simulate();
       return readFieldCompressedString(name);
     } catch (error) {
-      throw new L2Error(
-        l2TokenErrorMessage('get name', this.token.address),
+      throw createL2Error(
+        ErrorCode.L2_TOKEN_OPERATION,
+        `Failed to get name for token ${this.token.address}`,
+        { tokenAddress: this.token.address.toString() },
         error,
       );
     }
@@ -172,8 +171,10 @@ export class L2TokenImpl implements L2Token {
     try {
       return Number(await this.token.methods.public_get_decimals().simulate());
     } catch (error) {
-      throw new L2Error(
-        l2TokenErrorMessage('get decimals', this.token.address),
+      throw createL2Error(
+        ErrorCode.L2_TOKEN_OPERATION,
+        `Failed to get decimals for token ${this.token.address}`,
+        { tokenAddress: this.token.address.toString() },
         error,
       );
     }
@@ -188,8 +189,14 @@ export class L2TokenImpl implements L2Token {
     try {
       return await this.token.methods.balance_of_public(address).simulate();
     } catch (error) {
-      throw new L2Error(
-        l2BalanceErrorMessage(address, this.token.address, 'public'),
+      throw createL2Error(
+        ErrorCode.L2_INSUFFICIENT_BALANCE,
+        `Failed to get public balance for token ${this.token.address} for address ${address}`,
+        {
+          tokenAddress: this.token.address.toString(),
+          userAddress: address.toString(),
+          balanceType: 'public',
+        },
         error,
       );
     }
@@ -204,8 +211,14 @@ export class L2TokenImpl implements L2Token {
     try {
       return await this.token.methods.balance_of_private(address).simulate();
     } catch (error) {
-      throw new L2Error(
-        l2BalanceErrorMessage(address, this.token.address, 'private'),
+      throw createL2Error(
+        ErrorCode.L2_INSUFFICIENT_BALANCE,
+        `Failed to get private balance for token ${this.token.address} for address ${address}`,
+        {
+          tokenAddress: this.token.address.toString(),
+          userAddress: address.toString(),
+          balanceType: 'private',
+        },
         error,
       );
     }
@@ -229,8 +242,14 @@ export class L2TokenImpl implements L2Token {
         )
         .send();
     } catch (error) {
-      throw new L2Error(
-        l2TransferErrorMessage(amount, to, this.token.address, 'publicly'),
+      throw createL2Error(
+        ErrorCode.L2_TOKEN_OPERATION,
+        `Failed to transfer ${amount} tokens publicly to ${to} for token ${this.token.address}`,
+        {
+          tokenAddress: this.token.address.toString(),
+          amount: amount.toString(),
+          recipient: to.toString(),
+        },
         error,
       );
     }
@@ -256,11 +275,7 @@ export class L2TokenImpl implements L2Token {
       const shieldGatewayAddr = await this.getShieldGatewayAddress();
 
       // Store the verified ID in the wallet
-      wallet.storeCapsule(
-        shieldGatewayAddr,
-        Fr.fromHexString('0x1dfeed'), // VP_SLOT
-        verifiedID,
-      );
+      wallet.storeCapsule(shieldGatewayAddr, VP_SLOT, verifiedID);
 
       return this.token.methods
         .transfer_private_to_private(
@@ -271,8 +286,14 @@ export class L2TokenImpl implements L2Token {
         )
         .send();
     } catch (error) {
-      throw new L2Error(
-        l2TransferErrorMessage(amount, to, this.token.address, 'privately'),
+      throw createL2Error(
+        ErrorCode.L2_TOKEN_OPERATION,
+        `Failed to transfer ${amount} tokens privately to ${to} for token ${this.token.address}`,
+        {
+          tokenAddress: this.token.address.toString(),
+          amount: amount.toString(),
+          recipient: to.toString(),
+        },
         error,
       );
     }
@@ -288,8 +309,13 @@ export class L2TokenImpl implements L2Token {
       const address = this.client.getAddress();
       return this.token.methods.shield(address, amount, Fr.ZERO).send();
     } catch (error) {
-      throw new L2Error(
-        shieldOperationErrorMessage('shield', amount, this.token.address),
+      throw createL2Error(
+        ErrorCode.L2_SHIELD_OPERATION,
+        `Failed to shield ${amount} tokens for token ${this.token.address}`,
+        {
+          tokenAddress: this.token.address.toString(),
+          amount: amount.toString(),
+        },
         error,
       );
     }
@@ -305,8 +331,13 @@ export class L2TokenImpl implements L2Token {
       const address = this.client.getAddress();
       return this.token.methods.unshield(address, amount, Fr.ZERO).send();
     } catch (error) {
-      throw new L2Error(
-        shieldOperationErrorMessage('unshield', amount, this.token.address),
+      throw createL2Error(
+        ErrorCode.L2_UNSHIELD_OPERATION,
+        `Failed to unshield ${amount} tokens for token ${this.token.address}`,
+        {
+          tokenAddress: this.token.address.toString(),
+          amount: amount.toString(),
+        },
         error,
       );
     }
@@ -327,8 +358,14 @@ export class L2TokenImpl implements L2Token {
       const action = await this.token.methods.burn_public(from, amount, nonce);
       return { action, nonce };
     } catch (error) {
-      throw new L2Error(
-        burnErrorMessage(amount, from, this.token.address),
+      throw createL2Error(
+        ErrorCode.L2_BURN_OPERATION,
+        `Failed to burn ${amount} tokens from ${from} for token ${this.token.address}`,
+        {
+          tokenAddress: this.token.address.toString(),
+          amount: amount.toString(),
+          userAddress: from.toString(),
+        },
         error,
       );
     }
@@ -342,8 +379,10 @@ export class L2TokenImpl implements L2Token {
     try {
       return await this.token.methods.get_shield_gateway_public().simulate();
     } catch (error) {
-      throw new L2Error(
-        l2TokenErrorMessage('get shield gateway address', this.token.address),
+      throw createL2Error(
+        ErrorCode.L2_CONTRACT_INTERACTION,
+        `Failed to get shield gateway address for token ${this.token.address}`,
+        { tokenAddress: this.token.address.toString() },
         error,
       );
     }
@@ -363,7 +402,12 @@ export class L2TokenImpl implements L2Token {
       const token = await TokenContract.at(address, client.getWallet());
       return new L2TokenImpl(token, client);
     } catch (error) {
-      throw new L2Error(tokenFromAddressErrorMessage(address), error);
+      throw createL2Error(
+        ErrorCode.L2_CONTRACT_INTERACTION,
+        `Failed to create token from address ${address}`,
+        { tokenAddress: address.toString() },
+        error,
+      );
     }
   }
 
@@ -394,13 +438,22 @@ export class L2TokenImpl implements L2Token {
       )
         .send({
           universalDeploy: true,
-          contractAddressSalt: Fr.fromHexString('0x9876543210'),
+          contractAddressSalt: CONTRACT_ADDRESS_SALT,
         })
         .deployed();
 
       return new L2TokenImpl(token, client);
     } catch (error) {
-      throw new L2Error(tokenDeployErrorMessage(name, symbol), error);
+      throw createL2Error(
+        ErrorCode.L2_DEPLOYMENT,
+        `Failed to deploy token with name ${name} and symbol ${symbol}`,
+        {
+          tokenName: name,
+          tokenSymbol: symbol,
+          decimals,
+        },
+        error,
+      );
     }
   }
 }

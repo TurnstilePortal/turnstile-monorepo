@@ -7,7 +7,7 @@ import {
   type Wallet,
 } from '@aztec/aztec.js';
 import { PortalContract } from '@turnstile-portal/aztec-artifacts';
-import { L2Error } from '../errors.js';
+import { ErrorCode, createL2Error } from '../errors.js';
 import type { L2Client } from './client.js';
 
 /**
@@ -182,8 +182,10 @@ export class L2TokenPortal implements L2Portal {
         `0x${result.inner.toString(16).padStart(40, '0')}`,
       );
     } catch (error) {
-      throw new L2Error(
+      throw createL2Error(
+        ErrorCode.L2_CONTRACT_INTERACTION,
         `Failed to get L1 portal address from ${this.portalAddr}`,
+        { portalAddress: this.portalAddr.toString() },
         error,
       );
     }
@@ -214,8 +216,15 @@ export class L2TokenPortal implements L2Portal {
         )
         .send();
     } catch (error) {
-      throw new L2Error(
+      throw createL2Error(
+        ErrorCode.BRIDGE_DEPOSIT,
         `Failed to claim deposit for token ${l1TokenAddr} to recipient ${l2RecipientAddr}`,
+        {
+          l1TokenAddress: l1TokenAddr,
+          l2RecipientAddress: l2RecipientAddr,
+          amount: amount.toString(),
+          index: index.toString(),
+        },
         error,
       );
     }
@@ -246,8 +255,15 @@ export class L2TokenPortal implements L2Portal {
         )
         .send();
     } catch (error) {
-      throw new L2Error(
+      throw createL2Error(
+        ErrorCode.BRIDGE_DEPOSIT,
         `Failed to claim shielded deposit for token ${l1TokenAddr} to recipient ${l2RecipientAddr}`,
+        {
+          l1TokenAddress: l1TokenAddr,
+          l2RecipientAddress: l2RecipientAddr,
+          amount: amount.toString(),
+          index: index.toString(),
+        },
         error,
       );
     }
@@ -274,8 +290,13 @@ export class L2TokenPortal implements L2Portal {
         return true;
       }
     } catch (error) {
-      throw new L2Error(
+      throw createL2Error(
+        ErrorCode.BRIDGE_MESSAGE,
         `Failed to check if deposit is claimed for hash ${hash}`,
+        {
+          l2BlockNumber: l2BlockNumber.toString(),
+          hash,
+        },
         error,
       );
     }
@@ -314,8 +335,16 @@ export class L2TokenPortal implements L2Portal {
         )
         .send();
     } catch (error) {
-      throw new L2Error(
+      throw createL2Error(
+        ErrorCode.BRIDGE_REGISTER,
         `Failed to register token ${l1TokenAddr} as ${l2TokenAddr}`,
+        {
+          l1TokenAddress: l1TokenAddr,
+          l2TokenAddress: l2TokenAddr,
+          tokenName: name,
+          tokenSymbol: symbol,
+          decimals,
+        },
         error,
       );
     }
@@ -362,8 +391,14 @@ export class L2TokenPortal implements L2Portal {
 
       return { tx, leaf };
     } catch (error) {
-      throw new L2Error(
+      throw createL2Error(
+        ErrorCode.BRIDGE_WITHDRAW,
         `Failed to withdraw ${amount} tokens to ${l1RecipientAddr}`,
+        {
+          l1TokenAddress: l1TokenAddr,
+          l1RecipientAddress: l1RecipientAddr,
+          amount: amount.toString(),
+        },
         error,
       );
     }
@@ -382,8 +417,10 @@ export class L2TokenPortal implements L2Portal {
         .simulate();
       return AztecAddress.fromBigInt(result);
     } catch (error) {
-      throw new L2Error(
+      throw createL2Error(
+        ErrorCode.L2_TOKEN_OPERATION,
         `Failed to get L2 token for L1 token ${l1TokenAddr}`,
+        { l1TokenAddress: l1TokenAddr },
         error,
       );
     }
@@ -404,8 +441,10 @@ export class L2TokenPortal implements L2Portal {
         `0x${result.inner.toString(16).padStart(40, '0')}`,
       );
     } catch (error) {
-      throw new L2Error(
+      throw createL2Error(
+        ErrorCode.L2_TOKEN_OPERATION,
         `Failed to get L1 token for L2 token ${l2TokenAddr}`,
+        { l2TokenAddress: l2TokenAddr },
         error,
       );
     }
@@ -423,8 +462,10 @@ export class L2TokenPortal implements L2Portal {
         .is_registered_l1(EthAddress.fromString(l1TokenAddr))
         .simulate();
     } catch (error) {
-      throw new L2Error(
+      throw createL2Error(
+        ErrorCode.L2_TOKEN_OPERATION,
         `Failed to check if token ${l1TokenAddr} is registered by L1 address`,
+        { l1TokenAddress: l1TokenAddr },
         error,
       );
     }
@@ -442,8 +483,10 @@ export class L2TokenPortal implements L2Portal {
         .is_registered_l2(AztecAddress.fromString(l2TokenAddr))
         .simulate();
     } catch (error) {
-      throw new L2Error(
+      throw createL2Error(
+        ErrorCode.L2_TOKEN_OPERATION,
         `Failed to check if token ${l2TokenAddr} is registered by L2 address`,
+        { l2TokenAddress: l2TokenAddr },
         error,
       );
     }
@@ -465,15 +508,19 @@ export class L2TokenPortal implements L2Portal {
         L2TokenPortal.PUBLIC_NOT_SECRET_SECRET,
       );
       if (!wit) {
-        throw new L2Error(
+        throw createL2Error(
+          ErrorCode.BRIDGE_MESSAGE,
           `No membership witness found for L1ToL2Message ${l1ToL2Message}`,
+          { l1ToL2Message },
         );
       }
       const [messageIndex] = wit;
       return Number(messageIndex);
     } catch (error) {
-      throw new L2Error(
+      throw createL2Error(
+        ErrorCode.BRIDGE_MESSAGE,
         `Failed to get L1ToL2Message leaf index for ${l1ToL2Message}`,
+        { l1ToL2Message },
         error,
       );
     }
@@ -524,8 +571,14 @@ export class L2TokenPortal implements L2Portal {
       const combinedBuffer = Buffer.concat(leafData);
       return Fr.fromBuffer(combinedBuffer);
     } catch (error) {
-      throw new L2Error(
+      throw createL2Error(
+        ErrorCode.BRIDGE_MESSAGE,
         `Failed to get L2ToL1Message leaf for token ${l1TokenAddr} to recipient ${l1RecipientAddr}`,
+        {
+          l1TokenAddress: l1TokenAddr,
+          l1RecipientAddress: l1RecipientAddr,
+          amount: amount.toString(),
+        },
         error,
       );
     }

@@ -7,7 +7,8 @@ import {
   type Hash,
 } from 'viem';
 import { SiblingPath } from '@aztec/aztec.js';
-import { L1Error } from '../errors.js';
+import { ErrorCode, createL1Error } from '../errors.js';
+import { validateWallet } from '../validator.js';
 import { L1Client } from './client.js';
 
 /**
@@ -29,12 +30,10 @@ export interface L1Portal {
   /**
    * Sets the L2 portal address
    * @param l2Portal The L2 portal address
-   * @param options Transaction options
    * @returns The transaction receipt
    */
   setL2Portal(
-    l2Portal: `0x${string}`,
-    options?: Omit<TransactionRequest, 'to' | 'data'>
+    l2Portal: `0x${string}`
   ): Promise<TransactionReceipt>;
 
   /**
@@ -42,14 +41,12 @@ export interface L1Portal {
    * @param tokenAddr The token address
    * @param l2RecipientAddr The L2 recipient address
    * @param amount The amount to deposit
-   * @param options Transaction options
    * @returns The deposit result
    */
   deposit(
     tokenAddr: Address,
     l2RecipientAddr: string,
-    amount: bigint,
-    options?: Omit<TransactionRequest, 'to' | 'data'>
+    amount: bigint
   ): Promise<{
     txHash: Hash;
     messageHash: `0x${string}`;
@@ -59,12 +56,10 @@ export interface L1Portal {
   /**
    * Registers a token with the portal
    * @param tokenAddr The token address
-   * @param options Transaction options
    * @returns The registration result
    */
   register(
-    tokenAddr: Address,
-    options?: Omit<TransactionRequest, 'to' | 'data'>
+    tokenAddr: Address
   ): Promise<{
     txHash: Hash;
     messageHash: `0x${string}`;
@@ -77,15 +72,13 @@ export interface L1Portal {
    * @param l2BlockNumber The L2 block number
    * @param leafIndex The leaf index
    * @param siblingPath The sibling path
-   * @param options Transaction options
    * @returns The transaction hash
    */
   withdraw(
     leaf: `0x${string}`,
     l2BlockNumber: bigint,
     leafIndex: bigint,
-    siblingPath: SiblingPath<number>,
-    options?: Omit<TransactionRequest, 'to' | 'data'>
+    siblingPath: SiblingPath<number>
   ): Promise<Hash>;
 
   /**
@@ -159,7 +152,12 @@ export class L1TokenPortal implements L1Portal {
         functionName: 'l2Portal',
       }) as `0x${string}`;
     } catch (error) {
-      throw new L1Error(`Failed to get L2 portal address from ${this.address}`, error);
+      throw createL1Error(
+        ErrorCode.L1_CONTRACT_INTERACTION,
+        `Failed to get L2 portal address from ${this.address}`,
+        { portalAddress: this.address },
+        error
+      );
     }
   }
 
@@ -170,15 +168,12 @@ export class L1TokenPortal implements L1Portal {
    * @returns The transaction receipt
    */
   async setL2Portal(
-    l2Portal: `0x${string}`,
-    options?: Omit<TransactionRequest, 'to' | 'data'>
+    l2Portal: `0x${string}`
   ): Promise<TransactionReceipt> {
     try {
       const walletClient = this.client.getWalletClient();
 
-      if (!walletClient.account) {
-        throw new L1Error('No account connected to wallet client');
-      }
+      validateWallet(walletClient, 'Cannot set L2 portal: No account connected to wallet');
 
       // Define the ABI for the setL2Portal function
       const abi = [{
@@ -197,13 +192,18 @@ export class L1TokenPortal implements L1Portal {
         abi,
         functionName: 'setL2Portal',
         args: [l2Portal],
-        account: walletClient.account,
+        account: walletClient.account!,
         chain: walletClient.chain || null,
       });
 
       return await this.client.getPublicClient().waitForTransactionReceipt({ hash });
     } catch (error) {
-      throw new L1Error(`Failed to set L2 portal to ${l2Portal}`, error);
+      throw createL1Error(
+        ErrorCode.L1_CONTRACT_INTERACTION,
+        `Failed to set L2 portal to ${l2Portal}`,
+        { portalAddress: this.address, l2Portal },
+        error
+      );
     }
   }
 
@@ -218,8 +218,7 @@ export class L1TokenPortal implements L1Portal {
   async deposit(
     tokenAddr: Address,
     l2RecipientAddr: string,
-    amount: bigint,
-    options?: Omit<TransactionRequest, 'to' | 'data'>
+    amount: bigint
   ): Promise<{
     txHash: Hash;
     messageHash: `0x${string}`;
@@ -228,9 +227,7 @@ export class L1TokenPortal implements L1Portal {
     try {
       const walletClient = this.client.getWalletClient();
 
-      if (!walletClient.account) {
-        throw new L1Error('No account connected to wallet client');
-      }
+      validateWallet(walletClient, 'Cannot deposit: No account connected to wallet');
 
       // Encode the deposit data
       const encodedData = this.encodeDepositData(tokenAddr, l2RecipientAddr, amount);
@@ -252,7 +249,7 @@ export class L1TokenPortal implements L1Portal {
         abi,
         functionName: 'deposit',
         args: [encodedData],
-        account: walletClient.account,
+        account: walletClient.account!,
         chain: walletClient.chain || null,
       });
 
@@ -261,16 +258,23 @@ export class L1TokenPortal implements L1Portal {
       // Parse the deposit log
       const depositLog = this.parseDepositLog(receipt);
 
-      // Parse the message sent log
-      const messageSentLog = this.parseMessageSentLog(receipt);
-
       return {
         txHash: hash,
         messageHash: depositLog.hash,
         messageIndex: depositLog.index,
       };
     } catch (error) {
-      throw new L1Error(`Failed to deposit ${amount} of token ${tokenAddr} to ${l2RecipientAddr}`, error);
+      throw createL1Error(
+        ErrorCode.L1_TOKEN_OPERATION,
+        `Failed to deposit ${amount} of token ${tokenAddr} to ${l2RecipientAddr}`,
+        {
+          portalAddress: this.address,
+          tokenAddress: tokenAddr,
+          l2RecipientAddress: l2RecipientAddr,
+          amount: amount.toString()
+        },
+        error
+      );
     }
   }
 
@@ -281,8 +285,7 @@ export class L1TokenPortal implements L1Portal {
    * @returns The registration result
    */
   async register(
-    tokenAddr: Address,
-    options?: Omit<TransactionRequest, 'to' | 'data'>
+    tokenAddr: Address
   ): Promise<{
     txHash: Hash;
     messageHash: `0x${string}`;
@@ -291,9 +294,7 @@ export class L1TokenPortal implements L1Portal {
     try {
       const walletClient = this.client.getWalletClient();
 
-      if (!walletClient.account) {
-        throw new L1Error('No account connected to wallet client');
-      }
+      validateWallet(walletClient, 'Cannot register token: No account connected to wallet');
 
       // Define the ABI for the register function
       const abi = [{
@@ -312,7 +313,7 @@ export class L1TokenPortal implements L1Portal {
         abi,
         functionName: 'register',
         args: [tokenAddr],
-        account: walletClient.account,
+        account: walletClient.account!,
         chain: walletClient.chain || null,
       });
 
@@ -321,16 +322,18 @@ export class L1TokenPortal implements L1Portal {
       // Parse the register log
       const registerLog = this.parseRegisterLog(receipt);
 
-      // Parse the message sent log
-      const messageSentLog = this.parseMessageSentLog(receipt);
-
       return {
         txHash: hash,
         messageHash: registerLog.hash,
         messageIndex: registerLog.index,
       };
     } catch (error) {
-      throw new L1Error(`Failed to register token ${tokenAddr}`, error);
+      throw createL1Error(
+        ErrorCode.BRIDGE_REGISTER,
+        `Failed to register token ${tokenAddr}`,
+        { portalAddress: this.address, tokenAddress: tokenAddr },
+        error
+      );
     }
   }
 
@@ -347,15 +350,12 @@ export class L1TokenPortal implements L1Portal {
     leaf: `0x${string}`,
     l2BlockNumber: bigint,
     leafIndex: bigint,
-    siblingPath: SiblingPath<number>,
-    options?: Omit<TransactionRequest, 'to' | 'data'>
+    siblingPath: SiblingPath<number>
   ): Promise<Hash> {
     try {
       const walletClient = this.client.getWalletClient();
 
-      if (!walletClient.account) {
-        throw new L1Error('No account connected to wallet client');
-      }
+      validateWallet(walletClient, 'Cannot withdraw: No account connected to wallet');
 
       // Convert sibling path to hex strings
       const siblingPathHex = siblingPath
@@ -382,13 +382,23 @@ export class L1TokenPortal implements L1Portal {
         abi,
         functionName: 'withdraw',
         args: [leaf, l2BlockNumber, leafIndex, siblingPathHex],
-        account: walletClient.account,
+        account: walletClient.account!,
         chain: walletClient.chain || null,
       });
 
       return hash;
     } catch (error) {
-      throw new L1Error(`Failed to withdraw with leaf ${leaf}`, error);
+      throw createL1Error(
+        ErrorCode.BRIDGE_WITHDRAW,
+        `Failed to withdraw with leaf ${leaf}`,
+        {
+          portalAddress: this.address,
+          leaf,
+          l2BlockNumber: l2BlockNumber.toString(),
+          leafIndex: leafIndex.toString()
+        },
+        error
+      );
     }
   }
 
@@ -429,7 +439,16 @@ export class L1TokenPortal implements L1Portal {
 
       return l2BlockNumber <= chainTips.provenL2BlockNumber;
     } catch (error) {
-      throw new L1Error(`Failed to check if block ${l2BlockNumber} is available on L1`, error);
+      throw createL1Error(
+        ErrorCode.BRIDGE_MESSAGE,
+        `Failed to check if block ${l2BlockNumber} is available on L1`,
+        {
+          portalAddress: this.address,
+          l2BlockNumber: l2BlockNumber.toString(),
+          rollupAddress: this.rollupAddress
+        },
+        error
+      );
     }
   }
 
@@ -457,7 +476,16 @@ export class L1TokenPortal implements L1Portal {
       await new Promise(resolve => setTimeout(resolve, intervalMs));
     }
 
-    throw new L1Error(`Timeout waiting for block ${l2BlockNumber} to be available on L1`);
+    throw createL1Error(
+      ErrorCode.L1_TIMEOUT,
+      `Timeout waiting for block ${l2BlockNumber} to be available on L1`,
+      {
+        portalAddress: this.address,
+        l2BlockNumber: l2BlockNumber.toString(),
+        timeoutSeconds,
+        intervalSeconds
+      }
+    );
   }
 
   /**
@@ -489,7 +517,12 @@ export class L1TokenPortal implements L1Portal {
 
       return this.rollupAddress;
     } catch (error) {
-      throw new L1Error(`Failed to get rollup address from ${this.address}`, error);
+      throw createL1Error(
+        ErrorCode.L1_CONTRACT_INTERACTION,
+        `Failed to get rollup address from ${this.address}`,
+        { portalAddress: this.address },
+        error
+      );
     }
   }
 
@@ -557,12 +590,20 @@ export class L1TokenPortal implements L1Portal {
     });
 
     if (logs.length === 0) {
-      throw new L1Error(`No Deposit logs found in receipt for transaction: ${receipt.transactionHash}`);
+      throw createL1Error(
+        ErrorCode.L1_LOG_PARSING,
+        `No Deposit logs found in receipt for transaction: ${receipt.transactionHash}`,
+        { transactionHash: receipt.transactionHash }
+      );
     }
 
     const log = logs[0];
     if (!log || !log.args) {
-      throw new L1Error(`Failed to parse Deposit log in receipt for transaction: ${receipt.transactionHash}`);
+      throw createL1Error(
+        ErrorCode.L1_LOG_PARSING,
+        `Failed to parse Deposit log in receipt for transaction: ${receipt.transactionHash}`,
+        { transactionHash: receipt.transactionHash }
+      );
     }
 
     return {
@@ -602,12 +643,20 @@ export class L1TokenPortal implements L1Portal {
     });
 
     if (logs.length === 0) {
-      throw new L1Error(`No Registered logs found in receipt for transaction: ${receipt.transactionHash}`);
+      throw createL1Error(
+        ErrorCode.L1_LOG_PARSING,
+        `No Registered logs found in receipt for transaction: ${receipt.transactionHash}`,
+        { transactionHash: receipt.transactionHash }
+      );
     }
 
     const log = logs[0];
     if (!log || !log.args) {
-      throw new L1Error(`Failed to parse Registered log in receipt for transaction: ${receipt.transactionHash}`);
+      throw createL1Error(
+        ErrorCode.L1_LOG_PARSING,
+        `Failed to parse Registered log in receipt for transaction: ${receipt.transactionHash}`,
+        { transactionHash: receipt.transactionHash }
+      );
     }
 
     return {
@@ -646,12 +695,20 @@ export class L1TokenPortal implements L1Portal {
     });
 
     if (logs.length === 0) {
-      throw new L1Error(`No MessageSent logs found in receipt for transaction: ${receipt.transactionHash}`);
+      throw createL1Error(
+        ErrorCode.L1_LOG_PARSING,
+        `No MessageSent logs found in receipt for transaction: ${receipt.transactionHash}`,
+        { transactionHash: receipt.transactionHash }
+      );
     }
 
     const log = logs[0];
     if (!log || !log.args) {
-      throw new L1Error(`Failed to parse MessageSent log in receipt for transaction: ${receipt.transactionHash}`);
+      throw createL1Error(
+        ErrorCode.L1_LOG_PARSING,
+        `Failed to parse MessageSent log in receipt for transaction: ${receipt.transactionHash}`,
+        { transactionHash: receipt.transactionHash }
+      );
     }
 
     return {
