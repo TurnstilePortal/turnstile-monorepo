@@ -4,21 +4,19 @@ import {
   EthAddress,
   AztecAddress,
   type PXE,
-  type SentTx,
   type Wallet,
 } from '@aztec/aztec.js';
 import { PortalContract } from '@turnstile-portal/aztec-artifacts';
-import { ErrorCode } from '../errors.js';
-import { L2TokenPortal } from './portal.js';
-import type { L2Client } from './client.js';
+import { L2Portal } from './portal.js';
+import type { IL2Client } from './client.js';
 
 // Mock the imports
 vi.mock('@aztec/aztec.js');
 vi.mock('@turnstile-portal/aztec-artifacts');
 
-describe('L2TokenPortal', () => {
-  let portal: L2TokenPortal;
-  let mockL2Client: L2Client;
+describe('L2Portal', () => {
+  let portal: L2Portal;
+  let mockL2Client: IL2Client;
   let mockPXE: PXE;
   let mockWallet: Wallet;
   let portalAddr: AztecAddress;
@@ -110,12 +108,12 @@ describe('L2TokenPortal', () => {
     };
 
     // Create portal instance
-    portal = new L2TokenPortal(portalAddr, mockL2Client);
+    portal = new L2Portal(portalAddr, mockL2Client);
   });
 
   describe('constructor and getAddress', () => {
     it('should create a portal instance and return the correct address', () => {
-      expect(portal).toBeInstanceOf(L2TokenPortal);
+      expect(portal).toBeInstanceOf(L2Portal);
       expect(portal.getAddress()).toBe(portalAddr);
     });
   });
@@ -306,7 +304,7 @@ describe('L2TokenPortal', () => {
       expect(mockPXE.getL1ToL2MembershipWitness).toHaveBeenCalledWith(
         portalAddr,
         expect.anything(),
-        L2TokenPortal.PUBLIC_NOT_SECRET_SECRET,
+        L2Portal.PUBLIC_NOT_SECRET_SECRET,
       );
       expect(result).toBe(false);
     });
@@ -432,8 +430,8 @@ describe('L2TokenPortal', () => {
     it('should mock the full portal creation process', async () => {
       // We're not directly testing the constructor internals
       // but increasing coverage by ensuring it's called
-      const newPortal = new L2TokenPortal(portalAddr, mockL2Client);
-      expect(newPortal).toBeInstanceOf(L2TokenPortal);
+      const newPortal = new L2Portal(portalAddr, mockL2Client);
+      expect(newPortal).toBeInstanceOf(L2Portal);
 
       // Call methods that will trigger contract initialization and the portal method
       // This will hit getPortalContract

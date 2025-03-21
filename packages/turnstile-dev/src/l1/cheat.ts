@@ -1,19 +1,14 @@
-import { createWalletClient, getContract, http, publicActions } from 'viem';
-import { anvil } from 'viem/chains';
-import { privateKeyToAccount } from 'viem/accounts';
+import { getContract } from 'viem';
 import type {
-  WalletClient,
   GetContractReturnType,
   Client,
   Address,
-  Transport,
-  Chain,
-  Account,
 } from 'viem';
 import { RollupAbi } from '@aztec/l1-artifacts';
 import { RollupCheatCodes } from '@aztec/aztec.js/testing';
 import { EthCheatCodes } from '@aztec/ethereum/eth-cheatcodes';
 import { EthAddress } from '@aztec/aztec.js';
+import { type L1Client } from '@turnstile-portal/turnstile.js';
 
 export type AztecRollupContract = GetContractReturnType<
   typeof RollupAbi,
@@ -23,12 +18,14 @@ export type AztecRollupContract = GetContractReturnType<
 
 export async function getAztecRollupContract(
   rollupAddr: Address,
-  client: WalletClient<Transport, Chain, Account>,
+  l1Client: L1Client,
 ): Promise<AztecRollupContract> {
+  const walletClient = l1Client.getWalletClient();
+
   return getContract({
     address: rollupAddr,
     abi: RollupAbi,
-    client,
+    client: walletClient,
   });
 }
 

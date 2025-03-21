@@ -9,12 +9,12 @@ import {
 import { SiblingPath } from '@aztec/aztec.js';
 import { ErrorCode, createL1Error } from '../errors.js';
 import { validateWallet } from '../validator.js';
-import { L1Client } from './client.js';
+import { IL1Client } from './client.js';
 
 /**
  * Interface for L1 portal operations
  */
-export interface L1Portal {
+export interface IL1Portal {
   /**
    * Gets the portal address
    * @returns The portal address
@@ -102,20 +102,20 @@ export interface L1Portal {
 }
 
 /**
- * Implementation of L1Portal for the token portal contract
+ * Implementation of IL1Portal for the token portal contract
  */
-export class L1TokenPortal implements L1Portal {
+export class L1Portal implements IL1Portal {
   private address: Address;
-  private client: L1Client;
+  private client: IL1Client;
   private rollupAddress?: Address;
 
   /**
-   * Creates a new L1TokenPortal
+   * Creates a new L1Portal
    * @param address The portal address
    * @param client The L1 client
    * @param rollupAddress The rollup address (optional)
    */
-  constructor(address: Address, client: L1Client, rollupAddress?: Address) {
+  constructor(address: Address, client: IL1Client, rollupAddress?: Address) {
     this.address = address;
     this.client = client;
     this.rollupAddress = rollupAddress;
@@ -453,6 +453,42 @@ export class L1TokenPortal implements L1Portal {
   }
 
   /**
+   * Checks if a block becomes available on L1 within a timeout period
+   * @param l2BlockNumber The L2 block number
+   * @param checkFn Function to check if block is available
+   * @param timeProvider Function to get current time
+   * @param sleep Function to wait for a time interval
+   * @param timeoutSeconds The timeout in seconds
+   * @param intervalSeconds The polling interval in seconds
+   * @returns Promise that resolves to true if block becomes available, false if timeout occurs
+   */
+  async checkBlockAvailabilityWithTimeout(
+    l2BlockNumber: bigint,
+    checkFn: (blockNumber: bigint) => Promise<boolean>,
+    timeProvider: () => number = Date.now,
+    sleep: (ms: number) => Promise<void> = ms => new Promise(resolve => setTimeout(resolve, ms)),
+    timeoutSeconds = 60,
+    intervalSeconds = 5
+  ): Promise<boolean> {
+    const startTime = timeProvider();
+    const timeoutMs = timeoutSeconds * 1000;
+    const intervalMs = intervalSeconds * 1000;
+
+    while (timeProvider() - startTime < timeoutMs) {
+      // Check if block is available
+      if (await checkFn(l2BlockNumber)) {
+        return true;
+      }
+
+      // Wait for next interval
+      await sleep(intervalMs);
+    }
+
+    // Timeout occurred
+    return false;
+  }
+
+  /**
    * Waits for a block to be available on L1
    * @param l2BlockNumber The L2 block number
    * @param timeoutSeconds The timeout in seconds
@@ -463,29 +499,27 @@ export class L1TokenPortal implements L1Portal {
     timeoutSeconds = 60,
     intervalSeconds = 5
   ): Promise<void> {
-    const startTime = Date.now();
-    const timeoutMs = timeoutSeconds * 1000;
-    const intervalMs = intervalSeconds * 1000;
-
-    while (Date.now() - startTime < timeoutMs) {
-      if (await this.isBlockAvailableOnL1(l2BlockNumber)) {
-        return;
-      }
-
-      // Wait for the next interval
-      await new Promise(resolve => setTimeout(resolve, intervalMs));
-    }
-
-    throw createL1Error(
-      ErrorCode.L1_TIMEOUT,
-      `Timeout waiting for block ${l2BlockNumber} to be available on L1`,
-      {
-        portalAddress: this.address,
-        l2BlockNumber: l2BlockNumber.toString(),
-        timeoutSeconds,
-        intervalSeconds
-      }
+    const blockAvailable = await this.checkBlockAvailabilityWithTimeout(
+      l2BlockNumber,
+      (blockNum) => this.isBlockAvailableOnL1(blockNum),
+      Date.now,
+      (ms) => new Promise(resolve => setTimeout(resolve, ms)),
+      timeoutSeconds,
+      intervalSeconds
     );
+
+    if (!blockAvailable) {
+      throw createL1Error(
+        ErrorCode.L1_TIMEOUT,
+        `Timeout waiting for block ${l2BlockNumber} to be available on L1`,
+        {
+          portalAddress: this.address,
+          l2BlockNumber: l2BlockNumber.toString(),
+          timeoutSeconds,
+          intervalSeconds
+        }
+      );
+    }
   }
 
   /**

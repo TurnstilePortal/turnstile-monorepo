@@ -3,7 +3,7 @@ import type { AztecAddress, PXE, Wallet } from '@aztec/aztec.js';
 /**
  * Interface for L2 client operations
  */
-export interface L2Client {
+export interface IL2Client {
   /**
    * Gets the PXE client
    * @returns The PXE client
@@ -24,14 +24,14 @@ export interface L2Client {
 }
 
 /**
- * Implementation of L2Client using Aztec.js
+ * Implementation of IL2Client using Aztec.js
  */
-export class AztecL2Client implements L2Client {
+export class L2Client implements IL2Client {
   private pxe: PXE;
   private wallet: Wallet;
 
   /**
-   * Creates a new AztecL2Client
+   * Creates a new L2Client
    * @param pxe The PXE client
    * @param wallet The wallet
    */

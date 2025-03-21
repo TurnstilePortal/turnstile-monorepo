@@ -14,14 +14,12 @@ import {
 } from '../lib/deploy/l2Portal.js';
 import {
   getChain,
-  getWallets,
+  getClients,
   readDeploymentData,
   writeDeploymentData,
 } from '@turnstile-portal/turnstile-dev';
-import type {
-  DeploymentData,
-  L1ComboWallet,
-} from '@turnstile-portal/turnstile-dev';
+import type { DeploymentData } from '@turnstile-portal/turnstile-dev';
+import type { L1Client } from '@turnstile-portal/turnstile.js';
 
 import { http } from 'viem';
 
@@ -52,7 +50,7 @@ export function registerDeployTurnstileContracts(program: Command) {
       try {
         console.log('PXE URL:', options.pxe);
         console.log('RPC URL:', options.rpc);
-        const { l1Wallet, l2Wallet } = await getWallets(
+        const { l1Client, l2Client } = await getClients(
           pxe,
           {
             chain: getChain(options.l1Chain),
@@ -60,23 +58,23 @@ export function registerDeployTurnstileContracts(program: Command) {
           },
           options.keys,
         );
-        console.log(`L1 Address: ${l1Wallet.wallet.account.address}`);
-        console.log(`L2 Address: ${l2Wallet.getAddress()}`);
+        console.log(`L1 Address: ${l1Client.getAddress()}`);
+        console.log(`L2 Address: ${l2Client.getAddress()}`);
 
         // default values for optional arguments
         options.allowListAdmin =
-          options.allowListAdmin ?? l1Wallet.wallet.account.address;
+          options.allowListAdmin ?? l1Client.getAddress();
         options.allowListApprover =
-          options.allowListApprover ?? l1Wallet.wallet.account.address;
+          options.allowListApprover ?? l1Client.getAddress();
         options.l2PortalInitializer =
-          options.l2PortalInitializer ?? l1Wallet.wallet.account.address;
+          options.l2PortalInitializer ?? l1Client.getAddress();
 
         const deploymentData = await readDeploymentData(options.deploymentData);
 
         console.log('Deploying L1 Portal...');
         const { allowList, tokenPortal: l1Portal } = await deployL1Portal(
           options,
-          l1Wallet,
+          l1Client,
           deploymentData,
         );
         console.log(`Deployed L1 Portal at ${l1Portal}`);
@@ -89,7 +87,10 @@ export function registerDeployTurnstileContracts(program: Command) {
           tokenContractClassID,
           shieldGateway,
           portal: aztecPortal,
-        } = await deployL2Portal(l2Wallet, EthAddress.fromString(l1Portal));
+        } = await deployL2Portal(
+          l2Client.getWallet(),
+          EthAddress.fromString(l1Portal),
+        );
         console.log(`Deployed L2 Portal at ${aztecPortal.address.toString()}`);
 
         deploymentData.aztecTokenContractClassID =
@@ -100,7 +101,7 @@ export function registerDeployTurnstileContracts(program: Command) {
         // Register L2 Portal with L1 Portal
         console.log('Registering L2 Portal with L1 Portal...');
         await setL2PortalOnL1Portal(
-          l1Wallet,
+          l1Client,
           l1Portal,
           aztecPortal.address.toString(),
         );
@@ -116,16 +117,16 @@ export function registerDeployTurnstileContracts(program: Command) {
 async function deployL1Portal(
   // biome-ignore lint/suspicious/noExplicitAny: any is used for commander options
   options: any,
-  l1Wallet: L1ComboWallet,
+  l1Client: L1Client,
   deploymentData: DeploymentData,
 ): Promise<{ allowList: Hex; tokenPortal: Hex }> {
   const allowList = await deployERC20AllowList(
-    l1Wallet,
+    l1Client,
     options.allowListAdmin,
     options.allowListApprover,
   );
   const tokenPortal = await deployERC20TokenPortal(
-    l1Wallet,
+    l1Client,
     deploymentData.registryAddress,
     allowList,
     options.l2PortalInitializer,
@@ -134,20 +135,20 @@ async function deployL1Portal(
   return { allowList, tokenPortal };
 }
 
-async function deployL2Portal(l2Wallet: AztecWallet, l1Portal: EthAddress) {
+async function deployL2Portal(wallet: AztecWallet, l1Portal: EthAddress) {
   const tokenContractClassID =
-    await registerTurnstileTokenContractClass(l2Wallet);
+    await registerTurnstileTokenContractClass(wallet);
   const shieldGateway = await deployShieldGateway(
-    l2Wallet /* this needs to be an admin wallet */,
+    wallet /* this needs to be an admin wallet */,
   );
   const shieldGatewayBeacon = await deployBeacon(
-    l2Wallet,
-    l2Wallet.getAddress(), // admin address
+    wallet,
+    wallet.getAddress(), // admin address
     shieldGateway.address,
   );
 
   const portal = await deployTurnstileTokenPortal(
-    l2Wallet,
+    wallet,
     l1Portal,
     tokenContractClassID,
     shieldGatewayBeacon.address,

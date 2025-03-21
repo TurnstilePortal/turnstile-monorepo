@@ -8,12 +8,12 @@ import {
 } from '@aztec/aztec.js';
 import { PortalContract } from '@turnstile-portal/aztec-artifacts';
 import { ErrorCode, createL2Error } from '../errors.js';
-import type { L2Client } from './client.js';
+import type { IL2Client } from './client.js';
 
 /**
  * Interface for L2 portal operations
  */
-export interface L2Portal {
+export interface IL2Portal {
   /**
    * Gets the portal address
    * @returns The portal address
@@ -128,22 +128,22 @@ export interface L2Portal {
 }
 
 /**
- * Implementation of L2Portal for the Aztec portal contract
+ * Implementation of IL2Portal for the Aztec portal contract
  */
-export class L2TokenPortal implements L2Portal {
+export class L2Portal implements IL2Portal {
   // The not-secret secret used to send messages to L2
   static readonly PUBLIC_NOT_SECRET_SECRET = Fr.fromHexString('0x7075626c6963');
 
   private portalAddr: AztecAddress;
-  private client: L2Client;
+  private client: IL2Client;
   private portal?: PortalContract;
 
   /**
-   * Creates a new L2TokenPortal
+   * Creates a new L2Portal
    * @param portalAddr The portal address
    * @param client The L2 client
    */
-  constructor(portalAddr: AztecAddress, client: L2Client) {
+  constructor(portalAddr: AztecAddress, client: IL2Client) {
     this.portalAddr = portalAddr;
     this.client = client;
   }
@@ -505,7 +505,7 @@ export class L2TokenPortal implements L2Portal {
       const wit = await pxe.getL1ToL2MembershipWitness(
         this.portalAddr,
         Fr.fromHexString(l1ToL2Message),
-        L2TokenPortal.PUBLIC_NOT_SECRET_SECRET,
+        L2Portal.PUBLIC_NOT_SECRET_SECRET,
       );
       if (!wit) {
         throw createL2Error(

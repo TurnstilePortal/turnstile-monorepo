@@ -3,26 +3,43 @@ import { createPXEClient, AztecAddress } from '@aztec/aztec.js';
 import type { Wallet } from '@aztec/aztec.js';
 import { getInitialTestAccountsWallets } from '@aztec/accounts/testing';
 import {
-  getL2Wallet,
   readDeploymentData,
   readKeyData,
+  createL2Client,
 } from '@turnstile-portal/turnstile-dev';
 
 import { commonOpts } from '@turnstile-portal/deploy/commands';
 
-import { AztecToken } from '@turnstile-portal/turnstile.js';
+import {
+  L2Token,
+  type IL2Client,
+  L2Client,
+} from '@turnstile-portal/turnstile.js';
+
+// Create a proper L2Client from a Wallet
+function createL2ClientFromWallet(wallet: Wallet): L2Client {
+  // Get PXE from wallet's internal properties
+  // @ts-expect-error Accessing internal wallet properties for backward compatibility
+  const pxe = wallet.client || wallet.pxe;
+  if (!pxe) {
+    throw new Error('Cannot get PXE client from wallet');
+  }
+
+  // Create a new L2Client with the wallet and PXE
+  return new L2Client(pxe, wallet);
+}
 
 async function doTransfer(
-  wallet: Wallet,
+  l2Client: L2Client,
   tokenAddr: AztecAddress,
   recipient: AztecAddress,
   amount: bigint,
 ) {
-  const token = await AztecToken.getToken(tokenAddr, wallet);
-  const symbol = await token.symbol();
+  const token = await L2Token.fromAddress(tokenAddr, l2Client);
+  const symbol = await token.getSymbol();
   console.log(`Transferring ${amount} ${symbol} to ${recipient}...`);
 
-  const balance = await token.balanceOfPublic(wallet.getAddress());
+  const balance = await token.balanceOfPublic(l2Client.getAddress());
   console.log(`Current balance: ${balance}`);
   if (balance < amount) {
     throw new Error('Insufficient balance');
@@ -58,7 +75,8 @@ export function registerAztecTransferPublic(program: Command) {
 
       const pxe = createPXEClient(options.pxe);
 
-      const wallet = await getL2Wallet(pxe, await readKeyData(options.keys));
+      const keyData = await readKeyData(options.keys);
+      const l2Client = await createL2Client(pxe, keyData);
       const amount = BigInt(options.amount);
 
       const aztecTestWallets = await getInitialTestAccountsWallets(pxe);
@@ -79,33 +97,33 @@ export function registerAztecTransferPublic(program: Command) {
       const recipient = AztecAddress.fromString(options.recipient);
 
       const initialRecipientBalance = await (
-        await AztecToken.getToken(tokenAddr, wallet)
+        await L2Token.fromAddress(tokenAddr, l2Client)
       ).balanceOfPublic(recipient);
       console.log(
         `Initial recipient balance (${recipient}): ${initialRecipientBalance}`,
       );
 
       const initialSenderBalance = await (
-        await AztecToken.getToken(tokenAddr, wallet)
-      ).balanceOfPublic(wallet.getAddress());
+        await L2Token.fromAddress(tokenAddr, l2Client)
+      ).balanceOfPublic(l2Client.getAddress());
       console.log(
-        `Initial sender balance (${wallet.getAddress()}): ${initialSenderBalance}`,
+        `Initial sender balance (${l2Client.getAddress()}): ${initialSenderBalance}`,
       );
 
-      await doTransfer(wallet, tokenAddr, recipient, amount);
+      await doTransfer(l2Client, tokenAddr, recipient, amount);
 
       const finalRecipientBalance = await (
-        await AztecToken.getToken(tokenAddr, wallet)
+        await L2Token.fromAddress(tokenAddr, l2Client)
       ).balanceOfPublic(recipient);
       console.log(
         `Final recipient balance (${recipient}): ${finalRecipientBalance}`,
       );
 
       const finalSenderBalance = await (
-        await AztecToken.getToken(tokenAddr, wallet)
-      ).balanceOfPublic(wallet.getAddress());
+        await L2Token.fromAddress(tokenAddr, l2Client)
+      ).balanceOfPublic(l2Client.getAddress());
       console.log(
-        `Final sender balance (${wallet.getAddress()}): ${finalSenderBalance}`,
+        `Final sender balance (${l2Client.getAddress()}): ${finalSenderBalance}`,
       );
     });
 }

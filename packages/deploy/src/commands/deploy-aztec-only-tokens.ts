@@ -6,7 +6,7 @@ import { http } from 'viem';
 
 import {
   getChain,
-  getWallets,
+  getClients,
   readDeploymentData,
   writeDeploymentData,
 } from '@turnstile-portal/turnstile-dev';
@@ -80,7 +80,7 @@ export function registerDeployAztecOnlyTokens(program: Command) {
     .action(async (options) => {
       const pxe = createPXEClient(options.pxe);
       try {
-        const { l2Wallet } = await getWallets(
+        const { l2Client } = await getClients(
           pxe,
           {
             chain: getChain('anvil'),
@@ -88,6 +88,7 @@ export function registerDeployAztecOnlyTokens(program: Command) {
           },
           options.keys,
         );
+        const l2Wallet = l2Client.getWallet();
         console.log(`L2 Address to mint tokens to: ${l2Wallet.getAddress()}`);
 
         const deploymentData = await readDeploymentData(options.deploymentData);

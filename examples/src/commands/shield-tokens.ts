@@ -2,20 +2,37 @@ import type { Command } from 'commander';
 import { createPXEClient, AztecAddress, TxStatus } from '@aztec/aztec.js';
 import type { Wallet } from '@aztec/aztec.js';
 import {
-  getL2Wallet,
   readDeploymentData,
   readKeyData,
+  createL2Client,
 } from '@turnstile-portal/turnstile-dev';
 
 import { commonOpts } from '@turnstile-portal/deploy/commands';
 
-import { AztecToken } from '@turnstile-portal/turnstile.js';
+import {
+  L2Token,
+  type IL2Client,
+  L2Client,
+} from '@turnstile-portal/turnstile.js';
 
-async function doShield(wallet: Wallet, token: AztecToken, amount: bigint) {
-  const symbol = await token.symbol();
+// Create a proper L2Client from a Wallet
+function createL2ClientFromWallet(wallet: Wallet): L2Client {
+  // Get PXE from wallet's internal properties
+  // @ts-expect-error Accessing internal wallet properties for backward compatibility
+  const pxe = wallet.client || wallet.pxe;
+  if (!pxe) {
+    throw new Error('Cannot get PXE client from wallet');
+  }
+
+  // Create a new L2Client with the wallet and PXE
+  return new L2Client(pxe, wallet);
+}
+
+async function doShield(l2Client: L2Client, token: L2Token, amount: bigint) {
+  const symbol = await token.getSymbol();
   console.log(`Shielding ${amount} ${symbol}...`);
 
-  const balance = await token.balanceOfPublic(wallet.getAddress());
+  const balance = await token.balanceOfPublic(l2Client.getAddress());
   console.log(`Current balance: ${balance}`);
   if (balance < amount) {
     throw new Error('Insufficient balance.');
@@ -46,17 +63,20 @@ export function registerShieldTokens(program: Command) {
 
       const pxe = createPXEClient(options.pxe);
 
-      const wallet = await getL2Wallet(pxe, await readKeyData(options.keys));
+      const keyData = await readKeyData(options.keys);
+      const l2Client = await createL2Client(pxe, keyData);
       const amount = BigInt(options.amount);
-
-      const token = await AztecToken.getToken(tokenAddr, wallet);
-      const startingBalance = await token.balanceOfPublic(wallet.getAddress());
-      const startingPrivateBalance = await token.balanceOfPrivate(
-        wallet.getAddress(),
+      const token = await L2Token.fromAddress(tokenAddr, l2Client);
+      const startingBalance = await token.balanceOfPublic(
+        l2Client.getAddress(),
       );
-      const startingShieldedSupply = await token.shieldedSupply();
+      const startingPrivateBalance = await token.balanceOfPrivate(
+        l2Client.getAddress(),
+      );
+      // Note: shieldedSupply is not available in the new API
+      // const startingShieldedSupply = 0n;
 
-      const tx = await doShield(wallet, token, amount);
+      const tx = await doShield(l2Client, token, amount);
       const receipt = await tx.wait();
 
       if (receipt.status !== TxStatus.SUCCESS) {
@@ -66,18 +86,15 @@ export function registerShieldTokens(program: Command) {
       console.log('Shielding successful!');
 
       // Check the balance after the shield
-      const finalBalance = await token.balanceOfPublic(wallet.getAddress());
+      const finalBalance = await token.balanceOfPublic(l2Client.getAddress());
       const finalPrivateBalance = await token.balanceOfPrivate(
-        wallet.getAddress(),
+        l2Client.getAddress(),
       );
-      const finalShieldedSupply = await token.shieldedSupply();
 
       console.log(`Starting public balance: ${startingBalance}`);
       console.log(`Starting private balance: ${startingPrivateBalance}`);
-      console.log(`Starting shielded supply: ${startingShieldedSupply}`);
 
       console.log(`Final public balance: ${finalBalance}`);
       console.log(`Final private balance: ${finalPrivateBalance}`);
-      console.log(`Final shielded supply: ${finalShieldedSupply}`);
     });
 }

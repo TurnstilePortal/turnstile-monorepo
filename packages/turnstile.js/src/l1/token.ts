@@ -5,13 +5,13 @@ import type {
 } from 'viem';
 import { ErrorCode, createL1Error } from '../errors.js';
 import { validateWallet, validatePositiveAmount } from '../validator.js';
-import { L1Client } from './client.js';
+import { IL1Client } from './client.js';
 import { TOKEN_ABIS } from './abi.js';
 
 /**
  * Interface for L1 token operations
  */
-export interface L1Token {
+export interface IL1Token {
   /**
    * Gets the token address
    * @returns The token address
@@ -75,18 +75,18 @@ export interface L1Token {
 }
 
 /**
- * Implementation of L1Token for ERC20 tokens
+ * Implementation of IL1Token for ERC20 tokens
  */
-export class ERC20Token implements L1Token {
+export class L1Token implements IL1Token {
   private address: Address;
-  private client: L1Client;
+  protected client: IL1Client;
 
   /**
-   * Creates a new ERC20Token
+   * Creates a new L1Token
    * @param address The token address
    * @param client The L1 client
    */
-  constructor(address: Address, client: L1Client) {
+  constructor(address: Address, client: IL1Client) {
     this.address = address;
     this.client = client;
   }

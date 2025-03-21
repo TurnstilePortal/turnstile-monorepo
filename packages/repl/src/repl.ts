@@ -16,7 +16,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import {
-  getWallets,
+  getClients,
   readDeploymentData,
   readKeyData,
 } from '@turnstile-portal/turnstile-dev';
@@ -24,7 +24,7 @@ import {
 const RPC_URL = process.env.RPC_URL || 'http://localhost:8545';
 const PXE_URL = process.env.PXE_URL || 'http://localhost:8080';
 
-const pxe = createPXEClient(PXE_URL);
+const pxe = createPXEClient(PXE_URL, {}, makeFetch([], true));
 const node = createAztecNodeClient(PXE_URL);
 
 export const l1PublicClient = createPublicClient({
@@ -32,7 +32,8 @@ export const l1PublicClient = createPublicClient({
   transport: http(RPC_URL),
 });
 
-const argv = await yargs(hideBin(process.argv))
+const parser = yargs(hideBin(process.argv))
+  .scriptName('turnstile-repl')
   .option('deploymentData', {
     alias: 'dd',
     type: 'string',
@@ -46,26 +47,55 @@ const argv = await yargs(hideBin(process.argv))
     description: 'Key Data',
     demandOption: true,
     default: 'docker/turnstile-sandbox/sandbox-keys.json',
-  }).argv;
+  });
 
-const deploymentData = await readDeploymentData(argv.deploymentData);
-const keyData = await readKeyData(argv.keyData);
+const argv = await parser.parse();
 
-const { l1Wallet, l2Wallet } = await getWallets(
+// Ensure we're using the correct paths when running with tsx
+const deploymentDataPath =
+  process.argv.includes('--deploymentData') || process.argv.includes('--dd')
+    ? (argv.deploymentData as string)
+    : 'sandbox_deployment.json';
+
+const keyDataPath =
+  process.argv.includes('--keyData') || process.argv.includes('--kd')
+    ? (argv.keyData as string)
+    : 'docker/turnstile-sandbox/sandbox-keys.json';
+
+// Log the file paths we're trying to use
+console.log('Using deployment data file:', deploymentDataPath);
+console.log('Using key data file:', keyDataPath);
+
+// Check if files exist before trying to read them
+const { existsSync } = await import('node:fs');
+if (!existsSync(deploymentDataPath)) {
+  console.error(`Error: Deployment data file not found: ${deploymentDataPath}`);
+  process.exit(1);
+}
+
+if (!existsSync(keyDataPath)) {
+  console.error(`Error: Key data file not found: ${keyDataPath}`);
+  process.exit(1);
+}
+
+const deploymentData = await readDeploymentData(deploymentDataPath);
+const keyData = await readKeyData(keyDataPath);
+
+const { l1Client, l2Client } = await getClients(
   pxe,
   {
     chain: anvil,
     transport: http(RPC_URL),
   },
-  argv.keyData,
+  keyDataPath,
 );
 
-const l2Tokens: Record<string, turnstilejs.AztecToken> = {};
+const l2Tokens: Record<string, turnstilejs.L2Token> = {};
 try {
   for (const token of Object.values(deploymentData.tokens)) {
-    l2Tokens[token.symbol] = await turnstilejs.AztecToken.getToken(
+    l2Tokens[token.symbol] = await turnstilejs.L2Token.fromAddress(
       aztecjs.AztecAddress.fromString(token.l2Address),
-      l2Wallet,
+      l2Client,
     );
   }
 } catch (e) {
@@ -99,9 +129,8 @@ function createREPL() {
     deploymentData,
     keyData,
     l2Tokens,
-    l2Wallet,
-    l1Wallet,
-    l1PublicClient,
+    l2Client,
+    l1Client,
     turnstileAztecArtifacts,
   });
 
@@ -132,6 +161,7 @@ Default imports available in this environment:
   - viem: viem client
   - deploymentData: Data loaded from the deployment data file
   - keyData: Data loaded from the key data file
+  - l2Client: L2 client for interacting with Aztec contracts
   - l2Wallet: Wallet client for the L2 account
   - l1Wallet: Wallet client for the L1 account
   - l1PublicClient: Public client for the L1 chain

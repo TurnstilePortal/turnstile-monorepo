@@ -13,7 +13,7 @@ import { validateWallet } from '../validator.js';
 /**
  * Interface for L1 client operations
  */
-export interface L1Client {
+export interface IL1Client {
   /**
    * Gets the public client for read operations
    * @returns The public client
@@ -40,14 +40,14 @@ export interface L1Client {
 }
 
 /**
- * Implementation of L1Client using Viem
+ * Implementation of IL1Client using Viem
  */
-export class ViemL1Client implements L1Client {
+export class L1Client implements IL1Client {
   private publicClient: PublicClient;
   private walletClient: WalletClient<Transport, Chain, Account>;
 
   /**
-   * Creates a new ViemL1Client
+   * Creates a new L1Client
    * @param publicClient The public client
    * @param walletClient The wallet client
    */

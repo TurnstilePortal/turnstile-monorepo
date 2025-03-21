@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { L1TokenPortal } from './portal.js';
+import { L1Portal } from './portal.js';
 import { SiblingPath } from '@aztec/aztec.js';
 import { ErrorCode } from '../errors.js';
 import type {
@@ -12,7 +12,7 @@ import type {
   TransactionReceipt,
   Hash
 } from 'viem';
-import { L1Client } from './client.js';
+import { IL1Client } from './client.js';
 
 // Mock external dependencies
 vi.mock('viem', async () => {
@@ -28,7 +28,7 @@ vi.mock('../validator.js', () => ({
   validateWallet: vi.fn()
 }));
 
-describe('L1TokenPortal', () => {
+describe('L1Portal', () => {
   // Common test variables
   const portalAddress = '0x1234567890123456789012345678901234567890' as Address;
   const mockL2PortalAddress = '0x0000000000000000000000000000000000000001' as `0x${string}`;
@@ -42,8 +42,8 @@ describe('L1TokenPortal', () => {
   // Mock clients
   let mockPublicClient: PublicClient;
   let mockWalletClient: WalletClient<Transport, Chain, Account>;
-  let mockL1Client: L1Client;
-  let portal: L1TokenPortal;
+  let mockL1Client: IL1Client;
+  let portal: L1Portal;
 
   beforeEach(() => {
     // Reset all mocks
@@ -73,8 +73,8 @@ describe('L1TokenPortal', () => {
       getAddress: vi.fn()
     };
 
-    // Create L1TokenPortal instance
-    portal = new L1TokenPortal(portalAddress, mockL1Client);
+    // Create L1Portal instance
+    portal = new L1Portal(portalAddress, mockL1Client);
   });
 
   afterEach(() => {
@@ -530,8 +530,8 @@ describe('L1TokenPortal', () => {
     const mockProvenL2BlockNumber = 120n;
 
     beforeEach(() => {
-      // Create a new L1TokenPortal instance with rollupAddress for some tests
-      portal = new L1TokenPortal(portalAddress, mockL1Client, mockRollupAddress);
+      // Create a new L1Portal instance with rollupAddress for some tests
+      portal = new L1Portal(portalAddress, mockL1Client, mockRollupAddress);
     });
 
     it('should return true when block is available on L1', async () => {
@@ -578,7 +578,7 @@ describe('L1TokenPortal', () => {
 
     it('should get rollup address if not provided', async () => {
       // Create a new instance without rollupAddress
-      portal = new L1TokenPortal(portalAddress, mockL1Client);
+      portal = new L1Portal(portalAddress, mockL1Client);
 
       // Mock readContract to return rollup address first, then chain tips
       (mockPublicClient.readContract as any).mockResolvedValueOnce(mockRollupAddress);
@@ -681,28 +681,48 @@ describe('L1TokenPortal', () => {
 
     it('should timeout if block does not become available', async () => {
       // Mock isBlockAvailableOnL1 to always return false
-      const isBlockAvailableSpy = vi.spyOn(portal, 'isBlockAvailableOnL1')
-        .mockResolvedValue(false);
+      const checkFnMock = vi.fn().mockResolvedValue(false);
 
-      // Call the method with 5s timeout and 1s interval
-      const waitPromise = portal.waitForBlockOnL1(100n, 5, 1);
+      // Create controlled time provider for testing
+      let currentTime = 0;
+      const mockTimeProvider = () => currentTime;
 
-      // Fast-forward past the timeout (5s + a bit more)
-      await vi.advanceTimersByTimeAsync(5001);
+      // Create mock sleep function that advances our mock time
+      const mockSleep = vi.fn().mockImplementation(async (ms) => {
+        currentTime += ms;
+        return Promise.resolve();
+      });
 
-      try {
-        await waitPromise;
-        // Should not reach this point
-        expect(true).toBe(false);
-      } catch (error: any) {
-        // Should have thrown an error with L1_TIMEOUT code
-        expect(error.code).toBe(ErrorCode.L1_TIMEOUT);
-        expect(error.message).toContain('Timeout waiting for block');
-      }
+      // Use the extracted method directly with controlled dependencies
+      const result = await portal.checkBlockAvailabilityWithTimeout(
+        100n,
+        checkFnMock,
+        mockTimeProvider,
+        mockSleep,
+        5, // 5 seconds timeout
+        1  // 1 second interval
+      );
 
-      // Verify method was called multiple times
-      expect(isBlockAvailableSpy.mock.calls.length).toBeGreaterThan(3);
-      expect(isBlockAvailableSpy).toHaveBeenLastCalledWith(100n);
+      // Verify the check function was called multiple times
+      expect(checkFnMock).toHaveBeenCalledTimes(5); // Initial check + calls at each interval until timeout
+      expect(checkFnMock).toHaveBeenCalledWith(100n);
+
+      // Verify sleep was called with the correct interval
+      expect(mockSleep).toHaveBeenCalledTimes(5);
+      expect(mockSleep).toHaveBeenCalledWith(1000);
+
+      // Verify the timeout result is false
+      expect(result).toBe(false);
+
+      // Now test that waitForBlockOnL1 properly throws when checkBlockAvailabilityWithTimeout returns false
+      // Mock the checkBlockAvailabilityWithTimeout method
+      vi.spyOn(portal, 'checkBlockAvailabilityWithTimeout').mockResolvedValueOnce(false);
+
+      // Expect the waitForBlockOnL1 to throw the timeout error
+      await expect(portal.waitForBlockOnL1(100n, 5, 1)).rejects.toMatchObject({
+        code: ErrorCode.L1_TIMEOUT,
+        message: expect.stringContaining('Timeout waiting for block')
+      });
     });
 
     it('should use default values for timeout and interval', async () => {

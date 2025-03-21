@@ -3,27 +3,44 @@ import { createPXEClient, AztecAddress, Fr, TxStatus } from '@aztec/aztec.js';
 import type { Wallet } from '@aztec/aztec.js';
 import { getInitialTestAccountsWallets } from '@aztec/accounts/testing';
 import {
-  getL2Wallet,
   readDeploymentData,
   readKeyData,
+  createL2Client,
 } from '@turnstile-portal/turnstile-dev';
 
 import { commonOpts } from '@turnstile-portal/deploy/commands';
 
-import { AztecToken } from '@turnstile-portal/turnstile.js';
+import {
+  L2Token,
+  type IL2Client,
+  L2Client,
+} from '@turnstile-portal/turnstile.js';
+
+// Create a proper L2Client from a Wallet
+function createL2ClientFromWallet(wallet: Wallet): L2Client {
+  // Get PXE from wallet's internal properties
+  // @ts-expect-error Accessing internal wallet properties for backward compatibility
+  const pxe = wallet.client || wallet.pxe;
+  if (!pxe) {
+    throw new Error('Cannot get PXE client from wallet');
+  }
+
+  // Create a new L2Client with the wallet and PXE
+  return new L2Client(pxe, wallet);
+}
 
 async function doTransfer(
-  senderWallet: Wallet,
+  l2Client: L2Client,
   tokenAddr: AztecAddress,
   recipient: AztecAddress,
   amount: bigint,
 ) {
-  const token = await AztecToken.getToken(tokenAddr, senderWallet);
+  const token = await L2Token.fromAddress(tokenAddr, l2Client);
 
-  const symbol = await token.symbol();
+  const symbol = await token.getSymbol();
   console.log(`PRIVATELY Transferring ${amount} ${symbol} to ${recipient}...`);
 
-  const balance = await token.balanceOfPrivate(senderWallet.getAddress());
+  const balance = await token.balanceOfPrivate(l2Client.getAddress());
   if (balance < amount) {
     throw new Error('Insufficient balance');
   }
@@ -92,40 +109,39 @@ export function registerAztecTransferPrivate(program: Command) {
         throw recipientError('Recipient wallet not found');
       }
 
-      const senderWallet = await getL2Wallet(
-        pxe,
-        await readKeyData(options.keys),
-      );
+      const keyData = await readKeyData(options.keys);
+      const senderClient = await createL2Client(pxe, keyData);
       const amount = BigInt(options.amount);
 
+      const recipientClient = createL2ClientFromWallet(recipientWallet);
       const initialRecipientBalance = await (
-        await AztecToken.getToken(tokenAddr, recipientWallet)
+        await L2Token.fromAddress(tokenAddr, recipientClient)
       ).balanceOfPrivate(recipient);
       console.log(
         `Initial recipient balance (${recipient}): ${initialRecipientBalance}`,
       );
 
       const initialSenderBalance = await (
-        await AztecToken.getToken(tokenAddr, senderWallet)
-      ).balanceOfPrivate(senderWallet.getAddress());
+        await L2Token.fromAddress(tokenAddr, senderClient)
+      ).balanceOfPrivate(senderClient.getAddress());
       console.log(
-        `Initial sender balance (${senderWallet.getAddress()}): ${initialSenderBalance}`,
+        `Initial sender balance (${senderClient.getAddress()}): ${initialSenderBalance}`,
       );
 
-      await doTransfer(senderWallet, tokenAddr, recipient, amount);
+      await doTransfer(senderClient, tokenAddr, recipient, amount);
 
       const endingRecipientBalance = await (
-        await AztecToken.getToken(tokenAddr, recipientWallet)
+        await L2Token.fromAddress(tokenAddr, recipientClient)
       ).balanceOfPrivate(recipient);
       console.log(
         `Final recipient balance (${recipient}): ${endingRecipientBalance}`,
       );
 
       const endingSenderBalance = await (
-        await AztecToken.getToken(tokenAddr, senderWallet)
-      ).balanceOfPrivate(senderWallet.getAddress());
+        await L2Token.fromAddress(tokenAddr, senderClient)
+      ).balanceOfPrivate(senderClient.getAddress());
       console.log(
-        `Final sender balance (${senderWallet.getAddress()}): ${endingSenderBalance}`,
+        `Final sender balance (${senderClient.getAddress()}): ${endingSenderBalance}`,
       );
     });
 }

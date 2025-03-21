@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Address, PublicClient, WalletClient, Chain, Account, Transport } from 'viem';
-import { L1Token, ERC20Token } from './token.js';
+import { L1Token } from './token.js';
 import { TurnstileError } from '../errors.js';
 
 // Mock the readContract and writeContract functions
@@ -39,15 +39,15 @@ const mockSpender = '0x1111111111111111111111111111111111111111' as Address;
 const mockAmount = 1000000000000000000n; // 1 token with 18 decimals
 const mockTxHash = '0xabcdef1234567890';
 
-describe('ERC20Token', () => {
-  let token: ERC20Token;
+describe('L1Token', () => {
+  let token: L1Token;
 
   beforeEach(() => {
     // Reset mocks
     vi.resetAllMocks();
 
     // Create a new token for each test
-    token = new ERC20Token(mockTokenAddress, mockL1Client);
+    token = new L1Token(mockTokenAddress, mockL1Client);
   });
 
   describe('getAddress', () => {
@@ -244,7 +244,7 @@ describe('ERC20Token', () => {
       };
 
       // Create a token with the client without account
-      const tokenWithoutAccount = new ERC20Token(mockTokenAddress, clientWithoutAccount);
+      const tokenWithoutAccount = new L1Token(mockTokenAddress, clientWithoutAccount);
 
       // Call the method and expect it to throw
       await expect(tokenWithoutAccount.approve(mockSpender, mockAmount)).rejects.toThrow(TurnstileError);
@@ -298,7 +298,7 @@ describe('ERC20Token', () => {
       };
 
       // Create a token with the client without account
-      const tokenWithoutAccount = new ERC20Token(mockTokenAddress, clientWithoutAccount);
+      const tokenWithoutAccount = new L1Token(mockTokenAddress, clientWithoutAccount);
 
       // Call the method and expect it to throw
       await expect(tokenWithoutAccount.transfer(mockSpender, mockAmount)).rejects.toThrow(TurnstileError);

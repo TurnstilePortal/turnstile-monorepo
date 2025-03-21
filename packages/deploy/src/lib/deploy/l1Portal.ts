@@ -7,21 +7,31 @@ import {
   ERC20AllowListABI,
   ERC20TokenPortalABI,
 } from '@turnstile-portal/l1-artifacts-abi';
-import type { L1ComboWallet } from '@turnstile-portal/turnstile-dev';
-
-import { L1TokenPortal } from '@turnstile-portal/turnstile.js';
+import { L1Portal } from '@turnstile-portal/turnstile.js';
+import type { L1Client } from '@turnstile-portal/turnstile.js';
 
 export async function deployERC20AllowList(
-  w: L1ComboWallet,
+  client: L1Client,
   adminAddr: Hex,
   approverAddr: Hex,
 ): Promise<Hex> {
-  const txHash = await w.wallet.deployContract({
+  const walletClient = client.getWalletClient();
+  const account = walletClient.account;
+  if (!account) {
+    throw new Error('No account connected to wallet client');
+  }
+
+  const txHash = await walletClient.deployContract({
     abi: ERC20AllowListABI,
     bytecode: ERC20AllowListBytecode,
     args: [adminAddr, approverAddr],
+    account,
+    authorizationList: [],
+    chain: walletClient.chain,
   });
-  const receipt = await w.public.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await client
+    .getPublicClient()
+    .waitForTransactionReceipt({ hash: txHash });
   if (receipt.status !== 'success') {
     throw new Error(`Deploy failed: ${receipt}`);
   }
@@ -34,18 +44,29 @@ export async function deployERC20AllowList(
 }
 
 export async function deployERC20TokenPortal(
-  w: L1ComboWallet,
+  client: L1Client,
   aztecRegistryAddr: Hex,
   allowListAddr: Hex,
   l2PortalInitializerAddr: Hex,
 ): Promise<Hex> {
-  const txHash = await w.wallet.deployContract({
+  const walletClient = client.getWalletClient();
+  const account = walletClient.account;
+  if (!account) {
+    throw new Error('No account connected to wallet client');
+  }
+
+  const txHash = await walletClient.deployContract({
     abi: ERC20TokenPortalABI,
     bytecode: ERC20TokenPortalBytecode,
     args: [aztecRegistryAddr, allowListAddr, l2PortalInitializerAddr],
+    account,
+    authorizationList: [],
+    chain: walletClient.chain,
   });
 
-  const receipt = await w.public.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await client
+    .getPublicClient()
+    .waitForTransactionReceipt({ hash: txHash });
   if (receipt.status !== 'success') {
     throw new Error(`Deploy failed: ${receipt}`);
   }
@@ -59,11 +80,12 @@ export async function deployERC20TokenPortal(
 }
 
 export async function setL2PortalOnL1Portal(
-  w: L1ComboWallet,
+  client: L1Client,
   l1Portal: Hex,
   l2Portal: Hex,
 ) {
-  const portal = new L1TokenPortal(l1Portal, w.wallet, w.public);
+  // Use the provided L1Client directly
+  const portal = new L1Portal(l1Portal, client);
   const receipt = await portal.setL2Portal(l2Portal);
   if (receipt.status !== 'success') {
     throw new Error(`setL2Portal() failed: ${receipt}`);

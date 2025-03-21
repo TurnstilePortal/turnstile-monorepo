@@ -22,13 +22,9 @@ import { getSchnorrAccount, getSchnorrWallet } from '@aztec/accounts/schnorr';
 import { getDeployedTestAccountsWallets } from '@aztec/accounts/testing';
 import type { AccountWallet, PXE } from '@aztec/aztec.js';
 import { deriveSigningKey } from '@aztec/stdlib/keys';
+import { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
 
 import { readKeyData, type KeyData } from './keyData.js';
-
-export type L1ComboWallet = {
-  public: PublicClient;
-  wallet: WalletClient<Transport, Chain, Account>;
-};
 
 export async function generateAndDeployAztecAccountSchnorr(
   pxe: PXE,
@@ -81,22 +77,36 @@ export function generateEthAccount(): { privateKey: Hex; address: Hex } {
   };
 }
 
-export async function getWallets(
+export async function getClients(
   pxe: PXE,
   l1Config: { chain: Chain; transport: Transport },
   keyDataFile: string,
-): Promise<{ l1Wallet: L1ComboWallet; l2Wallet: AccountWallet }> {
+): Promise<{
+  l1Client: L1Client;
+  l2Client: L2Client;
+}> {
+  // Add console logging to help debug
+  console.log('Reading key data from:', keyDataFile);
   const keyData = await readKeyData(keyDataFile);
+  console.log('KeyData received:', JSON.stringify(keyData, null, 2));
+
+  // Add a safeguard to ensure we have the required fields
+  if (!keyData || !keyData.l1PrivateKey) {
+    throw new Error(
+      `Invalid keyData: missing l1PrivateKey in ${JSON.stringify(keyData)}`,
+    );
+  }
+
   return {
-    l1Wallet: await getL1Wallet(l1Config, keyData),
-    l2Wallet: await getL2Wallet(pxe, keyData),
+    l1Client: await createL1Client(l1Config, keyData),
+    l2Client: await createL2Client(pxe, keyData),
   };
 }
 
-export async function getL1Wallet(
+export async function createL1Client(
   l1Config: { chain: Chain; transport: Transport },
   keyData: KeyData,
-): Promise<L1ComboWallet> {
+): Promise<L1Client> {
   const l1Account: Account = privateKeyToAccount(keyData.l1PrivateKey);
   const l1WalletClient = createWalletClient({
     account: l1Account,
@@ -108,18 +118,19 @@ export async function getL1Wallet(
     transport: l1Config.transport,
   });
 
-  return { public: l1PublicClient, wallet: l1WalletClient };
+  return new L1Client(l1PublicClient, l1WalletClient);
 }
 
-export async function getL2Wallet(
+export async function createL2Client(
   pxe: PXE,
   keyData: KeyData,
-): Promise<AccountWallet> {
-  return getSchnorrWallet(
+): Promise<L2Client> {
+  const wallet = await getSchnorrWallet(
     pxe,
     AztecAddress.fromString(keyData.l2Address),
     Fq.fromString(keyData.l2SigningKey),
   );
+  return new L2Client(pxe, wallet);
 }
 
 const devnet = defineChain({

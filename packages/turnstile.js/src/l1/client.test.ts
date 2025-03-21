@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Address, PublicClient, WalletClient, Chain, Account, Transport } from 'viem';
-import { L1Client, ViemL1Client } from './client.js';
+import { L1Client } from './client.js';
 
 // Mock the Viem clients
 const mockGetChainId = vi.fn();
@@ -16,15 +16,15 @@ const mockWalletClient = {
   account: mockAccount,
 } as unknown as WalletClient<Transport, Chain, Account>;
 
-describe('ViemL1Client', () => {
-  let client: ViemL1Client;
+describe('L1Client', () => {
+  let client: L1Client;
 
   beforeEach(() => {
     // Reset mocks
     vi.resetAllMocks();
 
     // Create a new client for each test
-    client = new ViemL1Client(mockPublicClient, mockWalletClient);
+    client = new L1Client(mockPublicClient, mockWalletClient);
   });
 
   describe('getPublicClient', () => {
@@ -63,7 +63,7 @@ describe('ViemL1Client', () => {
       const noAccountWalletClient = {
         account: undefined,
       } as unknown as WalletClient<Transport, Chain, Account>;
-      const clientWithNoAccount = new ViemL1Client(mockPublicClient, noAccountWalletClient);
+      const clientWithNoAccount = new L1Client(mockPublicClient, noAccountWalletClient);
 
       expect(() => clientWithNoAccount.getAddress()).toThrow('No account connected to wallet client');
     });

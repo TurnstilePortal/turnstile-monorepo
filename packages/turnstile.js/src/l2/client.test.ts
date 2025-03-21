@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { PXE, Wallet, AztecAddress } from '@aztec/aztec.js';
-import { AztecL2Client } from './client.js';
+import { L2Client } from './client.js';
 
 // Mock AztecAddress type
 class MockAztecAddress {
@@ -28,15 +28,15 @@ const mockPXE = {
   // Add any PXE methods that might be used
 };
 
-describe('AztecL2Client', () => {
-  let client: AztecL2Client;
+describe('L2Client', () => {
+  let client: L2Client;
 
   beforeEach(() => {
     // Reset mocks
     vi.resetAllMocks();
 
     // Create a new client for each test
-    client = new AztecL2Client(
+    client = new L2Client(
       mockPXE as unknown as PXE,
       mockWallet as unknown as Wallet,
     );

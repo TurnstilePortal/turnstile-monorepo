@@ -13,7 +13,7 @@ import {
   readFieldCompressedString,
 } from '@aztec/aztec.js';
 import { TokenContract } from '@turnstile-portal/aztec-artifacts';
-import { L2TokenImpl } from './token.js';
+import { L2Token } from './token.js';
 import { ErrorCode, TurnstileError } from '../errors.js';
 import type { L2Client } from './client.js';
 
@@ -21,9 +21,9 @@ import type { L2Client } from './client.js';
 vi.mock('@aztec/aztec.js');
 vi.mock('@turnstile-portal/aztec-artifacts');
 
-describe('L2TokenImpl', () => {
+describe('L2Token', () => {
   // Set up test fixtures
-  let token: L2TokenImpl;
+  let token: L2Token;
   let mockL2Client: L2Client;
   let mockPXE: PXE;
   let mockWallet: Wallet;
@@ -162,12 +162,12 @@ describe('L2TokenImpl', () => {
     } as unknown as ReturnType<typeof TokenContract.deploy>);
 
     // Create token instance
-    token = new L2TokenImpl(mockTokenContract, mockL2Client);
+    token = new L2Token(mockTokenContract, mockL2Client);
   });
 
   describe('constructor and getAddress', () => {
     it('should create a token instance and return the correct address', () => {
-      expect(token).toBeInstanceOf(L2TokenImpl);
+      expect(token).toBeInstanceOf(L2Token);
       expect(token.getAddress()).toBe(tokenAddr);
     });
   });
@@ -711,13 +711,13 @@ describe('L2TokenImpl', () => {
         // Mock the TokenContract.at to return our mock contract
         vi.mocked(TokenContract.at).mockResolvedValue(mockTokenContract);
 
-        const result = await L2TokenImpl.fromAddress(tokenAddr, mockL2Client);
+        const result = await L2Token.fromAddress(tokenAddr, mockL2Client);
 
         // Check that the contract was retrieved with the correct parameters
         expect(TokenContract.at).toHaveBeenCalledWith(tokenAddr, mockWallet);
 
         // Check the result is a token instance with the correct contract
-        expect(result).toBeInstanceOf(L2TokenImpl);
+        expect(result).toBeInstanceOf(L2Token);
         expect(result.getAddress()).toBe(tokenAddr);
       });
 
@@ -728,7 +728,7 @@ describe('L2TokenImpl', () => {
 
         // Check that the error is thrown with the correct code
         await expect(
-          L2TokenImpl.fromAddress(tokenAddr, mockL2Client),
+          L2Token.fromAddress(tokenAddr, mockL2Client),
         ).rejects.toHaveProperty('code', ErrorCode.L2_CONTRACT_INTERACTION);
       });
     });
@@ -755,7 +755,7 @@ describe('L2TokenImpl', () => {
           >,
         );
 
-        const result = await L2TokenImpl.deploy(
+        const result = await L2Token.deploy(
           mockL2Client,
           portalAddr,
           name,
@@ -781,7 +781,7 @@ describe('L2TokenImpl', () => {
         );
 
         // Check the result is a token instance
-        expect(result).toBeInstanceOf(L2TokenImpl);
+        expect(result).toBeInstanceOf(L2Token);
         expect(result.getAddress()).toBe(tokenAddr);
       });
 
@@ -801,7 +801,7 @@ describe('L2TokenImpl', () => {
           >,
         );
 
-        const result = await L2TokenImpl.deploy(
+        const result = await L2Token.deploy(
           mockL2Client,
           portalAddr,
           name,
@@ -822,7 +822,7 @@ describe('L2TokenImpl', () => {
         expect(mockDeployReturn.send).toHaveBeenCalled();
 
         // Check the result is a token instance
-        expect(result).toBeInstanceOf(L2TokenImpl);
+        expect(result).toBeInstanceOf(L2Token);
         expect(result.getAddress()).toBe(tokenAddr);
       });
 
@@ -848,7 +848,7 @@ describe('L2TokenImpl', () => {
 
         // Check that the error is thrown with the correct code
         await expect(
-          L2TokenImpl.deploy(mockL2Client, portalAddr, name, symbol, decimals),
+          L2Token.deploy(mockL2Client, portalAddr, name, symbol, decimals),
         ).rejects.toHaveProperty('code', ErrorCode.L2_DEPLOYMENT);
       });
     });

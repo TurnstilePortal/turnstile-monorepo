@@ -28,7 +28,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist node_modules"
+    "clean": "rm -rf dist node_modules",
+    "test": "vitest run"
   },
   "keywords": [],
   "author": "",

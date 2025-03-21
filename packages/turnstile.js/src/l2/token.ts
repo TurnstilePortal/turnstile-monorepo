@@ -16,7 +16,7 @@ const CONTRACT_ADDRESS_SALT = Fr.fromHexString('0x9876543210');
 /**
  * Interface for L2 token operations
  */
-export interface L2Token {
+export interface IL2Token {
   /**
    * Gets the token address
    * @returns The token address
@@ -105,12 +105,12 @@ export interface L2Token {
 /**
  * Implementation of L2Token for Aztec tokens
  */
-export class L2TokenImpl implements L2Token {
+export class L2Token implements IL2Token {
   private client: L2Client;
   private token: TokenContract;
 
   /**
-   * Creates a new L2TokenImpl
+   * Creates a new L2Token
    * @param token The token contract
    * @param client The L2 client
    */
@@ -389,7 +389,7 @@ export class L2TokenImpl implements L2Token {
   }
 
   /**
-   * Creates a new L2TokenImpl from an address
+   * Creates a new L2Token from an address
    * @param address The token address
    * @param client The L2 client
    * @returns The token
@@ -397,10 +397,10 @@ export class L2TokenImpl implements L2Token {
   static async fromAddress(
     address: AztecAddress,
     client: L2Client,
-  ): Promise<L2TokenImpl> {
+  ): Promise<L2Token> {
     try {
       const token = await TokenContract.at(address, client.getWallet());
-      return new L2TokenImpl(token, client);
+      return new L2Token(token, client);
     } catch (error) {
       throw createL2Error(
         ErrorCode.L2_CONTRACT_INTERACTION,
@@ -426,7 +426,7 @@ export class L2TokenImpl implements L2Token {
     name: string,
     symbol: string,
     decimals: number,
-  ): Promise<L2TokenImpl> {
+  ): Promise<L2Token> {
     try {
       const wallet = client.getWallet();
       const token = await TokenContract.deploy(
@@ -442,7 +442,7 @@ export class L2TokenImpl implements L2Token {
         })
         .deployed();
 
-      return new L2TokenImpl(token, client);
+      return new L2Token(token, client);
     } catch (error) {
       throw createL2Error(
         ErrorCode.L2_DEPLOYMENT,
