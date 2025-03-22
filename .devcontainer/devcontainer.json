@@ -15,7 +15,7 @@
   ],
   "features": {
     "ghcr.io/ClarifiedLabs/devcontainer-features/aztec-sandbox:2": {
-      "version": "0.81.0"
+      "version": "0.82.2"
     },
     "ghcr.io/ClarifiedLabs/devcontainer-features/foundry:1": {
       "version": "nightly"
@@ -31,8 +31,8 @@
   ],
   "containerEnv": {
     "npm_config_store_dir": "/home/vscode/.pnpm-store",
-    "COMPOSE_PROJECT_NAME": "sandbox",
-    "COMPOSE_FILE": "/home/vscode/.aztec/docker-compose.sandbox.yml",
+    "COMPOSE_PROJECT_NAME": "aztec-sandbox",
+    "COMPOSE_FILE": "/home/vscode/turnstile-contracts/docker/docker-compose.yaml",
     "TURNSTILE_DEV_CONTAINER": "1",
     "FOUNDRY_DISABLE_NIGHTLY_WARNING": "1",
     "NODE_NO_WARNINGS": "1"

@@ -1,14 +1,16 @@
-import type { AztecAddress, PXE, Wallet } from '@aztec/aztec.js';
+import {
+  FeeJuicePaymentMethod,
+  type AztecAddress,
+  type AztecNode,
+  type Wallet,
+} from '@aztec/aztec.js';
+import type { UserFeeOptions } from '@aztec/entrypoints/interfaces';
 
 /**
  * Interface for L2 client operations
  */
 export interface IL2Client {
-  /**
-   * Gets the PXE client
-   * @returns The PXE client
-   */
-  getPXE(): PXE;
+  getNode(): AztecNode;
 
   /**
    * Gets the wallet
@@ -27,25 +29,25 @@ export interface IL2Client {
  * Implementation of IL2Client using Aztec.js
  */
 export class L2Client implements IL2Client {
-  private pxe: PXE;
+  private node: AztecNode;
   private wallet: Wallet;
 
   /**
    * Creates a new L2Client
-   * @param pxe The PXE client
+   * @param node The AztecNode client
    * @param wallet The wallet
    */
-  constructor(pxe: PXE, wallet: Wallet) {
-    this.pxe = pxe;
+  constructor(node: AztecNode, wallet: Wallet) {
+    this.node = node;
     this.wallet = wallet;
   }
 
   /**
-   * Gets the PXE client
-   * @returns The PXE client
+   * Gets the AztecNode client
+   * @returns The AztecNode client
    */
-  getPXE(): PXE {
-    return this.pxe;
+  getNode(): AztecNode {
+    return this.node;
   }
 
   /**
@@ -62,5 +64,13 @@ export class L2Client implements IL2Client {
    */
   getAddress(): AztecAddress {
     return this.wallet.getAddress();
+  }
+
+  getFeeOpts(): UserFeeOptions {
+    // TODO: make this configurable
+    return {
+      paymentMethod: new FeeJuicePaymentMethod(this.wallet.getAddress()),
+      estimateGas: true,
+    };
   }
 }

@@ -3,7 +3,7 @@ import {
   Fr,
   EthAddress,
   AztecAddress,
-  type PXE,
+  type AztecNode,
   type Wallet,
 } from '@aztec/aztec.js';
 import { PortalContract } from '@turnstile-portal/aztec-artifacts';
@@ -17,7 +17,7 @@ vi.mock('@turnstile-portal/aztec-artifacts');
 describe('L2Portal', () => {
   let portal: L2Portal;
   let mockL2Client: IL2Client;
-  let mockPXE: PXE;
+  let mockAztecNode: AztecNode;
   let mockWallet: Wallet;
   let portalAddr: AztecAddress;
   // biome-ignore lint/suspicious/noExplicitAny: Using any for test mocks is acceptable
@@ -86,14 +86,14 @@ describe('L2Portal', () => {
 
     vi.mocked(PortalContract.at).mockResolvedValue(mockPortalContract);
 
-    // Mock the PXE with proper mock functions
-    mockPXE = {
+    // Mock the AztecNode with proper mock functions
+    mockAztecNode = {
       getBlockNumber: vi.fn().mockResolvedValue(10),
-      getL1ToL2MembershipWitness: vi.fn(),
+      getL1ToL2MessageMembershipWitness: vi.fn(),
       getNodeInfo: vi.fn().mockResolvedValue({
         l1ChainId: 1,
       }),
-    } as unknown as PXE;
+    } as unknown as AztecNode;
 
     // Mock the wallet
     mockWallet = {
@@ -102,7 +102,7 @@ describe('L2Portal', () => {
 
     // Mock the L2Client
     mockL2Client = {
-      getPXE: vi.fn().mockReturnValue(mockPXE),
+      getNode: vi.fn().mockReturnValue(mockAztecNode),
       getWallet: vi.fn().mockReturnValue(mockWallet),
       getAddress: vi.fn().mockReturnValue(walletAddr),
     };
@@ -268,8 +268,8 @@ describe('L2Portal', () => {
 
     beforeEach(() => {
       // Need to reset these mocks for each test
-      vi.mocked(mockPXE.getBlockNumber).mockReset().mockResolvedValue(10);
-      vi.mocked(mockPXE.getL1ToL2MembershipWitness).mockReset();
+      vi.mocked(mockAztecNode.getBlockNumber).mockReset().mockResolvedValue(10);
+      vi.mocked(mockAztecNode.getL1ToL2MessageMembershipWitness).mockReset();
 
       // Mock the Fr.fromHexString for message hash
       vi.mocked(Fr.fromHexString).mockImplementation(
@@ -282,26 +282,30 @@ describe('L2Portal', () => {
 
     it('should return false if the block is not mined yet', async () => {
       // Setup - current block number is less than the required block
-      vi.mocked(mockPXE.getBlockNumber).mockResolvedValueOnce(4);
+      vi.mocked(mockAztecNode.getBlockNumber).mockResolvedValueOnce(4);
 
       const result = await portal.isClaimed(blockNumber, hash);
 
-      expect(mockPXE.getBlockNumber).toHaveBeenCalled();
+      expect(mockAztecNode.getBlockNumber).toHaveBeenCalled();
       expect(result).toBe(false);
     });
 
     it('should return false if the message is found (not claimed)', async () => {
       // Setup - block is mined but message is found (not claimed)
-      vi.mocked(mockPXE.getBlockNumber).mockResolvedValueOnce(10);
-      vi.mocked(mockPXE.getL1ToL2MembershipWitness).mockResolvedValueOnce(
+      vi.mocked(mockAztecNode.getBlockNumber).mockResolvedValueOnce(10);
+      vi.mocked(
+        mockAztecNode.getL1ToL2MessageMembershipWitness,
+      ).mockResolvedValueOnce(
         // biome-ignore lint/suspicious/noExplicitAny: Using any for test mocks is acceptable
         [123n, {}] as any,
       );
 
       const result = await portal.isClaimed(blockNumber, hash);
 
-      expect(mockPXE.getBlockNumber).toHaveBeenCalled();
-      expect(mockPXE.getL1ToL2MembershipWitness).toHaveBeenCalledWith(
+      expect(mockAztecNode.getBlockNumber).toHaveBeenCalled();
+      expect(
+        mockAztecNode.getL1ToL2MessageMembershipWitness,
+      ).toHaveBeenCalledWith(
         portalAddr,
         expect.anything(),
         L2Portal.PUBLIC_NOT_SECRET_SECRET,
@@ -311,22 +315,24 @@ describe('L2Portal', () => {
 
     it('should return true if the message is not found (claimed)', async () => {
       // Setup - block is mined and message is not found (claimed)
-      vi.mocked(mockPXE.getBlockNumber).mockResolvedValueOnce(10);
-      vi.mocked(mockPXE.getL1ToL2MembershipWitness).mockRejectedValueOnce(
-        new Error('Message not found'),
-      );
+      vi.mocked(mockAztecNode.getBlockNumber).mockResolvedValueOnce(10);
+      vi.mocked(
+        mockAztecNode.getL1ToL2MessageMembershipWitness,
+      ).mockRejectedValueOnce(new Error('Message not found'));
 
       const result = await portal.isClaimed(blockNumber, hash);
 
-      expect(mockPXE.getBlockNumber).toHaveBeenCalled();
-      expect(mockPXE.getL1ToL2MembershipWitness).toHaveBeenCalled();
+      expect(mockAztecNode.getBlockNumber).toHaveBeenCalled();
+      expect(
+        mockAztecNode.getL1ToL2MessageMembershipWitness,
+      ).toHaveBeenCalled();
       expect(result).toBe(true);
     });
 
-    it('should throw an error when PXE operations fail', async () => {
-      // Setup - PXE operations fail with unexpected error
-      vi.mocked(mockPXE.getBlockNumber).mockRejectedValueOnce(
-        new Error('PXE operation failed'),
+    it('should throw an error when AztecNode operations fail', async () => {
+      // Setup - AztecNode operations fail with unexpected error
+      vi.mocked(mockAztecNode.getBlockNumber).mockRejectedValueOnce(
+        new Error('AztecNode operation failed'),
       );
 
       await expect(portal.isClaimed(blockNumber, hash)).rejects.toThrow();
@@ -477,17 +483,19 @@ describe('L2Portal', () => {
       // This specifically tests the error handling in getL1ToL2MessageLeafIndex
       // when the membership witness is undefined
 
-      // Setup - PXE throws a specific error when message not found
-      vi.mocked(mockPXE.getL1ToL2MembershipWitness).mockRejectedValueOnce(
-        new Error('No membership witness found'),
-      );
+      // Setup - AztecNode throws a specific error when message not found
+      vi.mocked(
+        mockAztecNode.getL1ToL2MessageMembershipWitness,
+      ).mockRejectedValueOnce(new Error('No membership witness found'));
 
       // When a message can't be found, isClaimed returns true (message was claimed)
       const result = await portal.isClaimed(5, '0xabcdef');
 
       // Verify method was called, but without specific parameter checking
       // as the parameter order may vary based on implementation details
-      expect(mockPXE.getL1ToL2MembershipWitness).toHaveBeenCalled();
+      expect(
+        mockAztecNode.getL1ToL2MessageMembershipWitness,
+      ).toHaveBeenCalled();
 
       // The rejection should be caught and isClaimed returns true
       expect(result).toBe(true);

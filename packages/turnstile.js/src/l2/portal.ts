@@ -7,7 +7,7 @@ import {
   type Wallet,
 } from '@aztec/aztec.js';
 import { PortalContract } from '@turnstile-portal/aztec-artifacts';
-import { ErrorCode, createL2Error } from '../errors.js';
+import { ErrorCode, createL2Error, isTurnstileError } from '../errors.js';
 import type { IL2Client } from './client.js';
 
 /**
@@ -277,8 +277,8 @@ export class L2Portal implements IL2Portal {
    */
   async isClaimed(l2BlockNumber: number, hash: string): Promise<boolean> {
     try {
-      const pxe = this.client.getPXE();
-      if ((await pxe.getBlockNumber()) < l2BlockNumber) {
+      const node = this.client.getNode();
+      if ((await node.getBlockNumber()) < l2BlockNumber) {
         return false;
       }
 
@@ -501,11 +501,10 @@ export class L2Portal implements IL2Portal {
     l1ToL2Message: string,
   ): Promise<number> {
     try {
-      const pxe = this.client.getPXE();
-      const wit = await pxe.getL1ToL2MembershipWitness(
-        this.portalAddr,
+      const node = this.client.getNode();
+      const wit = await node.getL1ToL2MessageMembershipWitness(
+        'latest',
         Fr.fromHexString(l1ToL2Message),
-        L2Portal.PUBLIC_NOT_SECRET_SECRET,
       );
       if (!wit) {
         throw createL2Error(
@@ -517,6 +516,9 @@ export class L2Portal implements IL2Portal {
       const [messageIndex] = wit;
       return Number(messageIndex);
     } catch (error) {
+      if (isTurnstileError(error)) {
+        throw error;
+      }
       throw createL2Error(
         ErrorCode.BRIDGE_MESSAGE,
         `Failed to get L1ToL2Message leaf index for ${l1ToL2Message}`,
@@ -540,10 +542,10 @@ export class L2Portal implements IL2Portal {
   ): Promise<Fr> {
     try {
       const l1PortalAddr = await this.getL1Portal();
-      const pxe = this.client.getPXE();
+      const node = this.client.getNode();
 
       // Using this to get the L1 Chain ID
-      const nodeInfo = await pxe.getNodeInfo();
+      const nodeInfo = await node.getNodeInfo();
 
       const encoded = this.encodeWithdrawData(
         l1TokenAddr,

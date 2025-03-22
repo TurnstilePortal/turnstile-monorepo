@@ -23,7 +23,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@aztec/*": "0.81.0"
+      "@aztec/*": "0.82.2"
     }
   },
   "devDependencies": {

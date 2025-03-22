@@ -1,11 +1,9 @@
 import type { Command } from 'commander';
 import {
+  createAztecNodeClient,
   createPXEClient,
   AztecAddress,
-  type PXE,
-  TxStatus,
 } from '@aztec/aztec.js';
-import type { Wallet as AztecWallet } from '@aztec/aztec.js';
 
 import { http, type Hex } from 'viem';
 
@@ -22,62 +20,11 @@ import {
 
 import type { DeploymentDataToken } from '@turnstile-portal/turnstile-dev';
 
-import { deployL1DevToken, deployL2DevToken } from '../lib/deploy/devTokens.js';
+import { deployTokens, deployToken, DEV_TOKENS } from '../lib/tokens.js';
 
 import { commonOpts } from './common.js';
 
-const devTokens = {
-  DAI: {
-    name: 'DAI',
-    symbol: 'DAI',
-    decimals: 18,
-  },
-  USDC: {
-    name: 'USD Coin',
-    symbol: 'USDC',
-    decimals: 6,
-  },
-  USDT: {
-    name: 'Tether USD',
-    symbol: 'USDT',
-    decimals: 6,
-  },
-  WETH: {
-    name: 'Wrapped Ether',
-    symbol: 'WETH',
-    decimals: 18,
-  },
-  AZT: {
-    name: 'Aztec Token',
-    symbol: 'AZT',
-    decimals: 18,
-  },
-  TT1: {
-    name: 'Test Token 1',
-    symbol: 'TT1',
-    decimals: 18,
-  },
-  TT2: {
-    name: 'Test Token 2',
-    symbol: 'TT2',
-    decimals: 18,
-  },
-  TT3: {
-    name: 'Test Token 3',
-    symbol: 'TT3',
-    decimals: 18,
-  },
-  TT4: {
-    name: 'Test Token 4',
-    symbol: 'TT4',
-    decimals: 18,
-  },
-  TT5: {
-    name: 'Test Token 5',
-    symbol: 'TT5',
-    decimals: 18,
-  },
-};
+// Now using DEV_TOKENS from tokens.js library
 
 export function registerDeployDevTokens(program: Command) {
   return program
@@ -90,12 +37,14 @@ export function registerDeployDevTokens(program: Command) {
     .addOption(commonOpts.deploymentData)
     .action(async (options) => {
       const pxe = createPXEClient(options.pxe);
+      const node = createAztecNodeClient(options.aztecNode);
       try {
         console.log('PXE URL:', options.pxe);
         console.log('RPC URL:', options.rpc);
         console.log('L1 Chain:', options.l1Chain);
 
         const { l1Client, l2Client } = await getClients(
+          node,
           pxe,
           {
             chain: getChain(options.l1Chain),
@@ -119,22 +68,21 @@ export function registerDeployDevTokens(program: Command) {
           deploymentData.tokens = {};
         }
 
-        // Deploy the tokens
-        for (const { symbol, name, decimals } of Object.values(devTokens)) {
-          const { l1Token, l2Token } = await deployDevTokenContract(
-            l1Client,
-            l2Client.getWallet(),
-            aztecPortal,
-            name,
-            symbol,
-            decimals,
-          );
+        // Deploy tokens using the shared library
+        const tokenResults = await deployTokens(
+          l1Client,
+          l2Client,
+          deploymentData.aztecPortal as `0x${string}`,
+        );
+
+        // Store results in deployment data
+        for (const [symbol, result] of Object.entries(tokenResults)) {
           deploymentData.tokens[symbol] = {
-            name,
-            symbol,
-            decimals,
-            l1Address: l1Token,
-            l2Address: l2Token,
+            name: result.name,
+            symbol: result.symbol,
+            decimals: result.decimals,
+            l1Address: result.l1Address,
+            l2Address: result.l2Address,
           };
         }
 
@@ -148,7 +96,7 @@ export function registerDeployDevTokens(program: Command) {
         let advanceToL2Block = BigInt(0);
 
         // Register the tokens with the L1 Portal
-        for (const { symbol } of Object.values(devTokens)) {
+        for (const { symbol } of Object.values(DEV_TOKENS)) {
           const tokenInfo = deploymentData.tokens[symbol];
 
           if (!tokenInfo) {
@@ -206,25 +154,7 @@ export function registerDeployDevTokens(program: Command) {
     });
 }
 
-async function deployDevTokenContract(
-  l1Client: L1Client,
-  l2Wallet: AztecWallet,
-  aztecPortal: AztecAddress,
-  name: string,
-  symbol: string,
-  decimals: number,
-): Promise<{ l1Token: Hex; l2Token: Hex }> {
-  const l1Token = await deployL1DevToken(l1Client, name, symbol, decimals);
-  const l2Token = await deployL2DevToken(
-    l2Wallet,
-    aztecPortal,
-    name,
-    symbol,
-    decimals,
-  );
-
-  return { l1Token, l2Token };
-}
+// This function is no longer needed as we use the shared tokens library
 
 async function registerDevTokenContractL1(
   l1Client: L1Client,
@@ -240,35 +170,4 @@ async function registerDevTokenContractL1(
     messageIndex: result.messageIndex,
     messageHash: result.messageHash,
   };
-}
-
-// L2 registration is now handled differently in the refactored code
-// This function is kept for reference but is not used
-async function registerDevTokenContractL2(
-  pxe: PXE,
-  l2Wallet: AztecWallet,
-  aztecPortal: string,
-  index: bigint,
-  tokenInfo: DeploymentDataToken,
-  hash: Hex,
-) {
-  console.warn(
-    'L2 token registration is now handled differently in the refactored code',
-  );
-  // This would use the new L2TokenPortal class with the AztecL2Client
-  return { status: TxStatus.SUCCESS };
-}
-
-// Allow list functionality is now handled differently in the refactored code
-// This function is kept for reference but is not used
-async function proposeAndAccept(
-  l1Client: L1Client,
-  l1AllowList: Hex,
-  token: Hex,
-) {
-  console.warn(
-    'Allow list functionality is now handled differently in the refactored code',
-  );
-  // Would need to be updated to use the new client interface
-  console.log(`Simulating acceptance of token ${token} in the allow list`);
 }

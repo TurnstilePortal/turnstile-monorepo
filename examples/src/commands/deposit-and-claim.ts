@@ -1,5 +1,10 @@
 import type { Command } from 'commander';
-import { createPXEClient, TxStatus, AztecAddress } from '@aztec/aztec.js';
+import {
+  createAztecNodeClient,
+  createPXEClient,
+  TxStatus,
+  AztecAddress,
+} from '@aztec/aztec.js';
 import { http, getAddress } from 'viem';
 import type { Address } from 'viem';
 import {
@@ -99,8 +104,10 @@ export function registerDepositAndClaim(program: Command) {
       const l1TokenAddr = tokenInfo.l1Address;
 
       const pxe = createPXEClient(options.pxe);
+      const node = createAztecNodeClient(options.aztecNode);
 
       const { l1Client, l2Client } = await getClients(
+        node,
         pxe,
         {
           chain: getChain(options.l1Chain),

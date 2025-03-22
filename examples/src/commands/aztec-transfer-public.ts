@@ -1,5 +1,9 @@
 import type { Command } from 'commander';
-import { createPXEClient, AztecAddress } from '@aztec/aztec.js';
+import {
+  createAztecNodeClient,
+  createPXEClient,
+  AztecAddress,
+} from '@aztec/aztec.js';
 import type { Wallet } from '@aztec/aztec.js';
 import { getInitialTestAccountsWallets } from '@aztec/accounts/testing';
 import {
@@ -60,6 +64,7 @@ export function registerAztecTransferPublic(program: Command) {
     .description('Transfer Aztec tokens publicly')
     .addOption(commonOpts.keys)
     .addOption(commonOpts.pxe)
+    .addOption(commonOpts.aztecNode)
     .addOption(commonOpts.rpc)
     .addOption(commonOpts.deploymentData)
     .option('--token <symbol>', 'Token Symbol', 'TT1')
@@ -74,9 +79,10 @@ export function registerAztecTransferPublic(program: Command) {
       const tokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
 
       const pxe = createPXEClient(options.pxe);
+      const node = createAztecNodeClient(options.aztecNode);
 
       const keyData = await readKeyData(options.keys);
-      const l2Client = await createL2Client(pxe, keyData);
+      const l2Client = await createL2Client(pxe, node, keyData);
       const amount = BigInt(options.amount);
 
       const aztecTestWallets = await getInitialTestAccountsWallets(pxe);

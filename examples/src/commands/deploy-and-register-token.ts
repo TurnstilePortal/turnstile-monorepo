@@ -1,8 +1,12 @@
 import type { Command } from 'commander';
 import { randomBytes } from 'node:crypto';
-import { createPXEClient, AztecAddress, TxStatus } from '@aztec/aztec.js';
+import {
+  createAztecNodeClient,
+  createPXEClient,
+  AztecAddress,
+  TxStatus,
+} from '@aztec/aztec.js';
 import { http, getAddress } from 'viem';
-import type { Address } from 'viem';
 import {
   advanceBlocksUntil,
   getChain,
@@ -22,6 +26,7 @@ export function registerDeployAndRegisterToken(program: Command) {
     )
     .addOption(commonOpts.keys)
     .addOption(commonOpts.pxe)
+    .addOption(commonOpts.aztecNode)
     .addOption(commonOpts.l1Chain)
     .addOption(commonOpts.rpc)
     .addOption(commonOpts.deploymentData)
@@ -31,7 +36,9 @@ export function registerDeployAndRegisterToken(program: Command) {
       // Get deployment data and setup clients
       const deploymentData = await readDeploymentData(options.deploymentData);
       const pxe = createPXEClient(options.pxe);
-      const { l1Client, l2Client } = await getClients(
+      const node = createAztecNodeClient(options.aztecNode);
+      const { l2Client } = await getClients(
+        node,
         pxe,
         {
           chain: getChain(options.l1Chain),

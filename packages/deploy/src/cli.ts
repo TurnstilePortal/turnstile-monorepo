@@ -7,6 +7,10 @@ import { registerDeployDevTokens } from './commands/deploy-dev-tokens.js';
 import { registerDeployAztecKey } from './commands/deploy-aztec-key.js';
 import { registerFundDevAccount } from './commands/fund-dev-account.js';
 import { registerDeployAztecOnlyTokens } from './commands/deploy-aztec-only-tokens.js';
+import { registerDeployCommand } from './commands/deploy-command.js';
+
+// Initialize setup modules
+import './setup/index.js';
 
 async function main() {
   const program = new Command();
@@ -22,6 +26,7 @@ async function main() {
   registerDeployAztecKey(program);
   registerFundDevAccount(program);
   registerDeployAztecOnlyTokens(program);
+  registerDeployCommand(program);
 
   await program.parseAsync();
 }

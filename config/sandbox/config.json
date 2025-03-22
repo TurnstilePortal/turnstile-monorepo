@@ -1,0 +1,71 @@
+{
+  "name": "Sandbox Environment",
+  "connection": {
+    "ethereum": {
+      "rpc": "http://localhost:8545",
+      "chainName": "anvil"
+    },
+    "aztec": {
+      "pxe": "http://localhost:8080",
+      "node": "http://localhost:8080"
+    }
+  },
+  "deployment": {
+    "overwrite": true,
+    "generateKeysIfMissing": true,
+    "deployKeys": true,
+    "tokens": {
+      "DAI": {
+        "name": "DAI",
+        "symbol": "DAI",
+        "decimals": 18
+      },
+      "USDC": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "decimals": 6
+      },
+      "USDT": {
+        "name": "Tether USD",
+        "symbol": "USDT",
+        "decimals": 6
+      },
+      "WETH": {
+        "name": "Wrapped Ether",
+        "symbol": "WETH",
+        "decimals": 18
+      },
+      "AZT": {
+        "name": "Aztec Token",
+        "symbol": "AZT",
+        "decimals": 18
+      },
+      "TT1": {
+        "name": "Test Token 1",
+        "symbol": "TT1",
+        "decimals": 18
+      },
+      "TT2": {
+        "name": "Test Token 2",
+        "symbol": "TT2",
+        "decimals": 18
+      },
+      "TT3": {
+        "name": "Test Token 3",
+        "symbol": "TT3",
+        "decimals": 18
+      },
+      "TT4": {
+        "name": "Test Token 4",
+        "symbol": "TT4",
+        "decimals": 18
+      },
+      "TT5": {
+        "name": "Test Token 5",
+        "symbol": "TT5",
+        "decimals": 18
+      }
+    }
+  },
+  "setup": "SandboxSetup"
+}

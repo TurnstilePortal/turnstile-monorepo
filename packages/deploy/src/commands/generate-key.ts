@@ -3,7 +3,6 @@ import { existsSync, writeFileSync } from 'node:fs';
 import { createPXEClient } from '@aztec/aztec.js';
 import { parseEther } from 'viem';
 import {
-  anvilFundMe,
   generateAndDeployAztecAccountSchnorr,
   generateEthAccount,
   type KeyData,

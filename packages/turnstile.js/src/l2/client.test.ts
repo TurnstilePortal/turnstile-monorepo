@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { PXE, Wallet, AztecAddress } from '@aztec/aztec.js';
+import type { AztecNode, Wallet, AztecAddress } from '@aztec/aztec.js';
 import { L2Client } from './client.js';
 
 // Mock AztecAddress type
@@ -23,9 +23,9 @@ const mockWallet = {
   getAddress: vi.fn().mockReturnValue(mockAddress),
 };
 
-// Mock the PXE
-const mockPXE = {
-  // Add any PXE methods that might be used
+// Mock the AztecNode
+const mockAztecNode = {
+  // Add any AztecNode methods that might be used
 };
 
 describe('L2Client', () => {
@@ -37,15 +37,15 @@ describe('L2Client', () => {
 
     // Create a new client for each test
     client = new L2Client(
-      mockPXE as unknown as PXE,
+      mockAztecNode as unknown as AztecNode,
       mockWallet as unknown as Wallet,
     );
   });
 
-  describe('getPXE', () => {
-    it('should return the PXE client', () => {
-      const pxe = client.getPXE();
-      expect(pxe).toBe(mockPXE);
+  describe('getNode', () => {
+    it('should return the AztecNode client', () => {
+      const node = client.getNode();
+      expect(node).toBe(mockAztecNode);
     });
   });
 

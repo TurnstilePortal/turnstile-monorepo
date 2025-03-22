@@ -12,7 +12,6 @@ import {
   getClients,
   readDeploymentData,
   setAssumeProven,
-  createL1Client,
 } from '@turnstile-portal/turnstile-dev';
 
 import { commonOpts } from '@turnstile-portal/deploy/commands';
@@ -85,7 +84,7 @@ async function initiateL2Withdrawal({
   );
   console.log(`L2 to L1 message leaf: ${leaf}`);
 
-  const receipt = await withdrawTx.wait({ debug: true }); // `debug: true` gives us `debugInfo` in the receipt
+  const receipt = await withdrawTx.wait();
   if (receipt.status !== TxStatus.SUCCESS) {
     throw new Error('Withdrawal failed');
   }
@@ -182,6 +181,7 @@ export function registerWithdrawTokens(program: Command) {
       const node = createAztecNodeClient(options.pxe);
 
       const { l1Client, l2Client } = await getClients(
+        node,
         pxe,
         {
           chain: getChain(options.l1Chain),

@@ -1,5 +1,9 @@
 import type { Command } from 'commander';
-import { createPXEClient, AztecAddress } from '@aztec/aztec.js';
+import {
+  createPXEClient,
+  AztecAddress,
+  createAztecNodeClient,
+} from '@aztec/aztec.js';
 import { getInitialTestAccountsWallets } from '@aztec/accounts/testing';
 
 import { http } from 'viem';
@@ -75,12 +79,15 @@ export function registerDeployAztecOnlyTokens(program: Command) {
     .description('Deploy tokens on aztec L2')
     .addOption(commonOpts.keys)
     .addOption(commonOpts.pxe)
+    .addOption(commonOpts.aztecNode)
     .addOption(commonOpts.rpc)
     .addOption(commonOpts.deploymentData)
     .action(async (options) => {
       const pxe = createPXEClient(options.pxe);
+      const node = createAztecNodeClient(options.aztecNode);
       try {
         const { l2Client } = await getClients(
+          node,
           pxe,
           {
             chain: getChain('anvil'),

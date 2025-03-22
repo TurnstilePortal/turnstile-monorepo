@@ -1,4 +1,5 @@
 import {
+  Capsule,
   Fr,
   type AztecAddress,
   type ContractFunctionInteraction,
@@ -6,7 +7,7 @@ import {
 } from '@aztec/aztec.js';
 import { TokenContract } from '@turnstile-portal/aztec-artifacts';
 import { readFieldCompressedString } from '@aztec/aztec.js';
-import { ErrorCode, createL2Error } from '../errors.js';
+import { ErrorCode, createL2Error, isTurnstileError } from '../errors.js';
 import type { L2Client } from './client.js';
 
 // Constants
@@ -269,30 +270,36 @@ export class L2Token implements IL2Token {
   ): Promise<SentTx> {
     try {
       const from = this.client.getAddress();
-      const wallet = this.client.getWallet();
 
       // Get the shield gateway address
       const shieldGatewayAddr = await this.getShieldGatewayAddress();
 
-      // Store the verified ID in the wallet
-      wallet.storeCapsule(shieldGatewayAddr, VP_SLOT, verifiedID);
+      // Create function interaction
+      const interaction = this.token.methods.transfer_private_to_private(
+        from,
+        to,
+        amount,
+        Fr.ZERO, // nonce
+      );
 
-      return this.token.methods
-        .transfer_private_to_private(
-          from,
-          to,
-          amount,
-          Fr.ZERO, // nonce
-        )
-        .send();
+      interaction.with({
+        capsules: [new Capsule(shieldGatewayAddr, VP_SLOT, verifiedID)],
+      });
+      return interaction.send();
     } catch (error) {
+      if (isTurnstileError(error)) {
+        // If this is already a TurnstileError, just rethrow it
+        throw error;
+      }
+
+      const recipientStr = to ? to.toString() : 'null';
       throw createL2Error(
         ErrorCode.L2_TOKEN_OPERATION,
-        `Failed to transfer ${amount} tokens privately to ${to} for token ${this.token.address}`,
+        `Failed to transfer ${amount} tokens privately to ${recipientStr} for token ${this.token.address}`,
         {
           tokenAddress: this.token.address.toString(),
           amount: amount.toString(),
-          recipient: to.toString(),
+          recipient: recipientStr,
         },
         error,
       );

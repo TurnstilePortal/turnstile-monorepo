@@ -209,3 +209,7 @@ export function createValidationError(
   }
   return new TurnstileError(code, message, context, cause);
 }
+
+export function isTurnstileError(error: unknown): error is TurnstileError {
+  return error instanceof TurnstileError;
+}

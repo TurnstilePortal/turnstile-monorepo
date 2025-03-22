@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
-import type { AccountWallet, PXE } from '@aztec/aztec.js';
+import type { AccountWallet, AztecNode, PXE } from '@aztec/aztec.js';
 import type {
   PublicClient,
   WalletClient,
@@ -32,6 +32,7 @@ describe('Turnstile Dev Utils', () => {
 
     // Setup mocks
     const mockPXE = {} as PXE;
+    const mockNode = {} as AztecNode;
     const mockL1Config = {
       chain: { id: 1 } as Chain,
       transport: {} as Transport,
@@ -56,7 +57,12 @@ describe('Turnstile Dev Utils', () => {
     );
 
     // Call the function
-    const result = await getClients(mockPXE, mockL1Config, 'test-key.json');
+    const result = await getClients(
+      mockNode,
+      mockPXE,
+      mockL1Config,
+      'test-key.json',
+    );
 
     // Verify result
     expect(result).toBeDefined();

@@ -15,6 +15,7 @@ export async function deployERC20AllowList(
   adminAddr: Hex,
   approverAddr: Hex,
 ): Promise<Hex> {
+  console.log('Deploying AllowList...');
   const walletClient = client.getWalletClient();
   const account = walletClient.account;
   if (!account) {
@@ -26,9 +27,9 @@ export async function deployERC20AllowList(
     bytecode: ERC20AllowListBytecode,
     args: [adminAddr, approverAddr],
     account,
-    authorizationList: [],
     chain: walletClient.chain,
   });
+  console.log('AllowList deployed with tx hash:', txHash);
   const receipt = await client
     .getPublicClient()
     .waitForTransactionReceipt({ hash: txHash });
@@ -49,6 +50,7 @@ export async function deployERC20TokenPortal(
   allowListAddr: Hex,
   l2PortalInitializerAddr: Hex,
 ): Promise<Hex> {
+  console.log('Deploying L1 TokenPortal...');
   const walletClient = client.getWalletClient();
   const account = walletClient.account;
   if (!account) {
@@ -60,7 +62,6 @@ export async function deployERC20TokenPortal(
     bytecode: ERC20TokenPortalBytecode,
     args: [aztecRegistryAddr, allowListAddr, l2PortalInitializerAddr],
     account,
-    authorizationList: [],
     chain: walletClient.chain,
   });
 

@@ -1,5 +1,11 @@
 import type { Command } from 'commander';
-import { createPXEClient, AztecAddress, Fr, TxStatus } from '@aztec/aztec.js';
+import {
+  createAztecNodeClient,
+  createPXEClient,
+  AztecAddress,
+  Fr,
+  TxStatus,
+} from '@aztec/aztec.js';
 import type { Wallet } from '@aztec/aztec.js';
 import { getInitialTestAccountsWallets } from '@aztec/accounts/testing';
 import {
@@ -72,6 +78,7 @@ export function registerAztecTransferPrivate(program: Command) {
     .description('Transfer Aztec tokens privately using a verified ID')
     .addOption(commonOpts.keys)
     .addOption(commonOpts.pxe)
+    .addOption(commonOpts.aztecNode)
     .addOption(commonOpts.rpc)
     .addOption(commonOpts.deploymentData)
     .option('--token <symbol>', 'Token Symbol', 'TT1')
@@ -85,6 +92,7 @@ export function registerAztecTransferPrivate(program: Command) {
       }
       const tokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
 
+      const node = createAztecNodeClient(options.aztecNode);
       const pxe = createPXEClient(options.pxe);
       const aztecTestWallets = await getInitialTestAccountsWallets(pxe);
 
@@ -110,7 +118,7 @@ export function registerAztecTransferPrivate(program: Command) {
       }
 
       const keyData = await readKeyData(options.keys);
-      const senderClient = await createL2Client(pxe, keyData);
+      const senderClient = await createL2Client(pxe, node, keyData);
       const amount = BigInt(options.amount);
 
       const recipientClient = createL2ClientFromWallet(recipientWallet);

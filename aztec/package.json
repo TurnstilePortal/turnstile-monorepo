@@ -12,17 +12,17 @@
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@aztec/accounts": "0.81.0",
-    "@aztec/aztec.js": "0.81.0",
-    "@aztec/foundation": "0.81.0",
-    "@aztec/noir-contracts.js": "0.81.0",
+    "@aztec/accounts": "0.82.2",
+    "@aztec/aztec.js": "0.82.2",
+    "@aztec/foundation": "0.82.2",
+    "@aztec/noir-contracts.js": "0.82.2",
     "@turnstile-portal/aztec-artifacts": "workspace:^",
     "@turnstile-portal/turnstile.js": "workspace:^",
     "@types/node": "^22.5.4",
     "@types/yargs": "^17.0.33",
     "tsx": "^4.19.0",
     "typescript": "^5.6.2",
-    "viem": "^2.21.15",
+    "viem": "^2.23.13",
     "yargs": "^17.7.2"
   },
   "version": "0.0.28"

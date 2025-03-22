@@ -39,7 +39,6 @@ export async function deployL1DevToken(
     bytecode: InsecureMintableTokenBytecode,
     args: [name, symbol, decimals],
     account,
-    authorizationList: [],
     chain: walletClient.chain,
   });
 
@@ -94,7 +93,6 @@ export async function fundL1DevToken(
   const mintHash = await tokenContract.write.mint([walletAddress, amount], {
     account,
     chain: walletClient.chain,
-    authorizationList: [],
   });
   const mintReceipt = await publicClient.waitForTransactionReceipt({
     hash: mintHash,
@@ -111,7 +109,6 @@ export async function fundL1DevToken(
     const additionalMintHash = await tokenContract.write.mint([a, amount], {
       account,
       chain: walletClient.chain,
-      authorizationList: [],
     });
     const additionalMintReceipt = await publicClient.waitForTransactionReceipt({
       hash: additionalMintHash,

@@ -1,17 +1,7 @@
 import type { Command } from 'commander';
-import { createPXEClient } from '@aztec/aztec.js';
+import { createAztecNodeClient, createPXEClient } from '@aztec/aztec.js';
 
-import {
-  deployERC20AllowList,
-  deployERC20TokenPortal,
-  setL2PortalOnL1Portal,
-} from '../lib/deploy/l1Portal.js';
-import {
-  deployBeacon,
-  deployTurnstileTokenPortal,
-  deployShieldGateway,
-  registerTurnstileTokenContractClass,
-} from '../lib/deploy/l2Portal.js';
+import { deployTurnstileContracts } from '../lib/deployment.js';
 import {
   getChain,
   getClients,
@@ -47,10 +37,12 @@ export function registerDeployTurnstileContracts(program: Command) {
     )
     .action(async (options) => {
       const pxe = createPXEClient(options.pxe);
+      const node = createAztecNodeClient(options.aztecNode);
       try {
         console.log('PXE URL:', options.pxe);
         console.log('RPC URL:', options.rpc);
         const { l1Client, l2Client } = await getClients(
+          node,
           pxe,
           {
             chain: getChain(options.l1Chain),
@@ -71,40 +63,27 @@ export function registerDeployTurnstileContracts(program: Command) {
 
         const deploymentData = await readDeploymentData(options.deploymentData);
 
-        console.log('Deploying L1 Portal...');
-        const { allowList, tokenPortal: l1Portal } = await deployL1Portal(
-          options,
+        // Use our shared deployment library
+        const deploymentResult = await deployTurnstileContracts(
           l1Client,
-          deploymentData,
+          l2Client,
+          {
+            registryAddress: deploymentData.registryAddress,
+            allowListAdmin: options.allowListAdmin,
+            allowListApprover: options.allowListApprover,
+            l2PortalInitializer: options.l2PortalInitializer,
+          },
         );
-        console.log(`Deployed L1 Portal at ${l1Portal}`);
 
-        deploymentData.l1AllowList = allowList;
-        deploymentData.l1Portal = l1Portal;
-
-        console.log('Deploying L2 Portal...');
-        const {
-          tokenContractClassID,
-          shieldGateway,
-          portal: aztecPortal,
-        } = await deployL2Portal(
-          l2Client.getWallet(),
-          EthAddress.fromString(l1Portal),
-        );
-        console.log(`Deployed L2 Portal at ${aztecPortal.address.toString()}`);
-
+        // Store the deployment results
+        deploymentData.l1AllowList = deploymentResult.l1AllowList;
+        deploymentData.l1Portal = deploymentResult.l1Portal;
         deploymentData.aztecTokenContractClassID =
-          tokenContractClassID.toString();
-        deploymentData.aztecPortal = aztecPortal.address.toString();
-        deploymentData.aztecShieldGateway = shieldGateway.address.toString();
-
-        // Register L2 Portal with L1 Portal
-        console.log('Registering L2 Portal with L1 Portal...');
-        await setL2PortalOnL1Portal(
-          l1Client,
-          l1Portal,
-          aztecPortal.address.toString(),
-        );
+          deploymentResult.aztecTokenContractClassID;
+        deploymentData.aztecPortal =
+          deploymentResult.aztecPortal as `0x${string}`;
+        deploymentData.aztecShieldGateway =
+          deploymentResult.aztecShieldGateway as `0x${string}`;
 
         await writeDeploymentData(options.deploymentData, deploymentData);
       } catch (error) {
@@ -114,45 +93,5 @@ export function registerDeployTurnstileContracts(program: Command) {
     });
 }
 
-async function deployL1Portal(
-  // biome-ignore lint/suspicious/noExplicitAny: any is used for commander options
-  options: any,
-  l1Client: L1Client,
-  deploymentData: DeploymentData,
-): Promise<{ allowList: Hex; tokenPortal: Hex }> {
-  const allowList = await deployERC20AllowList(
-    l1Client,
-    options.allowListAdmin,
-    options.allowListApprover,
-  );
-  const tokenPortal = await deployERC20TokenPortal(
-    l1Client,
-    deploymentData.registryAddress,
-    allowList,
-    options.l2PortalInitializer,
-  );
-
-  return { allowList, tokenPortal };
-}
-
-async function deployL2Portal(wallet: AztecWallet, l1Portal: EthAddress) {
-  const tokenContractClassID =
-    await registerTurnstileTokenContractClass(wallet);
-  const shieldGateway = await deployShieldGateway(
-    wallet /* this needs to be an admin wallet */,
-  );
-  const shieldGatewayBeacon = await deployBeacon(
-    wallet,
-    wallet.getAddress(), // admin address
-    shieldGateway.address,
-  );
-
-  const portal = await deployTurnstileTokenPortal(
-    wallet,
-    l1Portal,
-    tokenContractClassID,
-    shieldGatewayBeacon.address,
-  );
-
-  return { tokenContractClassID, shieldGateway, portal };
-}
+// The deployL1Portal and deployL2Portal functions are no longer needed
+// as they are now part of the deployTurnstileContracts implementation

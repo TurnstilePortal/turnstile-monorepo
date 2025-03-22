@@ -23,9 +23,10 @@ import {
 
 const RPC_URL = process.env.RPC_URL || 'http://localhost:8545';
 const PXE_URL = process.env.PXE_URL || 'http://localhost:8080';
+const AZTEC_NODE_URL = process.env.AZTEC_NODE_URL || 'http://localhost:8080';
 
 const pxe = createPXEClient(PXE_URL, {}, makeFetch([], true));
-const node = createAztecNodeClient(PXE_URL);
+const node = createAztecNodeClient(AZTEC_NODE_URL);
 
 export const l1PublicClient = createPublicClient({
   chain: anvil,
@@ -82,6 +83,7 @@ const deploymentData = await readDeploymentData(deploymentDataPath);
 const keyData = await readKeyData(keyDataPath);
 
 const { l1Client, l2Client } = await getClients(
+  node,
   pxe,
   {
     chain: anvil,

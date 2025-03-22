@@ -1,5 +1,10 @@
 import type { Command } from 'commander';
-import { createPXEClient, AztecAddress, TxStatus } from '@aztec/aztec.js';
+import {
+  createAztecNodeClient,
+  createPXEClient,
+  AztecAddress,
+  TxStatus,
+} from '@aztec/aztec.js';
 import type { Wallet } from '@aztec/aztec.js';
 import {
   readDeploymentData,
@@ -49,6 +54,7 @@ export function registerUnshieldTokens(program: Command) {
     .description('Unshield tokens')
     .addOption(commonOpts.keys)
     .addOption(commonOpts.pxe)
+    .addOption(commonOpts.aztecNode)
     .addOption(commonOpts.rpc)
     .addOption(commonOpts.deploymentData)
     .option('--token <symbol>', 'Token Symbol', 'TT1')
@@ -62,9 +68,10 @@ export function registerUnshieldTokens(program: Command) {
       const tokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
 
       const pxe = createPXEClient(options.pxe);
+      const node = createAztecNodeClient(options.aztecNode);
 
       const keyData = await readKeyData(options.keys);
-      const l2Client = await createL2Client(pxe, keyData);
+      const l2Client = await createL2Client(pxe, node, keyData);
       const amount = BigInt(options.amount);
       const token = await L2Token.fromAddress(tokenAddr, l2Client);
       const startingBalance = await token.balanceOfPublic(

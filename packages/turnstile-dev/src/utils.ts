@@ -1,5 +1,5 @@
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { anvil, mainnet } from 'viem/chains';
+import { anvil, sepolia, mainnet } from 'viem/chains';
 import {
   createPublicClient,
   createWalletClient,
@@ -7,20 +7,18 @@ import {
   defineChain,
   type Account,
   type Chain,
-  type PublicClient,
   type Transport,
-  type WalletClient,
   type Hex,
 } from 'viem';
-import {
-  AztecAddress,
-  Fr,
-  Fq,
-  type Wallet as AztecWallet,
+import { AztecAddress, Fr, Fq } from '@aztec/aztec.js';
+import type {
+  AccountWallet,
+  AztecNode,
+  PXE,
+  Wallet as AztecWallet,
 } from '@aztec/aztec.js';
 import { getSchnorrAccount, getSchnorrWallet } from '@aztec/accounts/schnorr';
 import { getDeployedTestAccountsWallets } from '@aztec/accounts/testing';
-import type { AccountWallet, PXE } from '@aztec/aztec.js';
 import { deriveSigningKey } from '@aztec/stdlib/keys';
 import { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
 
@@ -78,6 +76,7 @@ export function generateEthAccount(): { privateKey: Hex; address: Hex } {
 }
 
 export async function getClients(
+  aztecNode: AztecNode,
   pxe: PXE,
   l1Config: { chain: Chain; transport: Transport },
   keyDataFile: string,
@@ -88,7 +87,7 @@ export async function getClients(
   // Add console logging to help debug
   console.log('Reading key data from:', keyDataFile);
   const keyData = await readKeyData(keyDataFile);
-  console.log('KeyData received:', JSON.stringify(keyData, null, 2));
+  // console.log('KeyData received:', JSON.stringify(keyData, null, 2));
 
   // Add a safeguard to ensure we have the required fields
   if (!keyData || !keyData.l1PrivateKey) {
@@ -99,7 +98,7 @@ export async function getClients(
 
   return {
     l1Client: await createL1Client(l1Config, keyData),
-    l2Client: await createL2Client(pxe, keyData),
+    l2Client: await createL2Client(pxe, aztecNode, keyData),
   };
 }
 
@@ -123,6 +122,7 @@ export async function createL1Client(
 
 export async function createL2Client(
   pxe: PXE,
+  node: AztecNode,
   keyData: KeyData,
 ): Promise<L2Client> {
   const wallet = await getSchnorrWallet(
@@ -130,7 +130,7 @@ export async function createL2Client(
     AztecAddress.fromString(keyData.l2Address),
     Fq.fromString(keyData.l2SigningKey),
   );
-  return new L2Client(pxe, wallet);
+  return new L2Client(node, wallet);
 }
 
 const devnet = defineChain({
@@ -153,6 +153,8 @@ export function getChain(chain: string): Chain {
   switch (chain) {
     case 'mainnet':
       return mainnet;
+    case 'sepolia':
+      return sepolia;
     case 'anvil':
       return anvil;
     case 'devnet':
@@ -175,5 +177,10 @@ export async function anvilFundMe(
     chain: anvil,
     transport: http(rpcUrl),
   });
-  await anvilWallet.sendTransaction({ to: address, value: amount });
+  console.log(`Funding ${address} with ${amount} ETH...`);
+  const receipt = await anvilWallet.sendTransaction({
+    to: address,
+    value: amount,
+  });
+  console.log(`Funded in tx ${receipt}`);
 }

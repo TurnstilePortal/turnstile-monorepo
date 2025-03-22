@@ -1,0 +1,14 @@
+{
+  "name": "Local Sandbox Environment",
+  "implementation": "local",
+  "ethereum": {
+    "rpc": "http://localhost:8545",
+    "chainId": 31337
+  },
+  "aztec": {
+    "pxe": "http://localhost:8080"
+  },
+  "sandbox": {
+    "containerName": "aztec-sandbox"
+  }
+}
