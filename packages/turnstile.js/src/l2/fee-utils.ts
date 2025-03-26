@@ -63,11 +63,16 @@ export async function bridgeL1FeeJuice(
   console.log(
     `Waiting for L1->L2 message to be synced (L2 block number ${l2BlockNumber.toString()})...`,
   );
-  const isSynced = async () =>
-    BigInt(await l2Client.getNode().getBlockNumber()) === l2BlockNumber;
+  const isSynced = async () => {
+    const currentBlockNumber = BigInt(
+      await l2Client.getNode().getBlockNumber(),
+    );
+    console.log(`Current block number: ${currentBlockNumber.toString()}`);
+    return currentBlockNumber >= l2BlockNumber;
+  };
   await retryUntil(
     isSynced,
-    `message ${claim.messageHash} sync`,
+    `message ${claim.messageHash} sync to L2`,
     180 /* max time in seconds */,
     5 /* retry interval in seconds */,
   );

@@ -18,7 +18,6 @@ export interface DeployConfig {
   aztecRollupAddresses?: AztecRollupAddresses;
   deployment: {
     overwrite: boolean;
-    generateKeysIfMissing: boolean;
     tokens: Record<string, TokenConfig>;
   };
   /**

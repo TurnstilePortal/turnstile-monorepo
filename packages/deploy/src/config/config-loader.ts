@@ -68,7 +68,6 @@ export async function loadDeployConfig(
     },
     deployment: {
       overwrite: config.deployment.overwrite ?? false,
-      generateKeysIfMissing: config.deployment.generateKeysIfMissing ?? true,
       tokens: config.deployment.tokens ?? {},
     },
     // Preserve the setup field if it exists
@@ -141,7 +140,6 @@ export async function createDefaultConfig(
     },
     deployment: {
       overwrite: false,
-      generateKeysIfMissing: true,
       tokens,
     },
   };

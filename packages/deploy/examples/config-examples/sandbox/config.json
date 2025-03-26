@@ -12,8 +12,6 @@
   },
   "deployment": {
     "overwrite": true,
-    "generateKeysIfMissing": true,
-    "deployKeys": true,
     "tokens": {
       "DAI": {
         "name": "DAI",

@@ -31,9 +31,9 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-  # advance-blocks:
-  #   image: turnstile-deploy:0.0.37
-  #   command: aztec-sandbox-advance-blocks --pxe http://aztec:8080
-  #   depends_on:
-  #     aztec:
-  #       condition: service_healthy
+  advance-blocks:
+    image: turnstile-deploy:0.0.37
+    command: aztec-sandbox-advance-blocks --pxe http://aztec:8080
+    depends_on:
+      aztec:
+        condition: service_healthy
