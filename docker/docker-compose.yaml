@@ -26,21 +26,14 @@ services:
     depends_on:
       - ethereum
     command: node --no-warnings /usr/src/yarn-project/aztec/dest/bin/index.js start --sandbox
-  bot:
-    image: aztecprotocol/aztec:0.82.2
-    environment:
-      LOG_LEVEL: info
-      ETHEREUM_HOSTS: http://ethereum:8545
-      AZTEC_NODE_URL: http://aztec:8080
-      BOT_NO_START: "false"
-      BOT_MAX_PENDING_TXS: 10
-      BOT_TX_INTERVAL_SECONDS: 10
-      BOT_L1_PRIVATE_KEY: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
-      PXE_PROVER_ENABLED: "false"
-      PROVER_REAL_PROOFS: "false"
-      PORT: 8077
-      PXE_PORT: 8077
-    command: bash -c "sleep 30; node --no-warnings /usr/src/yarn-project/aztec/dest/bin/index.js start --bot --pxe"
-    depends_on:
-      - ethereum
-      - aztec
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/status" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+  # advance-blocks:
+  #   image: turnstile-deploy:0.0.37
+  #   command: aztec-sandbox-advance-blocks --pxe http://aztec:8080
+  #   depends_on:
+  #     aztec:
+  #       condition: service_healthy

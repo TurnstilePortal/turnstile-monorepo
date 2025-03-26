@@ -8,16 +8,8 @@ import {
   readDeploymentData,
   writeDeploymentData,
 } from '@turnstile-portal/turnstile-dev';
-import type { DeploymentData } from '@turnstile-portal/turnstile-dev';
-import type { L1Client } from '@turnstile-portal/turnstile.js';
 
 import { http } from 'viem';
-
-import type { Hex } from 'viem';
-
-import type { Wallet as AztecWallet } from '@aztec/aztec.js';
-import { EthAddress } from '@aztec/aztec.js';
-
 import { commonOpts } from './common.js';
 
 export function registerDeployTurnstileContracts(program: Command) {
@@ -92,6 +84,3 @@ export function registerDeployTurnstileContracts(program: Command) {
       }
     });
 }
-
-// The deployL1Portal and deployL2Portal functions are no longer needed
-// as they are now part of the deployTurnstileContracts implementation

@@ -66,3 +66,12 @@ $(AZTEC_ARTIFACTS_PACKAGE_DIR)/%.json: aztec/target/%.json
 sandbox:
 	@echo "Starting sandbox..."
 	bash scripts/deploy-sandbox.sh
+
+.PHONY: turnstile-deploy-docker-image
+turnstile-deploy-docker-image:
+	@echo "Building turnstile-deploy Docker image..."
+	$(eval VERSION := $(shell grep -m1 '"version":' packages/deploy/package.json | cut -d '"' -f 4))
+	@echo "Using version: $(VERSION)"
+	docker build -t turnstile-deploy:$(VERSION) \
+		--build-arg VERSION=$(VERSION) \
+		-f packages/deploy/Dockerfile .
