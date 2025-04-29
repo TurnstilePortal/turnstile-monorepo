@@ -15,19 +15,27 @@ import {InsecurePortalTestToken} from "./InsecurePortalTestToken.sol";
 
 // test harness so we can call internal functions
 contract ERC20TokenPortalHarness is ERC20TokenPortal {
-    constructor(IMinimalAztecRegistry _aztecRegistry, ERC20AllowList _allowList, address _l2PortalInitializer)
-        ERC20TokenPortal(_aztecRegistry, _allowList, _l2PortalInitializer)
-    {}
+    constructor(
+        IMinimalAztecRegistry _aztecRegistry,
+        ERC20AllowList _allowList,
+        address _l2PortalInitializer
+    ) ERC20TokenPortal(_aztecRegistry, _allowList, _l2PortalInitializer) {}
 
-    function exposed_decodeDeposit(bytes calldata _data) external pure returns (address, bytes32, uint256) {
+    function exposed_decodeDeposit(
+        bytes calldata _data
+    ) external pure returns (address, bytes32, uint256) {
         return _decodeDeposit(_data);
     }
 
-    function exposed_decodeWithdraw(bytes calldata _data) external pure returns (address, bytes32, address, uint256) {
+    function exposed_decodeWithdraw(
+        bytes calldata _data
+    ) external pure returns (address, bytes32, address, uint256) {
         return _decodeWithdraw(_data);
     }
 
-    function exposed_tokenRegistrationContentHash(address _token) external view returns (bytes32) {
+    function exposed_tokenRegistrationContentHash(
+        address _token
+    ) external view returns (bytes32) {
         return _tokenRegistrationContentHash(_token);
     }
 
@@ -35,11 +43,17 @@ contract ERC20TokenPortalHarness is ERC20TokenPortal {
         _depositTransfer(_token, _amount);
     }
 
-    function exposed_withdrawTransfer(address _token, address _recipient, uint256 _amount) external {
+    function exposed_withdrawTransfer(
+        address _token,
+        address _recipient,
+        uint256 _amount
+    ) external {
         _withdrawTransfer(_token, _recipient, _amount);
     }
 
-    function _sendL2Message(bytes32 _contentHash) internal override returns (bytes32 key, uint256 index) {
+    function _sendL2Message(
+        bytes32 _contentHash
+    ) internal override returns (bytes32 key, uint256 index) {
         // Do nothing
     }
 }
@@ -50,7 +64,8 @@ contract ERC20TokenPortalTest is Test {
     InsecurePortalTestToken token;
 
     // 2^253 - 1
-    uint256 public constant DEPOSIT_LIMIT = 0x1fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+    uint256 public constant DEPOSIT_LIMIT =
+        0x1fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
 
     address admin;
     address approver;
@@ -77,13 +92,21 @@ contract ERC20TokenPortalTest is Test {
         tokenPortal.register(address(token));
     }
 
-    function test_decodeDeposit() public {
+    function test_decodeDeposit() public view {
         bytes32 recipient = bytes32(uint256(0x123456789abcdef));
         uint256 amount = 100;
-        bytes memory data =
-            abi.encodeWithSignature("deposit(address,bytes32,uint256)", address(token), recipient, amount);
+        bytes memory data = abi.encodeWithSignature(
+            "deposit(address,bytes32,uint256)",
+            address(token),
+            recipient,
+            amount
+        );
 
-        (address decodedToken, bytes32 contentHash, uint256 decodedAmount) = tokenPortal.exposed_decodeDeposit(data);
+        (
+            address decodedToken,
+            bytes32 contentHash,
+            uint256 decodedAmount
+        ) = tokenPortal.exposed_decodeDeposit(data);
 
         assertEq(decodedToken, address(token));
         assertEq(contentHash, Hash.sha256ToField(data));
@@ -93,11 +116,19 @@ contract ERC20TokenPortalTest is Test {
     function test_decodeWithdraw() public {
         address recipient = makeAddr("recipient");
         uint256 amount = 100;
-        bytes memory data =
-            abi.encodeWithSignature("withdraw(address,address,uint256)", address(token), recipient, amount);
+        bytes memory data = abi.encodeWithSignature(
+            "withdraw(address,address,uint256)",
+            address(token),
+            recipient,
+            amount
+        );
 
-        (address decodedToken, bytes32 contentHash, address decodedRecipient, uint256 decodedAmount) =
-            tokenPortal.exposed_decodeWithdraw(data);
+        (
+            address decodedToken,
+            bytes32 contentHash,
+            address decodedRecipient,
+            uint256 decodedAmount
+        ) = tokenPortal.exposed_decodeWithdraw(data);
 
         assertEq(decodedToken, address(token));
         assertEq(contentHash, Hash.sha256ToField(data));
@@ -106,7 +137,9 @@ contract ERC20TokenPortalTest is Test {
     }
 
     function test_tokenRegistrationContentHash() public view {
-        bytes32 contentHash = tokenPortal.exposed_tokenRegistrationContentHash(address(token));
+        bytes32 contentHash = tokenPortal.exposed_tokenRegistrationContentHash(
+            address(token)
+        );
 
         assertEq(
             contentHash,
@@ -149,7 +182,11 @@ contract ERC20TokenPortalTest is Test {
         vm.startPrank(depositor);
         token.approve(address(tokenPortal), type(uint256).max);
 
-        vm.expectRevert(abi.encodeWithSelector(ERC20TokenPortal.ERC20TokenPortal__DepositLimitExceeded.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ERC20TokenPortal.ERC20TokenPortal__DepositLimitExceeded.selector
+            )
+        );
         tokenPortal.exposed_depositTransfer(address(token), amount);
     }
 

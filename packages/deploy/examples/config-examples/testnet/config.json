@@ -1,0 +1,24 @@
+{
+  "name": "Testnet Environment",
+  "connection": {
+    "ethereum": {
+      "rpc": "https://sepolia.infura.io/v3/your-infura-id",
+      "chainName": "sepolia"
+    },
+    "aztec": {
+      "pxe": "https://testnet.aztec.network:8080",
+      "registryAddress": "0x2345678901234567890123456789012345678901",
+      "rollupAddress": "0x5432109876543210987654321098765432109876"
+    }
+  },
+  "deployment": {
+    "overwrite": false,
+    "tokens": {
+      "DAI": {
+        "name": "DAI",
+        "symbol": "DAI",
+        "decimals": 18
+      }
+    }
+  }
+}

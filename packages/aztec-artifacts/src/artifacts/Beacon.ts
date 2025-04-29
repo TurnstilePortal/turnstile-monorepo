@@ -23,19 +23,18 @@ import {
   type FieldLike,
   Fr,
   type FunctionSelectorLike,
-  L1EventPayload,
   loadContractArtifact,
+  loadContractArtifactForPublic,
   type NoirCompiledContract,
   NoteSelector,
   Point,
   type PublicKey,
   PublicKeys,
-  type UnencryptedL2Log,
   type Wallet,
   type U128Like,
   type WrappedFieldLike,
 } from '@aztec/aztec.js';
-import BeaconContractArtifactJson from './beacon-Beacon.json' assert { type: 'json' };
+import BeaconContractArtifactJson from './beacon-Beacon.json' with { type: 'json' };
 export const BeaconContractArtifact = loadContractArtifact(BeaconContractArtifactJson as NoirCompiledContract);
 
 
@@ -127,6 +126,13 @@ export class BeaconContract extends ContractBase {
   public static get artifact(): ContractArtifact {
     return BeaconContractArtifact;
   }
+
+  /**
+   * Returns this contract's artifact with public bytecode.
+   */
+  public static get artifactForPublic(): ContractArtifact {
+    return loadContractArtifactForPublic(BeaconContractArtifactJson as NoirCompiledContract);
+  }
   
 
   public static get storage(): ContractStorageLayout<'target' | 'overrides' | 'admin'> {
@@ -135,10 +141,10 @@ export class BeaconContract extends ContractBase {
       slot: new Fr(1n),
     },
 overrides: {
-      slot: new Fr(6n),
+      slot: new Fr(5n),
     },
 admin: {
-      slot: new Fr(7n),
+      slot: new Fr(6n),
     }
       } as ContractStorageLayout<'target' | 'overrides' | 'admin'>;
     }
@@ -149,9 +155,6 @@ admin: {
   /** Type-safe wrappers for the public methods exposed by the contract. */
   public declare methods: {
     
-    /** compute_note_hash_and_optionally_a_nullifier(contract_address: struct, nonce: field, storage_slot: field, note_type_id: field, compute_nullifier: boolean, packed_note_content: array) */
-    compute_note_hash_and_optionally_a_nullifier: ((contract_address: AztecAddressLike, nonce: FieldLike, storage_slot: FieldLike, note_type_id: FieldLike, compute_nullifier: boolean, packed_note_content: FieldLike[]) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
     /** get_admin_public() */
     get_admin_public: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
@@ -172,9 +175,6 @@ admin: {
 
     /** init(admin: struct, target: struct) */
     init: ((admin: AztecAddressLike, target: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** process_log(log_plaintext: struct, tx_hash: field, unique_note_hashes_in_tx: struct, first_nullifier_in_tx: field, recipient: struct) */
-    process_log: ((log_plaintext: { storage: FieldLike[], len: (bigint | number) }, tx_hash: FieldLike, unique_note_hashes_in_tx: { storage: FieldLike[], len: (bigint | number) }, first_nullifier_in_tx: FieldLike, recipient: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** public_dispatch(selector: field) */
     public_dispatch: ((selector: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;

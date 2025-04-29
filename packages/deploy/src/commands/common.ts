@@ -8,6 +8,9 @@ export const commonOpts = {
   pxe: new Option('-p, --pxe <url>', 'PXE server URL').default(
     'http://localhost:8080',
   ),
+  aztecNode: new Option('-n, --aztec-node <url> ', 'Aztec Node URL').default(
+    'http://localhost:8080',
+  ),
   rpc: new Option('--rpc <url>', 'RPC server URL').default(
     'http://localhost:8545',
   ),

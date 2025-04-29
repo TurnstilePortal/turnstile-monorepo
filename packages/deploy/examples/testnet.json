@@ -1,0 +1,15 @@
+{
+  "name": "Aztec Testnet Environment",
+  "implementation": "testnet",
+  "ethereum": {
+    "rpc": "https://sepolia-rpc.example.com",
+    "chainId": 11155111
+  },
+  "aztec": {
+    "pxe": "https://testnet-pxe.aztec.network"
+  },
+  "aztecCore": {
+    "rollupAddress": "0x11155111A939a4D5B8E8662666C242bCf3F221c7",
+    "registryAddress": "0x22155111A939a4D5B8E8662666C242bCf3F221c7"
+  }
+}

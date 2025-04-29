@@ -8,12 +8,13 @@ pub contract Portal {
     use std::meta::derive;
 
     use aztec::{
+        event::event_interface::EventInterface,
         hash::hash_args,
         macros::{
             events::event,
             functions::{
                 initialization_utils::compute_initialization_hash, initializer, internal, private,
-                public,
+                public, utility,
             },
             storage::storage,
         },
@@ -21,7 +22,7 @@ pub contract Portal {
             address::{AztecAddress, EthAddress, PartialAddress},
             contract_class_id::ContractClassId,
             public_keys::PublicKeys,
-            traits::Serialize,
+            traits::{FromField, Serialize, ToField},
         },
         state_vars::{Map, PublicImmutable},
         unencrypted_logs::unencrypted_event_emission::encode_event,
@@ -60,7 +61,7 @@ pub contract Portal {
     struct Deposit {
         eth_token: EthAddress,
         recipient: AztecAddress,
-        amount: Field,
+        amount: u128,
         message_leaf_index: Field,
     }
 
@@ -70,7 +71,7 @@ pub contract Portal {
         token: EthAddress,
         from: AztecAddress,
         to: EthAddress,
-        amount: Field,
+        amount: u128,
     }
 
     #[public]
@@ -177,12 +178,12 @@ pub contract Portal {
     fn claim_public(
         eth_token: Field,
         recipient: AztecAddress,
-        amount: Field,
+        amount: u128,
         message_leaf_index: Field,
     ) {
         let eth_token = EthAddress::from_field(eth_token);
 
-        let content_hash = deposit_content_hash(eth_token, recipient, amount);
+        let content_hash = deposit_content_hash(eth_token, recipient, amount.to_field());
         aztec::oracle::debug_log::debug_log_format("Deposit content hash: {0}", [content_hash]);
 
         // Consume the message
@@ -203,10 +204,10 @@ pub contract Portal {
     fn _claim_public(
         eth_token: EthAddress,
         recipient: AztecAddress,
-        amount: Field,
+        amount: u128,
         message_leaf_index: Field,
     ) {
-        Token::at(storage.l1_tokens.at(eth_token).read()).mint_public(recipient, amount).call(
+        Token::at(storage.l1_tokens.at(eth_token).read()).mint_to_public(recipient, amount).call(
             &mut context,
         );
 
@@ -219,12 +220,12 @@ pub contract Portal {
     fn claim_shielded(
         eth_token: Field,
         recipient: AztecAddress,
-        amount: Field,
+        amount: u128,
         message_leaf_index: Field,
     ) {
         let eth_token = EthAddress::from_field(eth_token);
 
-        let content_hash = deposit_content_hash(eth_token, recipient, amount);
+        let content_hash = deposit_content_hash(eth_token, recipient, amount.to_field());
         aztec::oracle::debug_log::debug_log_format("Deposit content hash: {0}", [content_hash]);
 
         // Consume the message
@@ -249,7 +250,7 @@ pub contract Portal {
     fn _log_claim(
         eth_token: EthAddress,
         recipient: AztecAddress,
-        amount: Field,
+        amount: u128,
         message_leaf_index: Field,
     ) {
         Deposit { eth_token, recipient, amount, message_leaf_index }.emit(encode_event(
@@ -262,7 +263,7 @@ pub contract Portal {
         eth_token: EthAddress,
         from: AztecAddress,
         recipient: EthAddress,
-        amount: Field,
+        amount: u128,
         withdrawNonce: Field,
         burnNonce: Field,
     ) {
@@ -278,7 +279,7 @@ pub contract Portal {
         );
 
         // Message the L1 Portal
-        let content_hash = withdraw_content_hash(eth_token, recipient, amount);
+        let content_hash = withdraw_content_hash(eth_token, recipient, amount.to_field());
         context.message_portal(storage.l1_portal.read(), content_hash);
 
         aztec::oracle::debug_log::debug_log_format("Withdraw L2ToL1 Message {0}", [content_hash]);
@@ -286,24 +287,29 @@ pub contract Portal {
         Withdraw { token: eth_token, from, to: recipient, amount }.emit(encode_event(&mut context));
     }
 
+    #[utility]
     unconstrained fn is_registered_l1(eth_token: Field) -> pub bool {
         let eth_token = EthAddress::from_field(eth_token);
         !storage.l1_tokens.at(eth_token).read().is_zero()
     }
 
+    #[utility]
     unconstrained fn is_registered_l2(aztec_token: AztecAddress) -> pub bool {
         !storage.l2_tokens.at(aztec_token).read().is_zero()
     }
 
+    #[utility]
     unconstrained fn get_l2_token(eth_token: Field) -> pub AztecAddress {
         let eth_token = EthAddress::from_field(eth_token);
         storage.l1_tokens.at(eth_token).read()
     }
 
+    #[utility]
     unconstrained fn get_l1_token(aztec_token: AztecAddress) -> pub EthAddress {
         storage.l2_tokens.at(aztec_token).read()
     }
 
+    #[utility]
     unconstrained fn get_l1_portal() -> pub EthAddress {
         storage.l1_portal.read()
     }

@@ -1,46 +1,35 @@
 import type { Command } from 'commander';
-import { createPXEClient, EthAddress, AztecAddress } from '@aztec/aztec.js';
-import {
-  getL2Wallet,
-  readDeploymentData,
-  readKeyData,
-} from '@turnstile-portal/turnstile-dev';
+import { readDeploymentData } from '@turnstile-portal/turnstile-dev';
 
 import { commonOpts } from '@turnstile-portal/deploy/commands';
-
-import { AztecTokenPortal } from '@turnstile-portal/turnstile.js';
-
-import { PortalContract } from '@turnstile-portal/aztec-artifacts';
 
 export function registerLookupAztecTokens(program: Command) {
   return program
     .command('lookup-aztec-tokens')
     .description('Obtains all registered tokens from Portal events')
-    .addOption(commonOpts.keys)
-    .addOption(commonOpts.pxe)
-    .addOption(commonOpts.l1Chain)
-    .addOption(commonOpts.rpc)
     .addOption(commonOpts.deploymentData)
     .action(async (options) => {
       const deploymentData = await readDeploymentData(options.deploymentData);
-      const pxe = createPXEClient(options.pxe);
-      const l2Wallet = await getL2Wallet(pxe, await readKeyData(options.keys));
 
-      const aztecPortalAddr = deploymentData.aztecPortal;
+      // Since the event API has changed, we'll need to look up the tokens another way
+      // Get the mapping of tokens from the deployment data directly
+      const tokens = deploymentData.tokens;
 
-      const aztecPortal = new AztecTokenPortal(aztecPortalAddr, pxe, l2Wallet);
+      console.log(
+        `Found ${Object.keys(tokens).length} tokens in deployment data:`,
+      );
 
-      const events = await aztecPortal.getPublicEvents<{
-        eth_token: { inner: bigint };
-        aztec_token: bigint;
-      }>(PortalContract.events.Register);
-      for (const event of events) {
-        const ethHex = mod2hexlength(event.eth_token.inner);
-        const aztecHex = mod2hexlength(event.aztec_token);
-        const ethAddr = EthAddress.fromString(`0x${ethHex}`);
-        const aztecAddr = AztecAddress.fromString(`0x${aztecHex}`);
+      for (const [symbol, tokenInfo] of Object.entries(tokens)) {
+        // Convert addresses to proper format if they don't already have 0x prefix
+        const l1Addr = tokenInfo.l1Address.startsWith('0x')
+          ? tokenInfo.l1Address
+          : `0x${tokenInfo.l1Address}`;
+        const l2Addr = tokenInfo.l2Address.startsWith('0x')
+          ? tokenInfo.l2Address
+          : `0x${tokenInfo.l2Address}`;
+
         console.log(
-          `L1 Address: ${ethAddr.toString()}, L2 Address: ${aztecAddr.toString()}`,
+          `Symbol: ${symbol}, L1 Address: ${l1Addr}, L2 Address: ${l2Addr}`,
         );
       }
     });

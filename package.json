@@ -2,6 +2,7 @@
   "name": "turnstile-contracts",
   "private": true,
   "version": "0.0.1",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/TurnstilePortal/turnstile-contracts.git"
@@ -21,6 +22,14 @@
     "format:fix": "biome format --write",
     "update-aztec-version": "tsx scripts/update-aztec-deps.ts"
   },
+  "pnpm": {
+    "overrides": {
+      "@aztec/**": "0.85.0-alpha-testnet.4"
+    }
+  },
+  "resolutions": {
+    "@aztec/**": "0.85.0-alpha-testnet.4"
+  },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@changesets/cli": "^2.27.11",
@@ -31,5 +40,6 @@
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "vitest": "^2.1.8"
-  }
+  },
+  "packageManager": "pnpm@10.10.0+sha512.d615db246fe70f25dcfea6d8d73dee782ce23e2245e3c4f6f888249fb568149318637dca73c2c5c8ef2a4ca0d5657fb9567188bfab47f566d1ee6ce987815c39"
 }

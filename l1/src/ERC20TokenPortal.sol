@@ -18,12 +18,15 @@ import {IERC20Minimal} from "./interfaces/IERC20Minimal.sol";
 contract ERC20TokenPortal is ITokenPortal {
     using SafeERC20 for IERC20Minimal;
 
-    /// @dev Max 253 bit uint: 2^253 - 1
-    uint256 public constant DEPOSIT_LIMIT = 0x1fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+    /// @dev Limit deposits to max uint128 as that is the type used on Aztec for token balances.
+    uint256 public constant DEPOSIT_LIMIT = type(uint128).max;
 
-    string public constant REGISTER_SIGNATURE = "register(address,string,string,uint8)";
-    bytes4 public constant DEPOSIT_SELECTOR = bytes4(keccak256("deposit(address,bytes32,uint256)"));
-    bytes4 public constant WITHDRAW_SELECTOR = bytes4(keccak256("withdraw(address,address,uint256)"));
+    string public constant REGISTER_SIGNATURE =
+        "register(address,string,string,uint8)";
+    bytes4 public constant DEPOSIT_SELECTOR =
+        bytes4(keccak256("deposit(address,bytes32,uint256)"));
+    bytes4 public constant WITHDRAW_SELECTOR =
+        bytes4(keccak256("withdraw(address,address,uint256)"));
 
     /// @inheritdoc ITokenPortal
     bytes32 public l2Portal;
@@ -39,7 +42,8 @@ contract ERC20TokenPortal is ITokenPortal {
 
     /// Hash of the string "public" used to send messages to L2. Computed with `computeSecretHash()` from aztec.js
     /// computeSecretHash(Buffer.from("public").toString("hex")) = 0x08c95e8336028903a8b24af616b13aaf6ebea60cd17b4947e514e3600a797081
-    bytes32 public constant PUBLIC_NOT_SECRET_HASH = 0x08c95e8336028903a8b24af616b13aaf6ebea60cd17b4947e514e3600a797081;
+    bytes32 public constant PUBLIC_NOT_SECRET_HASH =
+        0x08c95e8336028903a8b24af616b13aaf6ebea60cd17b4947e514e3600a797081;
 
     error ERC20TokenPortal__InvalidTransactionType();
     error ERC20TokenPortal__InvalidData();
@@ -64,7 +68,11 @@ contract ERC20TokenPortal is ITokenPortal {
 
     /// @param _aztecRegistry the L1 Aztec Rollup Registry
     /// @param _allowList token allow list
-    constructor(IMinimalAztecRegistry _aztecRegistry, IAllowList _allowList, address _l2PortalInitializer) {
+    constructor(
+        IMinimalAztecRegistry _aztecRegistry,
+        IAllowList _allowList,
+        address _l2PortalInitializer
+    ) {
         L2_PORTAL_INITIALIZER = _l2PortalInitializer;
 
         AZTEC_REGISTRY = IMinimalAztecRegistry(_aztecRegistry);
@@ -101,27 +109,39 @@ contract ERC20TokenPortal is ITokenPortal {
     }
 
     /// @inheritdoc ITokenPortal
-    function aztecRegistry() external view override returns (IMinimalAztecRegistry) {
+    function aztecRegistry()
+        external
+        view
+        override
+        returns (IMinimalAztecRegistry)
+    {
         return AZTEC_REGISTRY;
     }
 
     /// @inheritdoc ITokenPortal
-    function aztecRollup() external view override returns (IMinimalAztecRollup) {
+    function aztecRollup()
+        external
+        view
+        override
+        returns (IMinimalAztecRollup)
+    {
         return AZTEC_REGISTRY.getRollup();
     }
 
     /// @inheritdoc ITokenPortal
     function aztecInbox() public view override returns (IMinimalAztecInbox) {
-        return AZTEC_REGISTRY.getRollup().INBOX();
+        return AZTEC_REGISTRY.getRollup().getInbox();
     }
 
     /// @inheritdoc ITokenPortal
     function aztecOutbox() public view override returns (IMinimalAztecOutbox) {
-        return AZTEC_REGISTRY.getRollup().OUTBOX();
+        return AZTEC_REGISTRY.getRollup().getOutbox();
     }
 
     /// @inheritdoc ITokenPortal
-    function register(address _token) external override requireL2Portal returns (bytes32 leaf, uint256 index) {
+    function register(
+        address _token
+    ) external override requireL2Portal returns (bytes32 leaf, uint256 index) {
         if (tokenRegistry[_token]) {
             revert TokenPortal__AlreadyRegistered(_token);
         }
@@ -148,9 +168,13 @@ contract ERC20TokenPortal is ITokenPortal {
     }
 
     /// @inheritdoc ITokenPortal
-    function deposit(bytes calldata _data) external override requireL2Portal returns (bytes32 leaf, uint256 index) {
+    function deposit(
+        bytes calldata _data
+    ) external override requireL2Portal returns (bytes32 leaf, uint256 index) {
         // Decode the message
-        (address token, bytes32 contentHash, uint256 amount) = _decodeDeposit(_data);
+        (address token, bytes32 contentHash, uint256 amount) = _decodeDeposit(
+            _data
+        );
 
         // Require token is registered
         if (!tokenRegistry[token]) {
@@ -167,13 +191,19 @@ contract ERC20TokenPortal is ITokenPortal {
     }
 
     /// @inheritdoc ITokenPortal
-    function withdraw(bytes calldata _data, uint256 _l2BlockNumber, uint256 _leafIndex, bytes32[] calldata _path)
-        external
-        override
-        requireL2Portal
-    {
+    function withdraw(
+        bytes calldata _data,
+        uint256 _l2BlockNumber,
+        uint256 _leafIndex,
+        bytes32[] calldata _path
+    ) external override requireL2Portal {
         // Decode the message
-        (address token, bytes32 contentHash, address recipient, uint256 amount) = _decodeWithdraw(_data);
+        (
+            address token,
+            bytes32 contentHash,
+            address recipient,
+            uint256 amount
+        ) = _decodeWithdraw(_data);
 
         // Require token is registered
         if (!tokenRegistry[token]) {
@@ -197,16 +227,27 @@ contract ERC20TokenPortal is ITokenPortal {
     /// @param _contentHash the content hash of the message
     /// @return leaf The hash of the entry in the Inbox
     /// @return index The global index of the entry in the Inbox
-    function _sendL2Message(bytes32 _contentHash) internal virtual returns (bytes32 leaf, uint256 index) {
-        DataStructures.L2Actor memory actor = DataStructures.L2Actor(l2Portal, 1);
+    function _sendL2Message(
+        bytes32 _contentHash
+    ) internal virtual returns (bytes32 leaf, uint256 index) {
+        DataStructures.L2Actor memory actor = DataStructures.L2Actor(
+            l2Portal,
+            1
+        );
 
-        (leaf, index) = aztecInbox().sendL2Message(actor, _contentHash, PUBLIC_NOT_SECRET_HASH);
+        (leaf, index) = aztecInbox().sendL2Message(
+            actor,
+            _contentHash,
+            PUBLIC_NOT_SECRET_HASH
+        );
     }
 
     /// Returns the content hash of the message to be sent to L2 when a token is registered.
     /// @param tokenAddr token address
     /// @return the content hash of the message
-    function _tokenRegistrationContentHash(address tokenAddr) internal view returns (bytes32) {
+    function _tokenRegistrationContentHash(
+        address tokenAddr
+    ) internal view returns (bytes32) {
         IERC20Minimal token = IERC20Minimal(tokenAddr);
 
         // Limit the name and symbol to 31 characters to fit within a Field
@@ -220,7 +261,15 @@ contract ERC20TokenPortal is ITokenPortal {
         }
 
         return
-            Hash.sha256ToField(abi.encodeWithSignature(REGISTER_SIGNATURE, tokenAddr, name, symbol, token.decimals()));
+            Hash.sha256ToField(
+                abi.encodeWithSignature(
+                    REGISTER_SIGNATURE,
+                    tokenAddr,
+                    name,
+                    symbol,
+                    token.decimals()
+                )
+            );
     }
 
     /// Decode the deposit data from the message
@@ -228,7 +277,9 @@ contract ERC20TokenPortal is ITokenPortal {
     /// @return token the token address
     /// @return contentHash the content hash of the message
     /// @return amount the amount to deposit
-    function _decodeDeposit(bytes calldata data)
+    function _decodeDeposit(
+        bytes calldata data
+    )
         internal
         pure
         returns (address token, bytes32 contentHash, uint256 amount)
@@ -247,7 +298,10 @@ contract ERC20TokenPortal is ITokenPortal {
 
         // decode the rest of the data
         bytes32 recipient;
-        (token, recipient, amount) = abi.decode(data[4:], (address, bytes32, uint256));
+        (token, recipient, amount) = abi.decode(
+            data[4:],
+            (address, bytes32, uint256)
+        );
 
         // Calculate the content hash
         contentHash = Hash.sha256ToField(data);
@@ -257,11 +311,18 @@ contract ERC20TokenPortal is ITokenPortal {
     /// @param token the token address
     /// @param amount the amount to transfer
     function _depositTransfer(address token, uint256 amount) internal {
-        if (IERC20Minimal(token).balanceOf(address(this)) + amount > DEPOSIT_LIMIT) {
+        if (
+            IERC20Minimal(token).balanceOf(address(this)) + amount >
+            DEPOSIT_LIMIT
+        ) {
             revert ERC20TokenPortal__DepositLimitExceeded();
         }
 
-        IERC20Minimal(token).safeTransferFrom(msg.sender, address(this), amount);
+        IERC20Minimal(token).safeTransferFrom(
+            msg.sender,
+            address(this),
+            amount
+        );
     }
 
     /// Decode the withdraw data from the message
@@ -270,10 +331,17 @@ contract ERC20TokenPortal is ITokenPortal {
     /// @return contentHash the content hash of the message
     /// @return recipient the recipient address
     /// @return amount the amount to withdraw
-    function _decodeWithdraw(bytes calldata data)
+    function _decodeWithdraw(
+        bytes calldata data
+    )
         internal
         pure
-        returns (address token, bytes32 contentHash, address recipient, uint256 amount)
+        returns (
+            address token,
+            bytes32 contentHash,
+            address recipient,
+            uint256 amount
+        )
     {
         // Ensure the data is the expected length
         // 4 (selector) + 32 (token) + 32 (recipient) + 32 (amount) = 100
@@ -288,13 +356,20 @@ contract ERC20TokenPortal is ITokenPortal {
         }
 
         // decode the rest of the data
-        (token, recipient, amount) = abi.decode(data[4:], (address, address, uint256));
+        (token, recipient, amount) = abi.decode(
+            data[4:],
+            (address, address, uint256)
+        );
 
         // Calculate the content hash
         contentHash = Hash.sha256ToField(data);
     }
 
-    function _withdrawTransfer(address token, address recipient, uint256 amount) internal {
+    function _withdrawTransfer(
+        address token,
+        address recipient,
+        uint256 amount
+    ) internal {
         IERC20Minimal(token).safeTransfer(recipient, amount);
     }
 }

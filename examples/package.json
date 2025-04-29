@@ -21,11 +21,11 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@aztec/accounts": "0.76.4",
-    "@aztec/aztec.js": "0.76.4",
-    "@aztec/circuit-types": "0.76.4",
-    "@aztec/foundation": "0.76.4",
-    "@aztec/l1-artifacts": "0.76.4",
+    "@aztec/accounts": "0.85.0-alpha-testnet.4",
+    "@aztec/aztec.js": "0.85.0-alpha-testnet.4",
+    "@aztec/foundation": "0.85.0-alpha-testnet.4",
+    "@aztec/l1-artifacts": "0.85.0-alpha-testnet.4",
+    "@aztec/stdlib": "0.85.0-alpha-testnet.4",
     "@turnstile-portal/aztec-artifacts": "workspace:^",
     "@turnstile-portal/deploy": "workspace:^",
     "@turnstile-portal/l1-artifacts-abi": "workspace:^",
@@ -33,7 +33,7 @@
     "@turnstile-portal/turnstile-dev": "workspace:^",
     "@turnstile-portal/turnstile.js": "workspace:^",
     "commander": "^12.1.0",
-    "viem": "^2.21.15",
+    "viem": "^2.23.13",
     "yargs": "^17.7.2"
   },
   "devDependencies": {

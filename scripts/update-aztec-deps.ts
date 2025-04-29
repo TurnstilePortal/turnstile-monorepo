@@ -9,6 +9,7 @@ interface PackageJson {
   pnpm?: {
     overrides?: Record<string, string>;
   };
+  resolutions?: Record<string, string>;
 }
 
 async function updateAztecDeps(newVersion: string) {
@@ -48,6 +49,16 @@ async function updateAztecDeps(newVersion: string) {
         for (const [dep] of Object.entries(pkg.pnpm.overrides)) {
           if (dep.startsWith('@aztec/')) {
             pkg.pnpm.overrides[dep] = newVersion;
+            hasChanges = true;
+          }
+        }
+      }
+
+      // Update resolutions in root package.json
+      if (pkg.resolutions) {
+        for (const [dep] of Object.entries(pkg.resolutions)) {
+          if (dep.startsWith('@aztec/')) {
+            pkg.resolutions[dep] = newVersion;
             hasChanges = true;
           }
         }

@@ -6,3 +6,4 @@ codegenCache.json
 /sandbox_deployment.json
 lerna-debug.log
 devnet/
+coverage/

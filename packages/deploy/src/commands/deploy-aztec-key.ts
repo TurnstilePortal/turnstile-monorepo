@@ -20,7 +20,7 @@ export function registerDeployAztecKey(program: Command) {
       const l2Account = await deployAztecAccountSchnorr(
         pxe,
         Fr.fromHexString(kd.l2EncKey),
-        Fq.fromHexString(kd.l2SigningKey),
+        Fq.fromHexString(kd.l2SecretKey),
         Fr.fromHexString(kd.l2Salt),
       );
 

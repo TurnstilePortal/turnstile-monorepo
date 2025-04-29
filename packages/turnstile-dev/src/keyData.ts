@@ -5,6 +5,7 @@ export interface KeyData {
   l1PrivateKey: Hex;
   l2Address: Hex;
   l2EncKey: Hex;
+  l2SecretKey: Hex;
   l2SigningKey: Hex;
   l2Salt: Hex;
 }

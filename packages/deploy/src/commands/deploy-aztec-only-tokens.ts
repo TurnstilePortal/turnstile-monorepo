@@ -1,12 +1,16 @@
 import type { Command } from 'commander';
-import { createPXEClient, AztecAddress } from '@aztec/aztec.js';
+import {
+  createPXEClient,
+  AztecAddress,
+  createAztecNodeClient,
+} from '@aztec/aztec.js';
 import { getInitialTestAccountsWallets } from '@aztec/accounts/testing';
 
 import { http } from 'viem';
 
 import {
   getChain,
-  getWallets,
+  getClients,
   readDeploymentData,
   writeDeploymentData,
 } from '@turnstile-portal/turnstile-dev';
@@ -75,19 +79,22 @@ export function registerDeployAztecOnlyTokens(program: Command) {
     .description('Deploy tokens on aztec L2')
     .addOption(commonOpts.keys)
     .addOption(commonOpts.pxe)
+    .addOption(commonOpts.aztecNode)
     .addOption(commonOpts.rpc)
     .addOption(commonOpts.deploymentData)
     .action(async (options) => {
       const pxe = createPXEClient(options.pxe);
+      const node = createAztecNodeClient(options.aztecNode);
       try {
-        const { l2Wallet } = await getWallets(
-          pxe,
+        const { l2Client } = await getClients(
+          options.aztecNode,
           {
             chain: getChain('anvil'),
             transport: http(options.rpc),
           },
           options.keys,
         );
+        const l2Wallet = l2Client.getWallet();
         console.log(`L2 Address to mint tokens to: ${l2Wallet.getAddress()}`);
 
         const deploymentData = await readDeploymentData(options.deploymentData);
@@ -136,7 +143,7 @@ export function registerDeployAztecOnlyTokens(program: Command) {
             `Minting ${amount} ${symbol} for ${minter.getAddress().toString()}`,
           );
           let sentTx = await token.methods
-            .mint_public(minter.getAddress(), amount)
+            .mint_to_public(minter.getAddress(), amount)
             .send();
           let receipt = await sentTx.wait();
           console.log(receipt.status);
@@ -145,7 +152,7 @@ export function registerDeployAztecOnlyTokens(program: Command) {
             `Minting ${amount} ${symbol} for ${l2Wallet.getAddress().toString()}`,
           );
           sentTx = await token.methods
-            .mint_public(l2Wallet.getAddress(), amount)
+            .mint_to_public(l2Wallet.getAddress(), amount)
             .send();
           receipt = await sentTx.wait();
           console.log(receipt.status);

@@ -1,6 +1,12 @@
 import type { AztecAddress, Fr, EthAddress, Wallet } from '@aztec/aztec.js';
-import { getContractClassFromArtifact, TxStatus } from '@aztec/aztec.js';
-import { registerContractClass } from '@aztec/aztec.js/deployment';
+import {
+  getContractClassFromArtifact,
+  FeeJuicePaymentMethod,
+  TxStatus,
+} from '@aztec/aztec.js';
+import type { L2Client } from '@turnstile-portal/turnstile.js';
+
+import { getInitialTestAccountsWallets } from '@aztec/accounts/testing';
 
 import {
   PortalContract,
@@ -10,12 +16,17 @@ import {
 } from '@turnstile-portal/aztec-artifacts';
 
 export async function deployBeacon(
-  wallet: Wallet,
+  l2Client: L2Client,
   adminAddr: AztecAddress,
   targetAddr: AztecAddress,
 ): Promise<BeaconContract> {
-  const beacon = await BeaconContract.deploy(wallet, adminAddr, targetAddr)
-    .send()
+  console.log('Deploying Beacon...');
+  const beacon = await BeaconContract.deploy(
+    l2Client.getWallet(),
+    adminAddr,
+    targetAddr,
+  )
+    .send({ fee: l2Client.getFeeOpts() })
     .deployed();
 
   console.log(`Beacon deployed at ${beacon.address.toString()}`);
@@ -23,11 +34,13 @@ export async function deployBeacon(
 }
 
 export async function deployShieldGateway(
-  adminWallet: Wallet,
-  defaultThreshold = 5_000_000_000_000_000_000n, // 5 & 18 zeros
+  l2ClientAdmin: L2Client,
 ): Promise<ShieldGatewayContract> {
-  const shieldGateway = await ShieldGatewayContract.deploy(adminWallet)
-    .send()
+  console.log('Deploying Shield Gateway...');
+  const shieldGateway = await ShieldGatewayContract.deploy(
+    l2ClientAdmin.getWallet(),
+  )
+    .send({ fee: l2ClientAdmin.getFeeOpts() })
     .deployed();
   console.log(`Shield Gateway deployed at ${shieldGateway.address.toString()}`);
 
@@ -35,31 +48,36 @@ export async function deployShieldGateway(
 }
 
 export async function deployTurnstileTokenPortal(
-  wallet: Wallet,
+  l2Client: L2Client,
   l1Portal: EthAddress,
   tokenContractClass: Fr,
   shieldGatewayBeaconAddr: AztecAddress,
 ): Promise<PortalContract> {
   const portal = await PortalContract.deploy(
-    wallet,
+    l2Client.getWallet(),
     l1Portal,
     tokenContractClass,
     shieldGatewayBeaconAddr,
   )
-    .send()
+    .send({ fee: l2Client.getFeeOpts() })
     .deployed();
   console.log(`Portal deployed at ${portal.address.toString()}`);
   return portal;
 }
 
 export async function registerTurnstileTokenContractClass(
-  wallet: Wallet,
+  l2Client: L2Client,
 ): Promise<Fr> {
-  const tx = await registerContractClass(wallet, TokenContractArtifact);
-  const receipt = await tx.send().wait();
-  if (receipt.status !== TxStatus.SUCCESS) {
-    throw new Error(`Failed to register contract class: ${receipt}`);
-  }
+  console.log('Registering Turnstile Token contract class...');
+  await l2Client.getWallet().registerContractClass(TokenContractArtifact);
+  // const tx = await registerContractClass(
+  //   l2Client.getWallet(),
+  //   TokenContractArtifact,
+  // );
+  // const receipt = await tx.send({ fee: l2Client.getFeeOpts() }).wait();
+  // if (receipt.status !== TxStatus.SUCCESS) {
+  //   throw new Error(`Failed to register contract class: ${receipt}`);
+  // }
   const tokenContractClass = await getContractClassFromArtifact(
     TokenContractArtifact,
   );

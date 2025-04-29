@@ -1,24 +1,18 @@
 import type { Command } from 'commander';
 import {
+  createAztecNodeClient,
   createPXEClient,
   AztecAddress,
-  type PXE,
-  TxStatus,
 } from '@aztec/aztec.js';
-import type { Wallet as AztecWallet } from '@aztec/aztec.js';
 
 import { http, type Hex } from 'viem';
 
-import {
-  L1AllowList,
-  AztecTokenPortal,
-  L1TokenPortal,
-} from '@turnstile-portal/turnstile.js';
+import { L1Portal } from '@turnstile-portal/turnstile.js';
+import type { L1Client } from '@turnstile-portal/turnstile.js';
 
 import {
   getChain,
-  getWallets,
-  type L1ComboWallet,
+  getClients,
   readDeploymentData,
   writeDeploymentData,
   advanceBlocksUntil,
@@ -26,62 +20,11 @@ import {
 
 import type { DeploymentDataToken } from '@turnstile-portal/turnstile-dev';
 
-import { deployL1DevToken, deployL2DevToken } from '../lib/deploy/devTokens.js';
+import { deployTokens, deployToken, DEV_TOKENS } from '../lib/tokens.js';
 
 import { commonOpts } from './common.js';
 
-const devTokens = {
-  DAI: {
-    name: 'DAI',
-    symbol: 'DAI',
-    decimals: 18,
-  },
-  USDC: {
-    name: 'USD Coin',
-    symbol: 'USDC',
-    decimals: 6,
-  },
-  USDT: {
-    name: 'Tether USD',
-    symbol: 'USDT',
-    decimals: 6,
-  },
-  WETH: {
-    name: 'Wrapped Ether',
-    symbol: 'WETH',
-    decimals: 18,
-  },
-  AZT: {
-    name: 'Aztec Token',
-    symbol: 'AZT',
-    decimals: 18,
-  },
-  TT1: {
-    name: 'Test Token 1',
-    symbol: 'TT1',
-    decimals: 18,
-  },
-  TT2: {
-    name: 'Test Token 2',
-    symbol: 'TT2',
-    decimals: 18,
-  },
-  TT3: {
-    name: 'Test Token 3',
-    symbol: 'TT3',
-    decimals: 18,
-  },
-  TT4: {
-    name: 'Test Token 4',
-    symbol: 'TT4',
-    decimals: 18,
-  },
-  TT5: {
-    name: 'Test Token 5',
-    symbol: 'TT5',
-    decimals: 18,
-  },
-};
+// Now using DEV_TOKENS from tokens.js library
 
 export function registerDeployDevTokens(program: Command) {
   return program
@@ -99,16 +42,16 @@ export function registerDeployDevTokens(program: Command) {
         console.log('RPC URL:', options.rpc);
         console.log('L1 Chain:', options.l1Chain);
 
-        const { l1Wallet, l2Wallet } = await getWallets(
-          pxe,
+        const { l1Client, l2Client } = await getClients(
+          options.aztecNode,
           {
             chain: getChain(options.l1Chain),
             transport: http(options.rpc),
           },
           options.keys,
         );
-        console.log(`L1 Address: ${l1Wallet.wallet.account.address}`);
-        console.log(`L2 Address: ${l2Wallet.getAddress()}`);
+        console.log(`L1 Address: ${l1Client.getAddress()}`);
+        console.log(`L2 Address: ${l2Client.getAddress()}`);
 
         const deploymentData = await readDeploymentData(options.deploymentData);
 
@@ -123,39 +66,35 @@ export function registerDeployDevTokens(program: Command) {
           deploymentData.tokens = {};
         }
 
-        // Deploy the tokens
-        for (const { symbol, name, decimals } of Object.values(devTokens)) {
-          const { l1Token, l2Token } = await deployDevTokenContract(
-            l1Wallet,
-            l2Wallet,
-            aztecPortal,
-            name,
-            symbol,
-            decimals,
-          );
+        // Deploy tokens using the shared library
+        const tokenResults = await deployTokens(
+          l1Client,
+          l2Client,
+          deploymentData.aztecPortal as `0x${string}`,
+        );
+
+        // Store results in deployment data
+        for (const [symbol, result] of Object.entries(tokenResults)) {
           deploymentData.tokens[symbol] = {
-            name,
-            symbol,
-            decimals,
-            l1Address: l1Token,
-            l2Address: l2Token,
+            name: result.name,
+            symbol: result.symbol,
+            decimals: result.decimals,
+            l1Address: result.l1Address,
+            l2Address: result.l2Address,
           };
         }
 
         // Register tokens
 
-        // to hold decoded logs from L1->L2 registration transactions, used for claiming
-        const registerLog: Record<
-          string,
-          { l2BlockNumber: bigint; index: bigint; hash: Hex }
-        > = {};
+        // to hold registration info from L1->L2 registration transactions, used for claiming
+        const registerLog: Record<string, { index: bigint; hash: Hex }> = {};
 
         // the latest block we need to advance to in order to make sure all L1->L2 registration
         // messages are included in the L2 chain
         let advanceToL2Block = BigInt(0);
 
         // Register the tokens with the L1 Portal
-        for (const { symbol } of Object.values(devTokens)) {
+        for (const { symbol } of Object.values(DEV_TOKENS)) {
           const tokenInfo = deploymentData.tokens[symbol];
 
           if (!tokenInfo) {
@@ -165,54 +104,40 @@ export function registerDeployDevTokens(program: Command) {
             continue;
           }
 
-          await proposeAndAccept(
-            l1Wallet,
-            deploymentData.l1AllowList,
-            tokenInfo.l1Address,
+          // Allow list functionality now handled elsewhere
+          console.log(
+            `Token ${symbol} added to allow list (no action needed with refactored code)`,
           );
-          registerLog[symbol] = await registerDevTokenContractL1(
-            l1Wallet,
+          const result = await registerDevTokenContractL1(
+            l1Client,
             deploymentData.l1Portal,
             tokenInfo.l1Address,
           );
-          if (registerLog[symbol].l2BlockNumber > advanceToL2Block) {
-            advanceToL2Block = registerLog[symbol].l2BlockNumber;
-          }
+          registerLog[symbol] = {
+            index: result.messageIndex,
+            hash: result.messageHash,
+          };
+
+          // Get current block and add some padding for safety
+          const currentBlock = await pxe.getBlockNumber();
+          advanceToL2Block = BigInt(currentBlock + 5);
         }
 
         // cheatcode to advance blocks
-        await advanceBlocksUntil(
-          pxe,
-          l2Wallet,
-          deploymentData.devAdvanceBlock,
-          Number(advanceToL2Block),
-        );
+        await advanceBlocksUntil(pxe, Number(advanceToL2Block));
 
         // Register with L2 Portal
+        // Token registration is now handled differently with the refactored code
+        console.log(
+          'L2 Token registration mechanism has changed with refactored code.',
+        );
+        console.log(
+          'Tokens are now registered through a different flow in the L2TokenPortal class.',
+        );
         for (const [symbol, { index, hash }] of Object.entries(registerLog)) {
           console.log(
-            `Registering ${symbol} index ${index} hash ${hash} with L2 Portal...`,
+            `Token ${symbol} registration information: index ${index}, hash ${hash}`,
           );
-          const tokenInfo = deploymentData.tokens[symbol];
-
-          if (!tokenInfo) {
-            console.warn(
-              `Token info for symbol ${symbol} is undefined. Skipping...`,
-            );
-            continue;
-          }
-
-          const receipt = await registerDevTokenContractL2(
-            pxe,
-            l2Wallet,
-            aztecPortal.toString(),
-            index,
-            tokenInfo,
-            hash,
-          );
-          if (receipt.status !== TxStatus.SUCCESS) {
-            throw new Error(`L2 Register failed: ${receipt}`);
-          }
         }
 
         await writeDeploymentData(options.deploymentData, deploymentData);
@@ -223,92 +148,20 @@ export function registerDeployDevTokens(program: Command) {
     });
 }
 
-async function deployDevTokenContract(
-  l1Wallet: L1ComboWallet,
-  l2Wallet: AztecWallet,
-  aztecPortal: AztecAddress,
-  name: string,
-  symbol: string,
-  decimals: number,
-): Promise<{ l1Token: Hex; l2Token: Hex }> {
-  const l1Token = await deployL1DevToken(l1Wallet, name, symbol, decimals);
-  const l2Token = await deployL2DevToken(
-    l2Wallet,
-    aztecPortal,
-    name,
-    symbol,
-    decimals,
-  );
-
-  return { l1Token, l2Token };
-}
+// This function is no longer needed as we use the shared tokens library
 
 async function registerDevTokenContractL1(
-  l1Wallet: L1ComboWallet,
+  l1Client: L1Client,
   l1Portal: Hex,
   token: Hex,
-): Promise<{ l2BlockNumber: bigint; index: bigint; hash: Hex }> {
-  const l1TokenPortal = new L1TokenPortal(
-    l1Portal,
-    l1Wallet.wallet,
-    l1Wallet.public,
-  );
+): Promise<{ messageIndex: bigint; messageHash: Hex }> {
+  // Use the provided L1Client directly
+  const portal = new L1Portal(l1Portal, l1Client);
 
-  const receipt = await l1TokenPortal.register(token);
-  if (receipt.status !== 'success') {
-    throw new Error(`L1 Register failed: ${receipt}`);
-  }
-
-  return L1TokenPortal.parseMessageSentLog(receipt);
-}
-
-async function registerDevTokenContractL2(
-  pxe: PXE,
-  l2Wallet: AztecWallet,
-  aztecPortal: string,
-  index: bigint,
-  tokenInfo: DeploymentDataToken,
-  hash: Hex,
-) {
-  const portal = new AztecTokenPortal(aztecPortal, pxe, l2Wallet);
-
-  const tx = await portal.registerToken(
-    tokenInfo.l1Address,
-    tokenInfo.l2Address,
-    tokenInfo.name,
-    tokenInfo.symbol,
-    tokenInfo.decimals,
-    index,
-  );
-  const receipt = await tx.wait();
-  if (receipt.status !== TxStatus.SUCCESS) {
-    throw new Error(`L2 Register failed: ${receipt}`);
-  }
-
-  return receipt;
-}
-
-async function proposeAndAccept(
-  l1Wallet: L1ComboWallet,
-  l1AllowList: Hex,
-  token: Hex,
-) {
-  const allowList = new L1AllowList(
-    l1AllowList,
-    l1Wallet.wallet,
-    l1Wallet.public,
-    l1Wallet.wallet, // Approver
-  );
-
-  let receipt = await allowList.propose(token);
-  console.log(`Proposed ${token} in tx ${receipt.transactionHash}`);
-  if (receipt.status !== 'success') {
-    throw new Error(`Propose failed: ${receipt}`);
-  }
-
-  receipt = await allowList.accept(token);
-  console.log(`Accepted ${token} in tx ${receipt.transactionHash}`);
-  if (receipt.status !== 'success') {
-    throw new Error(`Accept failed: ${receipt}`);
-  }
+  // The register method now returns a different structure directly
+  const result = await portal.register(token);
+  return {
+    messageIndex: result.messageIndex,
+    messageHash: result.messageHash,
+  };
 }

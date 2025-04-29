@@ -23,19 +23,18 @@ import {
   type FieldLike,
   Fr,
   type FunctionSelectorLike,
-  L1EventPayload,
   loadContractArtifact,
+  loadContractArtifactForPublic,
   type NoirCompiledContract,
   NoteSelector,
   Point,
   type PublicKey,
   PublicKeys,
-  type UnencryptedL2Log,
   type Wallet,
   type U128Like,
   type WrappedFieldLike,
 } from '@aztec/aztec.js';
-import PortalContractArtifactJson from './portal-Portal.json' assert { type: 'json' };
+import PortalContractArtifactJson from './portal-Portal.json' with { type: 'json' };
 export const PortalContractArtifact = loadContractArtifact(PortalContractArtifactJson as NoirCompiledContract);
 
 
@@ -43,7 +42,7 @@ export const PortalContractArtifact = loadContractArtifact(PortalContractArtifac
         token: EthAddressLike
 from: AztecAddressLike
 to: EthAddressLike
-amount: FieldLike
+amount: (bigint | number)
       }
     
 
@@ -56,7 +55,7 @@ aztec_token: AztecAddressLike
       export type Deposit = {
         eth_token: EthAddressLike
 recipient: AztecAddressLike
-amount: FieldLike
+amount: (bigint | number)
 message_leaf_index: FieldLike
       }
     
@@ -128,6 +127,13 @@ export class PortalContract extends ContractBase {
   public static get artifact(): ContractArtifact {
     return PortalContractArtifact;
   }
+
+  /**
+   * Returns this contract's artifact with public bytecode.
+   */
+  public static get artifactForPublic(): ContractArtifact {
+    return loadContractArtifactForPublic(PortalContractArtifactJson as NoirCompiledContract);
+  }
   
 
   public static get storage(): ContractStorageLayout<'l1_portal' | 'l1_tokens' | 'l2_tokens' | 'token_contract_class_id' | 'shield_gateway_beacon'> {
@@ -151,26 +157,23 @@ shield_gateway_beacon: {
     }
     
 
-  public static get notes(): ContractNotes<'U253Note'> {
+  public static get notes(): ContractNotes<'UintNote'> {
     return {
-      U253Note: {
+      UintNote: {
           id: new NoteSelector(0),
         }
-    } as ContractNotes<'U253Note'>;
+    } as ContractNotes<'UintNote'>;
   }
   
 
   /** Type-safe wrappers for the public methods exposed by the contract. */
   public declare methods: {
     
-    /** claim_public(eth_token: field, recipient: struct, amount: field, message_leaf_index: field) */
-    claim_public: ((eth_token: FieldLike, recipient: AztecAddressLike, amount: FieldLike, message_leaf_index: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** claim_public(eth_token: field, recipient: struct, amount: integer, message_leaf_index: field) */
+    claim_public: ((eth_token: FieldLike, recipient: AztecAddressLike, amount: (bigint | number), message_leaf_index: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** claim_shielded(eth_token: field, recipient: struct, amount: field, message_leaf_index: field) */
-    claim_shielded: ((eth_token: FieldLike, recipient: AztecAddressLike, amount: FieldLike, message_leaf_index: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** compute_note_hash_and_optionally_a_nullifier(contract_address: struct, nonce: field, storage_slot: field, note_type_id: field, compute_nullifier: boolean, packed_note_content: array) */
-    compute_note_hash_and_optionally_a_nullifier: ((contract_address: AztecAddressLike, nonce: FieldLike, storage_slot: FieldLike, note_type_id: FieldLike, compute_nullifier: boolean, packed_note_content: FieldLike[]) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** claim_shielded(eth_token: field, recipient: struct, amount: integer, message_leaf_index: field) */
+    claim_shielded: ((eth_token: FieldLike, recipient: AztecAddressLike, amount: (bigint | number), message_leaf_index: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** constructor(l1_portal: field, token_contract_class: field, shield_gateway_beacon: struct) */
     constructor: ((l1_portal: FieldLike, token_contract_class: FieldLike, shield_gateway_beacon: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
@@ -190,9 +193,6 @@ shield_gateway_beacon: {
     /** is_registered_l2(aztec_token: struct) */
     is_registered_l2: ((aztec_token: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** process_log(log_plaintext: struct, tx_hash: field, unique_note_hashes_in_tx: struct, first_nullifier_in_tx: field, recipient: struct) */
-    process_log: ((log_plaintext: { storage: FieldLike[], len: (bigint | number) }, tx_hash: FieldLike, unique_note_hashes_in_tx: { storage: FieldLike[], len: (bigint | number) }, first_nullifier_in_tx: FieldLike, recipient: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
     /** public_dispatch(selector: field) */
     public_dispatch: ((selector: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
@@ -202,8 +202,8 @@ shield_gateway_beacon: {
     /** sync_notes() */
     sync_notes: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** withdraw_public(eth_token: struct, from: struct, recipient: struct, amount: field, withdrawNonce: field, burnNonce: field) */
-    withdraw_public: ((eth_token: EthAddressLike, from: AztecAddressLike, recipient: EthAddressLike, amount: FieldLike, withdrawNonce: FieldLike, burnNonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** withdraw_public(eth_token: struct, from: struct, recipient: struct, amount: integer, withdrawNonce: field, burnNonce: field) */
+    withdraw_public: ((eth_token: EthAddressLike, from: AztecAddressLike, recipient: EthAddressLike, amount: (bigint | number), withdrawNonce: FieldLike, burnNonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
   };
 
   
@@ -261,13 +261,15 @@ shield_gateway_beacon: {
         {
             "name": "amount",
             "type": {
-                "kind": "field"
+                "kind": "integer",
+                "sign": "unsigned",
+                "width": 128
             }
         }
     ],
     "path": "Portal::Withdraw"
 },
-        eventSelector: EventSelector.fromString("0x8fa12d74"),
+        eventSelector: EventSelector.fromString("0x3896c256"),
         fieldNames: ["token","from","to","amount"],
       },
 Register: {
@@ -347,7 +349,9 @@ Deposit: {
         {
             "name": "amount",
             "type": {
-                "kind": "field"
+                "kind": "integer",
+                "sign": "unsigned",
+                "width": 128
             }
         },
         {
@@ -359,7 +363,7 @@ Deposit: {
     ],
     "path": "Portal::Deposit"
 },
-        eventSelector: EventSelector.fromString("0x56b58a5b"),
+        eventSelector: EventSelector.fromString("0x2310ce0f"),
         fieldNames: ["eth_token","recipient","amount","message_leaf_index"],
       }
     };
