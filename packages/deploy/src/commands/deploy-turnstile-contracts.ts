@@ -28,13 +28,11 @@ export function registerDeployTurnstileContracts(program: Command) {
       'L2 Portal Initializer Address',
     )
     .action(async (options) => {
-      const pxe = createPXEClient(options.pxe);
-      const node = createAztecNodeClient(options.aztecNode);
       try {
         console.log('PXE URL:', options.pxe);
         console.log('RPC URL:', options.rpc);
         const { l1Client, l2Client } = await getClients(
-          node,
+          options.aztecNode,
           {
             chain: getChain(options.l1Chain),
             transport: http(options.rpc),

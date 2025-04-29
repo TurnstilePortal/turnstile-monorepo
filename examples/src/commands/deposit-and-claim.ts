@@ -102,10 +102,9 @@ export function registerDepositAndClaim(program: Command) {
       const l1TokenAddr = tokenInfo.l1Address;
 
       const pxe = createPXEClient(options.pxe);
-      const node = createAztecNodeClient(options.aztecNode);
 
       const { l1Client, l2Client } = await getClients(
-        node,
+        options.aztecNode,
         {
           chain: getChain(options.l1Chain),
           transport: http(options.rpc),

@@ -1,10 +1,5 @@
 import type { Command } from 'commander';
-import {
-  createPXEClient,
-  createAztecNodeClient,
-  AztecAddress,
-  TxStatus,
-} from '@aztec/aztec.js';
+import { createAztecNodeClient, AztecAddress, TxStatus } from '@aztec/aztec.js';
 import type { AztecNode, Fr } from '@aztec/aztec.js';
 import { http, getAddress, type Hex } from 'viem';
 import {
@@ -176,10 +171,10 @@ export function registerWithdrawTokens(program: Command) {
       const l1TokenAddr = getAddress(tokenInfo.l1Address) as `0x${string}`;
       const l1RollupAddr = deploymentData.rollupAddress;
 
-      const node = createAztecNodeClient(options.pxe);
+      const node = createAztecNodeClient(options.aztecNode);
 
       const { l1Client, l2Client } = await getClients(
-        node,
+        options.aztecNode,
         {
           chain: getChain(options.l1Chain),
           transport: http(options.rpc),

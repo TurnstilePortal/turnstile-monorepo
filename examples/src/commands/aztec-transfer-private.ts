@@ -114,7 +114,7 @@ export function registerAztecTransferPrivate(program: Command) {
       }
 
       const keyData = await readKeyData(options.keys);
-      const senderClient = await createL2Client(node, keyData);
+      const senderClient = await createL2Client(options.aztecNode, keyData);
       const amount = BigInt(options.amount);
 
       const recipientClient = createL2ClientFromWallet(

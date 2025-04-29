@@ -119,12 +119,11 @@ async function runDeployment(
   config: DeployConfig,
   paths: { keysFile: string; deploymentFile: string },
 ): Promise<void> {
-  console.log(`Connecting to Aztec Node at ${config.connection.aztec.node}`);
-  const node = createAztecNodeClient(config.connection.aztec.node);
+  console.log(`Using Aztec Node at ${config.connection.aztec.node}`);
 
   // Initialize clients
   const { l1Client, l2Client } = await getClients(
-    node,
+    config.connection.aztec.node,
     {
       chain: getChain(config.connection.ethereum.chainName),
       transport: http(config.connection.ethereum.rpc),
@@ -150,6 +149,7 @@ async function runDeployment(
     }
   }
 
+  const node = createAztecNodeClient(config.connection.aztec.node);
   const l1Addresses = await node.getL1ContractAddresses();
   const registryAddress = l1Addresses.registryAddress.toString();
 

@@ -83,7 +83,7 @@ const deploymentData = await readDeploymentData(deploymentDataPath);
 const keyData = await readKeyData(keyDataPath);
 
 const { l1Client, l2Client } = await getClients(
-  node,
+  AZTEC_NODE_URL,
   {
     chain: anvil,
     transport: http(RPC_URL),

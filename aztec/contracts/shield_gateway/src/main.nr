@@ -38,20 +38,22 @@ pub contract ShieldGateway {
             [amount.to_field(), token.to_field(), sender.to_field(), recipient.to_field()],
         );
 
-        // TODO: What checks should we perform here?
-        // Ensure Verified ID is provided & valid
+        // TODO: Implement verified ID checks
+        // // Ensure Verified ID is provided & valid
+        // // Safety: value constrained later
+        // let mut verified_id: [Field; 5] =
+        //     unsafe { capsules::load(context.this_address(), VP_SLOT).unwrap() };
 
-        // Safety: value constrained later
-        let mut verified_id: [Field; 5] =
-            unsafe { capsules::load(context.this_address(), VP_SLOT).unwrap() };
-
-        let _ = ShieldGateway::at(context.this_address()).verify_id_private(verified_id).view(
-            &mut context,
-        );
+        // let _ = ShieldGateway::at(context.this_address()).verify_id_private(verified_id).view(
+        //     &mut context,
+        // );
 
         // Publicly log Verified ID Serial & Token & binned value (Amount / BIN_AMOUNT)
         ShieldGateway::at(context.this_address())
-            ._log_transfer(verified_id[0], token, _binned(amount))
+            ._log_transfer(
+                0, // TODO: using dummy serial number. Switch to verified_id[0] when available
+                token,
+                _binned(amount))
             .enqueue(&mut context);
     }
 

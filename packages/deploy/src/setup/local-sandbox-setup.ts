@@ -13,25 +13,30 @@ export class LocalSandboxSetup implements DeploySetup {
     await this.waitForSandboxReady(config.connection.aztec.node);
   }
 
-  private async getContainerId(): Promise<string> {
+  private async getContainerIds(): Promise<string[]> {
     const { stdout } = await execAsync(
       'docker ps --filter name=aztec-start -q',
     );
-    const containerId = stdout.trim();
-    if (!containerId) {
+    const containerIds = stdout
+      .trim()
+      .split('\n')
+      .filter((id) => id);
+    if (containerIds.length === 0) {
       throw new Error('No aztec-start container found');
     }
 
-    return containerId;
+    return containerIds;
   }
 
   private async startOrResetSandbox(): Promise<void> {
     console.log('Checking the sandbox...');
     try {
       // await execAsync('docker-compose down -v');
-      const containerId = await this.getContainerId();
-      await execAsync(`docker stop ${containerId}`);
-      console.log(`Stopped existing sandbox container ${containerId}`);
+      const containerIds = await this.getContainerIds();
+      for (const containerId of containerIds) {
+        await execAsync(`docker stop ${containerId}`);
+        console.log(`Stopped existing sandbox container ${containerId}`);
+      }
     } catch (error) {
       console.log('Container not running or not found, continuing...');
     }

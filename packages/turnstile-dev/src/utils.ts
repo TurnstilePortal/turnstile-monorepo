@@ -10,8 +10,12 @@ import {
   type Transport,
   type Hex,
 } from 'viem';
-import { Fr, Fq } from '@aztec/aztec.js';
-import { computePartialAddress } from '@aztec/stdlib/contract';
+import {
+  createPXEClient,
+  Fr,
+  Fq,
+  createAztecNodeClient,
+} from '@aztec/aztec.js';
 import { createPXEService, type PXEServiceConfig } from '@aztec/pxe/server';
 import type {
   AccountWallet,
@@ -20,16 +24,14 @@ import type {
   PXE,
   Wallet as AztecWallet,
 } from '@aztec/aztec.js';
-import {
-  getSchnorrAccount,
-  getSchnorrWallet,
-  getSchnorrWalletWithSecretKey,
-} from '@aztec/accounts/schnorr';
+import { getSchnorrAccount, getSchnorrWallet } from '@aztec/accounts/schnorr';
 import { getDeployedTestAccountsWallets } from '@aztec/accounts/testing';
 import { deriveSigningKey } from '@aztec/stdlib/keys';
 import { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
 
 import { readKeyData, type KeyData } from './keyData.js';
+import { spawn } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 
 export async function createPXE(
   node: AztecNode,
@@ -48,7 +50,7 @@ export async function createPXE(
       l1Contracts,
       l1ChainId,
       rollupVersion,
-      proverEnabled: l1ChainId !== 31337,
+      proverEnabled: l1ChainId !== 31337 && l1ChainId !== 1337,
     } as PXEServiceConfig;
   }
 
@@ -108,19 +110,14 @@ export function generateEthAccount(): { privateKey: Hex; address: Hex } {
 }
 
 export async function getClients(
-  aztecNode: AztecNode,
+  aztecNode: string,
   l1Config: { chain: Chain; transport: Transport },
   keyDataFile: string,
 ): Promise<{
   l1Client: L1Client;
   l2Client: L2Client;
 }> {
-  // Add console logging to help debug
-  console.log('Reading key data from:', keyDataFile);
   const keyData = await readKeyData(keyDataFile);
-  // console.log('KeyData received:', JSON.stringify(keyData, null, 2));
-
-  // Add a safeguard to ensure we have the required fields
   if (!keyData || !keyData.l1PrivateKey) {
     throw new Error(
       `Invalid keyData: missing l1PrivateKey in ${JSON.stringify(keyData)}`,
@@ -152,13 +149,23 @@ export async function createL1Client(
 }
 
 export async function createL2Client(
-  node: AztecNode,
+  aztecNode: string,
   keyData: KeyData,
   pxe?: PXE,
 ): Promise<L2Client> {
+  const node = createAztecNodeClient(aztecNode);
   if (!pxe) {
+    // pxe = await createPXE(node);
+    const { l1ChainId } = await node.getNodeInfo();
+    // TODO: Figure out a better way to get the network name
+    const network = l1ChainId === 11155111 ? 'alpha-testnet' : undefined;
+
     // biome-ignore lint/style/noParameterAssign: only assigning if undefined
-    pxe = await createPXE(node);
+    pxe = await startLocalPXE(
+      aztecNode,
+      network,
+      l1ChainId !== 31337 && l1ChainId !== 1337,
+    );
   }
   const account = await getSchnorrAccount(
     pxe,
@@ -221,4 +228,159 @@ export async function anvilFundMe(
     value: amount,
   });
   console.log(`Funded in tx ${receipt}`);
+}
+
+export async function startLocalPXE(
+  nodeUrl: string,
+  network: string | undefined,
+  proverEnabled: boolean,
+  port = 8976,
+): Promise<PXE> {
+  console.log('Starting local PXE...');
+  const command = 'aztec';
+  const args = [
+    'start',
+    '--port',
+    port.toString(), // Convert port number to string
+    '--pxe',
+    '--pxe.nodeUrl',
+    nodeUrl,
+    '--pxe.proverEnabled',
+    proverEnabled ? 'true' : 'false',
+  ];
+  if (network) {
+    args.push('--pxe.network', network);
+  }
+
+  return new Promise<PXE>((resolve, reject) => {
+    let pxeProcess: ChildProcess | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
+    let serverStarted = false;
+    let accumulatedStdout = ''; // Accumulate stdout in case the message is split across chunks
+    let accumulatedStderr = ''; // Accumulate stderr in case the message is split across chunks
+
+    const cleanup = (killProcess = false) => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      if (pxeProcess) {
+        pxeProcess.stdout?.removeAllListeners();
+        pxeProcess.stderr?.removeAllListeners();
+        pxeProcess.removeAllListeners('error');
+        pxeProcess.removeAllListeners('close');
+        if (killProcess && !pxeProcess.killed) {
+          console.log('Attempting to kill PXE process...');
+          const killed = pxeProcess.kill('SIGTERM'); // Attempt graceful shutdown
+          if (!killed) {
+            console.warn('Failed to send SIGTERM to PXE process.');
+            // Consider SIGKILL if SIGTERM fails or after a delay
+            setTimeout(() => {
+              if (pxeProcess && !pxeProcess.killed) {
+                pxeProcess.kill('SIGKILL');
+              }
+            }, 1000);
+          }
+        }
+        pxeProcess = null; // Clear reference
+      }
+    };
+
+    timeoutId = setTimeout(() => {
+      if (!serverStarted) {
+        console.error('PXE start timed out after 15 seconds.');
+        cleanup(true); // Request process kill on timeout
+        reject(
+          new Error('Timeout: Failed to start PXE server within 15 seconds.'),
+        );
+      }
+    }, 15000); // 15 seconds timeout
+
+    try {
+      console.log(`Spawning: ${command} ${args.join(' ')}`);
+      pxeProcess = spawn(command, args as readonly string[], {
+        env: { ...process.env, FORCE_COLOR: '0' }, // Ensure consistent output format
+        stdio: ['ignore', 'pipe', 'pipe'], // Ignore stdin, pipe stdout, pipe stderr
+      });
+
+      pxeProcess?.stdout?.on('data', (data: Buffer) => {
+        const outputChunk = data.toString();
+        accumulatedStdout += outputChunk;
+        console.log(`PXE stdout chunk: ${outputChunk.trim()}`); // Log chunk for debugging
+
+        // Check for server listening message in stdout
+        if (
+          accumulatedStdout.includes('Aztec Server listening') &&
+          !serverStarted
+        ) {
+          console.log(`PXE server started on port ${port}`);
+          serverStarted = true;
+          cleanup(false); // Don't kill the process, just clean up listeners/timeout
+
+          // Create and return a PXE client with the specified port
+          const pxe = createPXEClient(`http://localhost:${port}`);
+          resolve(pxe);
+        }
+      });
+
+      pxeProcess?.stderr?.on('data', (data: Buffer) => {
+        const errorOutput = data.toString();
+        accumulatedStderr += errorOutput;
+        console.error(`PXE stderr: ${errorOutput.trim()}`);
+
+        // Also check for server listening message in stderr
+        if (
+          accumulatedStderr.includes('Aztec Server listening') &&
+          !serverStarted
+        ) {
+          console.log(`PXE server started on port ${port}`);
+          serverStarted = true;
+          cleanup(false); // Don't kill the process, just clean up listeners/timeout
+
+          // Create and return a PXE client with the specified port
+          const pxe = createPXEClient(`http://localhost:${port}`);
+          resolve(pxe);
+        }
+      });
+
+      pxeProcess?.on('error', (err) => {
+        if (!serverStarted) {
+          // Avoid rejection if server started just before error event
+          console.error('Failed to start PXE process:', err);
+          cleanup(true); // Kill process on spawn error
+          reject(new Error(`Failed to start PXE process: ${err.message}`));
+        }
+      });
+
+      pxeProcess?.on('close', (code, signal) => {
+        // This might be called after the server started and cleanup already happened
+        if (!serverStarted && pxeProcess) {
+          // Check pxeProcess existence as cleanup sets it to null
+          console.error(
+            `PXE process exited unexpectedly with code ${code}, signal ${signal}`,
+          );
+          cleanup(false); // Don't try killing again, just cleanup listeners
+          reject(
+            new Error(
+              `PXE process exited unexpectedly (code ${code}, signal ${signal}) before server started.`,
+            ),
+          );
+        } else if (pxeProcess) {
+          console.log(
+            `PXE process exited (code ${code}, signal ${signal}) after server started or during cleanup.`,
+          );
+          // Process might have been killed by cleanup, which is expected in timeout/error cases.
+        }
+      });
+    } catch (error) {
+      // This catches synchronous errors during spawn setup
+      console.error('Error setting up PXE process spawn:', error);
+      cleanup(true); // Ensure cleanup if spawn fails synchronously
+      reject(
+        new Error(
+          `Failed to spawn PXE process: ${error instanceof Error ? error.message : String(error)}`,
+        ),
+      );
+    }
+  });
 }

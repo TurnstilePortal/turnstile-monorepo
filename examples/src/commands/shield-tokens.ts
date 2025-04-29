@@ -66,10 +66,8 @@ export function registerShieldTokens(program: Command) {
       }
       const tokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
 
-      const node = createAztecNodeClient(options.aztecNode);
-
       const keyData = await readKeyData(options.keys);
-      const l2Client = await createL2Client(node, keyData);
+      const l2Client = await createL2Client(options.aztecNode, keyData);
       const amount = BigInt(options.amount);
       const token = await L2Token.fromAddress(tokenAddr, l2Client);
       const startingBalance = await token.balanceOfPublic(
@@ -78,8 +76,6 @@ export function registerShieldTokens(program: Command) {
       const startingPrivateBalance = await token.balanceOfPrivate(
         l2Client.getAddress(),
       );
-      // Note: shieldedSupply is not available in the new API
-      // const startingShieldedSupply = 0n;
 
       const tx = await doShield(l2Client, token, amount);
       const receipt = await tx.wait();

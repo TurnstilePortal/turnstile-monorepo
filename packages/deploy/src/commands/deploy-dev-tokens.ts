@@ -37,14 +37,13 @@ export function registerDeployDevTokens(program: Command) {
     .addOption(commonOpts.deploymentData)
     .action(async (options) => {
       const pxe = createPXEClient(options.pxe);
-      const node = createAztecNodeClient(options.aztecNode);
       try {
         console.log('PXE URL:', options.pxe);
         console.log('RPC URL:', options.rpc);
         console.log('L1 Chain:', options.l1Chain);
 
         const { l1Client, l2Client } = await getClients(
-          node,
+          options.aztecNode,
           {
             chain: getChain(options.l1Chain),
             transport: http(options.rpc),

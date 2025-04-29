@@ -31,8 +31,6 @@ describe('Turnstile Dev Utils', () => {
     const { readKeyData } = await import('./keyData.js');
 
     // Setup mocks
-    const mockPXE = {} as PXE;
-    const mockNode = {} as AztecNode;
     const mockL1Config = {
       chain: { id: 1 } as Chain,
       transport: {} as Transport,
@@ -58,7 +56,7 @@ describe('Turnstile Dev Utils', () => {
     );
 
     // Call the function
-    const result = await getClients(mockNode, mockL1Config, 'test-key.json');
+    const result = await getClients('node', mockL1Config, 'test-key.json');
 
     // Verify result
     expect(result).toBeDefined();

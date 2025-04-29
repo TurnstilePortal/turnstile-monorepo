@@ -87,7 +87,7 @@ export function registerDeployAztecOnlyTokens(program: Command) {
       const node = createAztecNodeClient(options.aztecNode);
       try {
         const { l2Client } = await getClients(
-          node,
+          options.aztecNode,
           {
             chain: getChain('anvil'),
             transport: http(options.rpc),

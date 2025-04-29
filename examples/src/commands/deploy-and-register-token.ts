@@ -36,9 +36,8 @@ export function registerDeployAndRegisterToken(program: Command) {
       // Get deployment data and setup clients
       const deploymentData = await readDeploymentData(options.deploymentData);
       const pxe = createPXEClient(options.pxe);
-      const node = createAztecNodeClient(options.aztecNode);
       const { l2Client } = await getClients(
-        node,
+        options.aztecNode,
         {
           chain: getChain(options.l1Chain),
           transport: http(options.rpc),

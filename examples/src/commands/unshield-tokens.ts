@@ -66,10 +66,8 @@ export function registerUnshieldTokens(program: Command) {
       }
       const tokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
 
-      const node = createAztecNodeClient(options.aztecNode);
-
       const keyData = await readKeyData(options.keys);
-      const l2Client = await createL2Client(node, keyData);
+      const l2Client = await createL2Client(options.aztecNode, keyData);
       const amount = BigInt(options.amount);
       const token = await L2Token.fromAddress(tokenAddr, l2Client);
       const startingBalance = await token.balanceOfPublic(

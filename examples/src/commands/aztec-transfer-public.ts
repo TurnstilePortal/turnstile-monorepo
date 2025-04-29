@@ -62,10 +62,9 @@ export function registerAztecTransferPublic(program: Command) {
       const tokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
 
       const pxe = createPXEClient(options.pxe);
-      const node = createAztecNodeClient(options.aztecNode);
 
       const keyData = await readKeyData(options.keys);
-      const l2Client = await createL2Client(node, keyData);
+      const l2Client = await createL2Client(options.aztecNode, keyData);
       const amount = BigInt(options.amount);
 
       const aztecTestWallets = await getInitialTestAccountsWallets(pxe);
