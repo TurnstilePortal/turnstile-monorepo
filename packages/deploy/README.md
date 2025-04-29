@@ -62,7 +62,7 @@ Private keys and account information are stored in separate JSON files for secur
 {
   "l1PrivateKey": "0x...",
   "l2PrivateKey": "0x...",
-  "l2SigningKey": "0x...",
+  "l2SecretKey": "0x...",
   "l1Address": "0x...",
   "l2Address": "0x..."
 }

@@ -23,7 +23,6 @@ import {
   type FieldLike,
   Fr,
   type FunctionSelectorLike,
-  L1EventPayload,
   loadContractArtifact,
   loadContractArtifactForPublic,
   type NoirCompiledContract,
@@ -35,7 +34,7 @@ import {
   type U128Like,
   type WrappedFieldLike,
 } from '@aztec/aztec.js';
-import BeaconContractArtifactJson from './beacon-Beacon.json' assert { type: 'json' };
+import BeaconContractArtifactJson from './beacon-Beacon.json' with { type: 'json' };
 export const BeaconContractArtifact = loadContractArtifact(BeaconContractArtifactJson as NoirCompiledContract);
 
 
@@ -176,9 +175,6 @@ admin: {
 
     /** init(admin: struct, target: struct) */
     init: ((admin: AztecAddressLike, target: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** process_log(_log_plaintext: struct, _tx_hash: field, _unique_note_hashes_in_tx: struct, _first_nullifier_in_tx: field, _recipient: struct) */
-    process_log: ((_log_plaintext: { storage: FieldLike[], len: (bigint | number) }, _tx_hash: FieldLike, _unique_note_hashes_in_tx: { storage: FieldLike[], len: (bigint | number) }, _first_nullifier_in_tx: FieldLike, _recipient: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** public_dispatch(selector: field) */
     public_dispatch: ((selector: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;

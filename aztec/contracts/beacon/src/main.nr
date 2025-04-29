@@ -7,7 +7,7 @@ pub contract Beacon {
     use aztec::{
         context::PublicContext,
         event::event_interface::EventInterface,
-        macros::{events::event, functions::{initializer, private, public, view}, storage::storage},
+        macros::{events::event, functions::{initializer, private, public, utility, view}, storage::storage},
         protocol_types::{address::AztecAddress, traits::{FromField, Serialize, ToField}},
         state_vars::{Map, PublicMutable, SharedMutable},
         unencrypted_logs::unencrypted_event_emission::encode_event,
@@ -167,6 +167,7 @@ pub contract Beacon {
         storage.admin.read()
     }
 
+    #[utility]
     pub unconstrained fn get_target_unconstrained(source: AztecAddress) -> pub AztecAddress {
         let mut target = storage.overrides.at(source).get_current_value();
         if (target.is_zero()) {
@@ -175,10 +176,12 @@ pub contract Beacon {
         storage.target.get_current_value()
     }
 
+    #[utility]
     pub unconstrained fn get_default_target_unconstrained() -> pub AztecAddress {
         storage.target.get_current_value()
     }
 
+    #[utility]
     pub unconstrained fn get_admin_unconstrained() -> pub AztecAddress {
         storage.admin.read()
     }

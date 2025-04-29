@@ -235,7 +235,7 @@ export class L2Token implements IL2Token {
     try {
       const from = this.client.getAddress();
       return this.token.methods
-        .transfer_public_to_public(
+        .transfer_in_public(
           from,
           to,
           amount,
@@ -275,7 +275,7 @@ export class L2Token implements IL2Token {
       const shieldGatewayAddr = await this.getShieldGatewayAddress();
 
       // Create function interaction
-      const interaction = this.token.methods.transfer_private_to_private(
+      const interaction = this.token.methods.transfer_in_private(
         from,
         to,
         amount,

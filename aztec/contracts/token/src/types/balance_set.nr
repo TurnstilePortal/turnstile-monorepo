@@ -1,10 +1,10 @@
-use aztec::{
-    context::{PrivateContext, UnconstrainedContext},
+use dep::aztec::{
+    context::{PrivateContext, UtilityContext},
     note::{note_emission::OuterNoteEmission, retrieved_note::RetrievedNote},
     protocol_types::{address::AztecAddress, constants::MAX_NOTE_HASH_READ_REQUESTS_PER_CALL},
 };
-use aztec::prelude::{NoteGetterOptions, NoteViewerOptions, PrivateSet};
-use uint_note::uint_note::UintNote;
+use dep::aztec::prelude::{NoteGetterOptions, NoteViewerOptions, PrivateSet};
+use dep::uint_note::uint_note::UintNote;
 use std::ops::Add;
 
 pub struct BalanceSet<Context> {
@@ -18,7 +18,7 @@ impl<Context> BalanceSet<Context> {
     }
 }
 
-impl BalanceSet<UnconstrainedContext> {
+impl BalanceSet<UtilityContext> {
     pub unconstrained fn balance_of(self: Self) -> u128 {
         self.balance_of_with_offset(0)
     }

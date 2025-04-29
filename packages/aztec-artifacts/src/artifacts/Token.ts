@@ -23,7 +23,6 @@ import {
   type FieldLike,
   Fr,
   type FunctionSelectorLike,
-  L1EventPayload,
   loadContractArtifact,
   loadContractArtifactForPublic,
   type NoirCompiledContract,
@@ -35,7 +34,7 @@ import {
   type U128Like,
   type WrappedFieldLike,
 } from '@aztec/aztec.js';
-import TokenContractArtifactJson from './token-Token.json' assert { type: 'json' };
+import TokenContractArtifactJson from './token-Token.json' with { type: 'json' };
 export const TokenContractArtifact = loadContractArtifact(TokenContractArtifactJson as NoirCompiledContract);
 
 
@@ -46,7 +45,8 @@ amount: (bigint | number)
     
 
       export type Transfer = {
-        to: AztecAddressLike
+        from: AztecAddressLike
+to: AztecAddressLike
 amount: (bigint | number)
       }
     
@@ -59,12 +59,6 @@ amount: (bigint | number)
 
       export type Mint = {
         to: AztecAddressLike
-amount: (bigint | number)
-      }
-    
-
-      export type Burn = {
-        from: AztecAddressLike
 amount: (bigint | number)
       }
     
@@ -145,7 +139,7 @@ export class TokenContract extends ContractBase {
   }
   
 
-  public static get storage(): ContractStorageLayout<'minter' | 'shield_gateway_beacon' | 'private_balances' | 'public_balances' | 'total_supply' | 'shielded_supply' | 'name' | 'symbol' | 'decimals'> {
+  public static get storage(): ContractStorageLayout<'minter' | 'shield_gateway_beacon' | 'balances' | 'public_balances' | 'total_supply' | 'shielded_supply' | 'symbol' | 'name' | 'decimals'> {
       return {
         minter: {
       slot: new Fr(1n),
@@ -153,7 +147,7 @@ export class TokenContract extends ContractBase {
 shield_gateway_beacon: {
       slot: new Fr(3n),
     },
-private_balances: {
+balances: {
       slot: new Fr(5n),
     },
 public_balances: {
@@ -165,16 +159,16 @@ total_supply: {
 shielded_supply: {
       slot: new Fr(8n),
     },
-name: {
+symbol: {
       slot: new Fr(9n),
     },
-symbol: {
+name: {
       slot: new Fr(11n),
     },
 decimals: {
       slot: new Fr(13n),
     }
-      } as ContractStorageLayout<'minter' | 'shield_gateway_beacon' | 'private_balances' | 'public_balances' | 'total_supply' | 'shielded_supply' | 'name' | 'symbol' | 'decimals'>;
+      } as ContractStorageLayout<'minter' | 'shield_gateway_beacon' | 'balances' | 'public_balances' | 'total_supply' | 'shielded_supply' | 'symbol' | 'name' | 'decimals'>;
     }
     
 
@@ -205,11 +199,14 @@ decimals: {
     /** cancel_authwit(inner_hash: field) */
     cancel_authwit: ((inner_hash: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** finalize_mint_shielded(to: struct, amount: integer, hiding_point_slot: field) */
-    finalize_mint_shielded: ((to: AztecAddressLike, amount: (bigint | number), hiding_point_slot: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** finalize_mint_shielded(to: struct, amount: integer, partial_note: struct) */
+    finalize_mint_shielded: ((to: AztecAddressLike, amount: (bigint | number), partial_note: { commitment: FieldLike }) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** finalize_transfer_public_to_private(amount: integer, hiding_point_slot: field) */
-    finalize_transfer_public_to_private: ((amount: (bigint | number), hiding_point_slot: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** finalize_mint_to_private(amount: integer, partial_note: struct) */
+    finalize_mint_to_private: ((amount: (bigint | number), partial_note: { commitment: FieldLike }) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
+    /** finalize_transfer_to_private(amount: integer, partial_note: struct) */
+    finalize_transfer_to_private: ((amount: (bigint | number), partial_note: { commitment: FieldLike }) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** get_shield_gateway_beacon_private() */
     get_shield_gateway_beacon_private: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
@@ -229,11 +226,17 @@ decimals: {
     /** init(minter: struct, name: string, symbol: string, decimals: integer) */
     init: ((minter: AztecAddressLike, name: string, symbol: string, decimals: (bigint | number)) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** mint_public(to: struct, amount: integer) */
-    mint_public: ((to: AztecAddressLike, amount: (bigint | number)) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** is_minter(minter: struct) */
+    is_minter: ((minter: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** mint_shielded(to: struct, amount: integer) */
     mint_shielded: ((to: AztecAddressLike, amount: (bigint | number)) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
+    /** mint_to_private(from: struct, to: struct, amount: integer) */
+    mint_to_private: ((from: AztecAddressLike, to: AztecAddressLike, amount: (bigint | number)) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
+    /** mint_to_public(to: struct, amount: integer) */
+    mint_to_public: ((to: AztecAddressLike, amount: (bigint | number)) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** prepare_private_balance_increase(to: struct, from: struct) */
     prepare_private_balance_increase: ((to: AztecAddressLike, from: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
@@ -246,9 +249,6 @@ decimals: {
 
     /** private_get_symbol() */
     private_get_symbol: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** process_log(log_plaintext: struct, tx_hash: field, unique_note_hashes_in_tx: struct, first_nullifier_in_tx: field, recipient: struct) */
-    process_log: ((log_plaintext: { storage: FieldLike[], len: (bigint | number) }, tx_hash: FieldLike, unique_note_hashes_in_tx: { storage: FieldLike[], len: (bigint | number) }, first_nullifier_in_tx: FieldLike, recipient: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** public_dispatch(selector: field) */
     public_dispatch: ((selector: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
@@ -265,9 +265,6 @@ decimals: {
     /** set_shield_gateway_beacon(beacon: struct) */
     set_shield_gateway_beacon: ((beacon: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** setup_refund(fee_payer: struct, user: struct, funded_amount: integer, nonce: field) */
-    setup_refund: ((fee_payer: AztecAddressLike, user: AztecAddressLike, funded_amount: (bigint | number), nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
     /** shield(from: struct, amount: integer, nonce: field) */
     shield: ((from: AztecAddressLike, amount: (bigint | number), nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
@@ -280,24 +277,27 @@ decimals: {
     /** total_supply() */
     total_supply: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** transfer_private_to_private(from: struct, to: struct, amount: integer, nonce: field) */
-    transfer_private_to_private: ((from: AztecAddressLike, to: AztecAddressLike, amount: (bigint | number), nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** transfer(to: struct, amount: integer) */
+    transfer: ((to: AztecAddressLike, amount: (bigint | number)) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** transfer_private_to_public(from: struct, to: struct, amount: integer, nonce: field) */
-    transfer_private_to_public: ((from: AztecAddressLike, to: AztecAddressLike, amount: (bigint | number), nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** transfer_in_private(from: struct, to: struct, amount: integer, nonce: field) */
+    transfer_in_private: ((from: AztecAddressLike, to: AztecAddressLike, amount: (bigint | number), nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** transfer_public_to_private(from: struct, to: struct, amount: integer, nonce: field) */
-    transfer_public_to_private: ((from: AztecAddressLike, to: AztecAddressLike, amount: (bigint | number), nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** transfer_in_public(from: struct, to: struct, amount: integer, nonce: field) */
+    transfer_in_public: ((from: AztecAddressLike, to: AztecAddressLike, amount: (bigint | number), nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** transfer_public_to_public(from: struct, to: struct, amount: integer, nonce: field) */
-    transfer_public_to_public: ((from: AztecAddressLike, to: AztecAddressLike, amount: (bigint | number), nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** transfer_to_private(to: struct, amount: integer) */
+    transfer_to_private: ((to: AztecAddressLike, amount: (bigint | number)) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
+    /** transfer_to_public(from: struct, to: struct, amount: integer, nonce: field) */
+    transfer_to_public: ((from: AztecAddressLike, to: AztecAddressLike, amount: (bigint | number), nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** unshield(from: struct, amount: integer, nonce: field) */
     unshield: ((from: AztecAddressLike, amount: (bigint | number), nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
   };
 
   
-    public static get events(): { Unshield: {abiType: AbiType, eventSelector: EventSelector, fieldNames: string[] }, Transfer: {abiType: AbiType, eventSelector: EventSelector, fieldNames: string[] }, Shield: {abiType: AbiType, eventSelector: EventSelector, fieldNames: string[] }, Mint: {abiType: AbiType, eventSelector: EventSelector, fieldNames: string[] }, Burn: {abiType: AbiType, eventSelector: EventSelector, fieldNames: string[] } } {
+    public static get events(): { Unshield: {abiType: AbiType, eventSelector: EventSelector, fieldNames: string[] }, Transfer: {abiType: AbiType, eventSelector: EventSelector, fieldNames: string[] }, Shield: {abiType: AbiType, eventSelector: EventSelector, fieldNames: string[] }, Mint: {abiType: AbiType, eventSelector: EventSelector, fieldNames: string[] } } {
     return {
       Unshield: {
         abiType: {
@@ -337,6 +337,21 @@ Transfer: {
     "kind": "struct",
     "fields": [
         {
+            "name": "from",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "inner",
+                        "type": {
+                            "kind": "field"
+                        }
+                    }
+                ],
+                "path": "authwit::aztec::protocol_types::address::aztec_address::AztecAddress"
+            }
+        },
+        {
             "name": "to",
             "type": {
                 "kind": "struct",
@@ -362,8 +377,8 @@ Transfer: {
     ],
     "path": "Token::Transfer"
 },
-        eventSelector: EventSelector.fromString("0x2a0aa0af"),
-        fieldNames: ["to","amount"],
+        eventSelector: EventSelector.fromString("0x70a1894e"),
+        fieldNames: ["from","to","amount"],
       },
 Shield: {
         abiType: {
@@ -430,39 +445,6 @@ Mint: {
 },
         eventSelector: EventSelector.fromString("0x46ddceab"),
         fieldNames: ["to","amount"],
-      },
-Burn: {
-        abiType: {
-    "kind": "struct",
-    "fields": [
-        {
-            "name": "from",
-            "type": {
-                "kind": "struct",
-                "fields": [
-                    {
-                        "name": "inner",
-                        "type": {
-                            "kind": "field"
-                        }
-                    }
-                ],
-                "path": "authwit::aztec::protocol_types::address::aztec_address::AztecAddress"
-            }
-        },
-        {
-            "name": "amount",
-            "type": {
-                "kind": "integer",
-                "sign": "unsigned",
-                "width": 128
-            }
-        }
-    ],
-    "path": "Token::Burn"
-},
-        eventSelector: EventSelector.fromString("0xf94b47e2"),
-        fieldNames: ["from","amount"],
       }
     };
   }

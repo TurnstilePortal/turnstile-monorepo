@@ -4,6 +4,7 @@ import {
   EthAddress,
   AztecAddress,
   type AztecNode,
+  type PXE,
   type Wallet,
 } from '@aztec/aztec.js';
 import { PortalContract } from '@turnstile-portal/aztec-artifacts';
@@ -18,6 +19,7 @@ describe('L2Portal', () => {
   let portal: L2Portal;
   let mockL2Client: IL2Client;
   let mockAztecNode: AztecNode;
+  let mockPxe: PXE;
   let mockWallet: Wallet;
   let portalAddr: AztecAddress;
   // biome-ignore lint/suspicious/noExplicitAny: Using any for test mocks is acceptable
@@ -95,6 +97,8 @@ describe('L2Portal', () => {
       }),
     } as unknown as AztecNode;
 
+    mockPxe = {} as unknown as PXE;
+
     // Mock the wallet
     mockWallet = {
       getAddress: vi.fn().mockReturnValue(walletAddr),
@@ -105,6 +109,7 @@ describe('L2Portal', () => {
       getNode: vi.fn().mockReturnValue(mockAztecNode),
       getWallet: vi.fn().mockReturnValue(mockWallet),
       getAddress: vi.fn().mockReturnValue(walletAddr),
+      getPxe: vi.fn().mockRejectedValue(mockPxe),
     };
 
     // Create portal instance

@@ -51,7 +51,7 @@ pub fn abi_encode_deposit(
 }
 
 // For testing purposes, enables printing the ABI-encoded data
-pub unconstrained fn field_from_encoded_bytes(encoded: [u8; 100], offset: u8) -> Field {
+pub unconstrained fn field_from_encoded_bytes(encoded: [u8; 100], offset: u32) -> Field {
     let mut arr = [0; 31];
     for i in 0..31 {
         if offset + i >= 100 {

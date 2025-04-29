@@ -1,7 +1,12 @@
 import type { AztecAddress, Fr, EthAddress, Wallet } from '@aztec/aztec.js';
-import { getContractClassFromArtifact, TxStatus } from '@aztec/aztec.js';
-import { registerContractClass } from '@aztec/aztec.js/deployment';
+import {
+  getContractClassFromArtifact,
+  FeeJuicePaymentMethod,
+  TxStatus,
+} from '@aztec/aztec.js';
 import type { L2Client } from '@turnstile-portal/turnstile.js';
+
+import { getInitialTestAccountsWallets } from '@aztec/accounts/testing';
 
 import {
   PortalContract,
@@ -15,6 +20,7 @@ export async function deployBeacon(
   adminAddr: AztecAddress,
   targetAddr: AztecAddress,
 ): Promise<BeaconContract> {
+  console.log('Deploying Beacon...');
   const beacon = await BeaconContract.deploy(
     l2Client.getWallet(),
     adminAddr,
@@ -30,6 +36,7 @@ export async function deployBeacon(
 export async function deployShieldGateway(
   l2ClientAdmin: L2Client,
 ): Promise<ShieldGatewayContract> {
+  console.log('Deploying Shield Gateway...');
   const shieldGateway = await ShieldGatewayContract.deploy(
     l2ClientAdmin.getWallet(),
   )
@@ -62,14 +69,15 @@ export async function registerTurnstileTokenContractClass(
   l2Client: L2Client,
 ): Promise<Fr> {
   console.log('Registering Turnstile Token contract class...');
-  const tx = await registerContractClass(
-    l2Client.getWallet(),
-    TokenContractArtifact,
-  );
-  const receipt = await tx.send({ fee: l2Client.getFeeOpts() }).wait();
-  if (receipt.status !== TxStatus.SUCCESS) {
-    throw new Error(`Failed to register contract class: ${receipt}`);
-  }
+  await l2Client.getWallet().registerContractClass(TokenContractArtifact);
+  // const tx = await registerContractClass(
+  //   l2Client.getWallet(),
+  //   TokenContractArtifact,
+  // );
+  // const receipt = await tx.send({ fee: l2Client.getFeeOpts() }).wait();
+  // if (receipt.status !== TxStatus.SUCCESS) {
+  //   throw new Error(`Failed to register contract class: ${receipt}`);
+  // }
   const tokenContractClass = await getContractClassFromArtifact(
     TokenContractArtifact,
   );

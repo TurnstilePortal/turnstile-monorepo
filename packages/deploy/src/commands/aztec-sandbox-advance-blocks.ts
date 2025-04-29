@@ -10,7 +10,7 @@ import { getInitialTestAccountsWallets } from '@aztec/accounts/testing';
 import { TestContract } from '@aztec/noir-contracts.js/Test';
 import { commonOpts } from './common.js';
 
-export function registerAztecSandboxAdvanceBLocks(program: Command) {
+export function registerAztecSandboxAdvanceBlocks(program: Command) {
   return program
     .command('aztec-sandbox-advance-blocks')
     .description('Sends transactions to advance blocks in the sandbox')

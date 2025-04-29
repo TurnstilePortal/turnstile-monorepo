@@ -23,7 +23,6 @@ import {
   type FieldLike,
   Fr,
   type FunctionSelectorLike,
-  L1EventPayload,
   loadContractArtifact,
   loadContractArtifactForPublic,
   type NoirCompiledContract,
@@ -35,7 +34,7 @@ import {
   type U128Like,
   type WrappedFieldLike,
 } from '@aztec/aztec.js';
-import ShieldGatewayContractArtifactJson from './shield_gateway-ShieldGateway.json' assert { type: 'json' };
+import ShieldGatewayContractArtifactJson from './shield_gateway-ShieldGateway.json' with { type: 'json' };
 export const ShieldGatewayContractArtifact = loadContractArtifact(ShieldGatewayContractArtifactJson as NoirCompiledContract);
 
 
@@ -141,9 +140,6 @@ export class ShieldGatewayContract extends ContractBase {
 
     /** init() */
     init: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** process_log(log_plaintext: struct, tx_hash: field, unique_note_hashes_in_tx: struct, first_nullifier_in_tx: field, recipient: struct) */
-    process_log: ((log_plaintext: { storage: FieldLike[], len: (bigint | number) }, tx_hash: FieldLike, unique_note_hashes_in_tx: { storage: FieldLike[], len: (bigint | number) }, first_nullifier_in_tx: FieldLike, recipient: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** public_dispatch(selector: field) */
     public_dispatch: ((selector: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;

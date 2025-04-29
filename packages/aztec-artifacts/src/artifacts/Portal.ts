@@ -23,7 +23,6 @@ import {
   type FieldLike,
   Fr,
   type FunctionSelectorLike,
-  L1EventPayload,
   loadContractArtifact,
   loadContractArtifactForPublic,
   type NoirCompiledContract,
@@ -35,7 +34,7 @@ import {
   type U128Like,
   type WrappedFieldLike,
 } from '@aztec/aztec.js';
-import PortalContractArtifactJson from './portal-Portal.json' assert { type: 'json' };
+import PortalContractArtifactJson from './portal-Portal.json' with { type: 'json' };
 export const PortalContractArtifact = loadContractArtifact(PortalContractArtifactJson as NoirCompiledContract);
 
 
@@ -193,9 +192,6 @@ shield_gateway_beacon: {
 
     /** is_registered_l2(aztec_token: struct) */
     is_registered_l2: ((aztec_token: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** process_log(log_plaintext: struct, tx_hash: field, unique_note_hashes_in_tx: struct, first_nullifier_in_tx: field, recipient: struct) */
-    process_log: ((log_plaintext: { storage: FieldLike[], len: (bigint | number) }, tx_hash: FieldLike, unique_note_hashes_in_tx: { storage: FieldLike[], len: (bigint | number) }, first_nullifier_in_tx: FieldLike, recipient: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** public_dispatch(selector: field) */
     public_dispatch: ((selector: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;

@@ -45,7 +45,6 @@ export function registerDeployDevTokens(program: Command) {
 
         const { l1Client, l2Client } = await getClients(
           node,
-          pxe,
           {
             chain: getChain(options.l1Chain),
             transport: http(options.rpc),
@@ -126,11 +125,7 @@ export function registerDeployDevTokens(program: Command) {
         }
 
         // cheatcode to advance blocks
-        await advanceBlocksUntil(
-          pxe,
-          l2Client.getWallet(),
-          Number(advanceToL2Block),
-        );
+        await advanceBlocksUntil(pxe, Number(advanceToL2Block));
 
         // Register with L2 Portal
         // Token registration is now handled differently with the refactored code

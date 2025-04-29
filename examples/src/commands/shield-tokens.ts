@@ -30,7 +30,7 @@ function createL2ClientFromWallet(wallet: Wallet): L2Client {
   }
 
   // Create a new L2Client with the wallet and PXE
-  return new L2Client(pxe, wallet);
+  return new L2Client(pxe, pxe, wallet);
 }
 
 async function doShield(l2Client: L2Client, token: L2Token, amount: bigint) {
@@ -53,7 +53,6 @@ export function registerShieldTokens(program: Command) {
     .command('shield-tokens')
     .description('Shield tokens')
     .addOption(commonOpts.keys)
-    .addOption(commonOpts.pxe)
     .addOption(commonOpts.aztecNode)
     .addOption(commonOpts.rpc)
     .addOption(commonOpts.deploymentData)
@@ -67,11 +66,10 @@ export function registerShieldTokens(program: Command) {
       }
       const tokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
 
-      const pxe = createPXEClient(options.pxe);
       const node = createAztecNodeClient(options.aztecNode);
 
       const keyData = await readKeyData(options.keys);
-      const l2Client = await createL2Client(pxe, node, keyData);
+      const l2Client = await createL2Client(node, keyData);
       const amount = BigInt(options.amount);
       const token = await L2Token.fromAddress(tokenAddr, l2Client);
       const startingBalance = await token.balanceOfPublic(

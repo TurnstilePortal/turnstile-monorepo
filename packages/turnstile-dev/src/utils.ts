@@ -10,19 +10,51 @@ import {
   type Transport,
   type Hex,
 } from 'viem';
-import { AztecAddress, Fr, Fq } from '@aztec/aztec.js';
+import { Fr, Fq } from '@aztec/aztec.js';
+import { computePartialAddress } from '@aztec/stdlib/contract';
+import { createPXEService, type PXEServiceConfig } from '@aztec/pxe/server';
 import type {
   AccountWallet,
+  AztecAddress,
   AztecNode,
   PXE,
   Wallet as AztecWallet,
 } from '@aztec/aztec.js';
-import { getSchnorrAccount, getSchnorrWallet } from '@aztec/accounts/schnorr';
+import {
+  getSchnorrAccount,
+  getSchnorrWallet,
+  getSchnorrWalletWithSecretKey,
+} from '@aztec/accounts/schnorr';
 import { getDeployedTestAccountsWallets } from '@aztec/accounts/testing';
 import { deriveSigningKey } from '@aztec/stdlib/keys';
 import { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
 
 import { readKeyData, type KeyData } from './keyData.js';
+
+
+export async function createPXE(
+  node: AztecNode,
+  config?: PXEServiceConfig | undefined,
+): Promise<PXE> {
+  if (!config) {
+    console.log('Creating PXE service with default config...');
+    const l1Contracts = await node.getL1ContractAddresses();
+    const { l1ChainId, rollupVersion } = await node.getNodeInfo();
+    // biome-ignore lint/style/noParameterAssign: only assigning if undefined
+    config = {
+      l2BlockBatchSize: 200,
+      l2BlockPollingIntervalMS: 100,
+      dataDirectory: undefined,
+      dataStoreMapSizeKB: 1024 * 1024,
+      l1Contracts,
+      l1ChainId,
+      rollupVersion,
+    } as PXEServiceConfig;
+  };
+
+  const pxe = await createPXEService(node, config);
+  return pxe;
+}
 
 export async function generateAndDeployAztecAccountSchnorr(
   pxe: PXE,
@@ -77,7 +109,6 @@ export function generateEthAccount(): { privateKey: Hex; address: Hex } {
 
 export async function getClients(
   aztecNode: AztecNode,
-  pxe: PXE,
   l1Config: { chain: Chain; transport: Transport },
   keyDataFile: string,
 ): Promise<{
@@ -98,7 +129,7 @@ export async function getClients(
 
   return {
     l1Client: await createL1Client(l1Config, keyData),
-    l2Client: await createL2Client(pxe, aztecNode, keyData),
+    l2Client: await createL2Client(aztecNode, keyData),
   };
 }
 
@@ -121,16 +152,18 @@ export async function createL1Client(
 }
 
 export async function createL2Client(
-  pxe: PXE,
   node: AztecNode,
   keyData: KeyData,
+  pxe?: PXE,
 ): Promise<L2Client> {
-  const wallet = await getSchnorrWallet(
-    pxe,
-    AztecAddress.fromString(keyData.l2Address),
-    Fq.fromString(keyData.l2SigningKey),
-  );
-  return new L2Client(node, wallet);
+  if (!pxe) {
+    // biome-ignore lint/style/noParameterAssign: only assigning if undefined
+    pxe = await createPXE(node);
+  }
+  const account = await getSchnorrAccount(pxe, Fr.fromString(keyData.l2SecretKey), Fq.fromString(keyData.l2SigningKey), Fr.fromString(keyData.l2Salt));
+  const wallet = await account.register();
+  const client = new L2Client(node, pxe, wallet);
+  return client;
 }
 
 const devnet = defineChain({

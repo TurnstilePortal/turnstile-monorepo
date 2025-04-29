@@ -35,7 +35,6 @@ export function registerDeployTurnstileContracts(program: Command) {
         console.log('RPC URL:', options.rpc);
         const { l1Client, l2Client } = await getClients(
           node,
-          pxe,
           {
             chain: getChain(options.l1Chain),
             transport: http(options.rpc),
@@ -55,7 +54,6 @@ export function registerDeployTurnstileContracts(program: Command) {
 
         const deploymentData = await readDeploymentData(options.deploymentData);
 
-        // Use our shared deployment library
         const deploymentResult = await deployTurnstileContracts(
           l1Client,
           l2Client,

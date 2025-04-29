@@ -39,7 +39,6 @@ export function registerDeployAndRegisterToken(program: Command) {
       const node = createAztecNodeClient(options.aztecNode);
       const { l2Client } = await getClients(
         node,
-        pxe,
         {
           chain: getChain(options.l1Chain),
           transport: http(options.rpc),
@@ -97,11 +96,7 @@ export function registerDeployAndRegisterToken(program: Command) {
 
         // Advance L2 blocks if needed
         console.log(`Waiting for L2 block ${l2BlockNumber}...`);
-        await advanceBlocksUntil(
-          pxe,
-          l2Client.getWallet(),
-          Number(l2BlockNumber),
-        );
+        await advanceBlocksUntil(pxe, Number(l2BlockNumber));
 
         // Register token on L2
         console.log('Registering token on L2...');

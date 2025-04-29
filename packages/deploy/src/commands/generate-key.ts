@@ -36,6 +36,7 @@ export function registerGenerateKey(program: Command) {
         l1PrivateKey,
         l2Address: l2Account.wallet.getAddress().toString(),
         l2EncKey: l2Account.encKey.toString(),
+        l2SecretKey: l2Account.signingKey.toString(),
         l2SigningKey: l2Account.signingKey.toString(),
         l2Salt: l2Account.salt.toString(),
       };

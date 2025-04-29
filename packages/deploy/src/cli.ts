@@ -8,7 +8,7 @@ import { registerDeployAztecKey } from './commands/deploy-aztec-key.js';
 import { registerFundDevAccount } from './commands/fund-dev-account.js';
 import { registerDeployAztecOnlyTokens } from './commands/deploy-aztec-only-tokens.js';
 import { registerDeployCommand } from './commands/deploy-command.js';
-import { registerAztecSandboxAdvanceBLocks } from './commands/aztec-sandbox-advance-blocks.js';
+import { registerAztecSandboxAdvanceBlocks } from './commands/aztec-sandbox-advance-blocks.js';
 
 // Initialize setup modules
 import './setup/index.js';
@@ -28,7 +28,7 @@ async function main() {
   registerFundDevAccount(program);
   registerDeployAztecOnlyTokens(program);
   registerDeployCommand(program);
-  registerAztecSandboxAdvanceBLocks(program);
+  registerAztecSandboxAdvanceBlocks(program);
 
   await program.parseAsync();
 }

@@ -1,5 +1,6 @@
 import {
   createLogger,
+  getContractInstanceFromDeployParams,
   retryUntil,
   Fr,
   FunctionSelector,
@@ -14,12 +15,18 @@ import type { AztecAddress, L2AmountClaim } from '@aztec/aztec.js';
 import type { L1Client } from '../l1/client.js';
 import type { L2Client } from './client.js';
 import { ErrorCode, TurnstileError } from '../errors.js';
-import type { ViemPublicClient, ViemWalletClient } from '@aztec/ethereum';
+import type { ExtendedViemWalletClient } from '@aztec/ethereum';
 import { ExecutionPayload } from '@aztec/entrypoints/payload';
-import { getSponsoredFPCAddress } from '@aztec/cli/utils';
+import {
+  SponsoredFPCContract,
+  SponsoredFPCContractArtifact,
+} from '@aztec/noir-contracts.js/SponsoredFPC';
+import { SPONSORED_FPC_SALT } from '@aztec/constants';
+
 import { GasSettings } from '@aztec/stdlib/gas';
 import { getCanonicalFeeJuice } from '@aztec/protocol-contracts/fee-juice';
 import type { BlockNumber, BlockTag } from 'viem';
+import { publicActions } from 'viem';
 
 export async function getFeeJuiceFromFaucet(
   l1Client: L1Client,
@@ -42,10 +49,12 @@ export async function bridgeL1FeeJuice(
   console.log(
     `Bridging ${amount} fee juice from ${l1Client.getAddress().toString()} to ${recipient}`,
   );
+
+  const extendedClient = l1Client.getWalletClient().extend(publicActions) as unknown as ExtendedViemWalletClient;
+
   const portal = await L1FeeJuicePortalManager.new(
     l2Client.getWallet(),
-    l1Client.getPublicClient() as unknown as ViemPublicClient,
-    l1Client.getWalletClient() as unknown as ViemWalletClient,
+    extendedClient,
     createLogger('turnstile.js:fee-utils'),
   );
   const claim = await portal.bridgeTokensPublic(
@@ -132,6 +141,24 @@ async function getFeeJuiceClaimSelector(l2Client: L2Client) {
     );
   }
   return await FunctionSelector.fromNameAndParameters(claimFunc);
+}
+
+export async function getSponsoredFPCInstance() {
+  return await getContractInstanceFromDeployParams(
+    SponsoredFPCContract.artifact,
+    { salt: new Fr(SPONSORED_FPC_SALT) },
+  );
+}
+
+export async function getSponsoredFPCAddress() {
+  return (await getSponsoredFPCInstance()).address;
+}
+
+export async function registerSponsoredFPC(l2Client: L2Client) {
+  const instance = await getSponsoredFPCInstance();
+  await l2Client
+    .getWallet()
+    .registerContract({ instance, artifact: SponsoredFPCContractArtifact });
 }
 
 export async function claimFeeJuiceOnL2(

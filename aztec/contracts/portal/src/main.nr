@@ -14,7 +14,7 @@ pub contract Portal {
             events::event,
             functions::{
                 initialization_utils::compute_initialization_hash, initializer, internal, private,
-                public,
+                public, utility,
             },
             storage::storage,
         },
@@ -207,7 +207,7 @@ pub contract Portal {
         amount: u128,
         message_leaf_index: Field,
     ) {
-        Token::at(storage.l1_tokens.at(eth_token).read()).mint_public(recipient, amount).call(
+        Token::at(storage.l1_tokens.at(eth_token).read()).mint_to_public(recipient, amount).call(
             &mut context,
         );
 
@@ -287,24 +287,29 @@ pub contract Portal {
         Withdraw { token: eth_token, from, to: recipient, amount }.emit(encode_event(&mut context));
     }
 
+    #[utility]
     unconstrained fn is_registered_l1(eth_token: Field) -> pub bool {
         let eth_token = EthAddress::from_field(eth_token);
         !storage.l1_tokens.at(eth_token).read().is_zero()
     }
 
+    #[utility]
     unconstrained fn is_registered_l2(aztec_token: AztecAddress) -> pub bool {
         !storage.l2_tokens.at(aztec_token).read().is_zero()
     }
 
+    #[utility]
     unconstrained fn get_l2_token(eth_token: Field) -> pub AztecAddress {
         let eth_token = EthAddress::from_field(eth_token);
         storage.l1_tokens.at(eth_token).read()
     }
 
+    #[utility]
     unconstrained fn get_l1_token(aztec_token: AztecAddress) -> pub EthAddress {
         storage.l2_tokens.at(aztec_token).read()
     }
 
+    #[utility]
     unconstrained fn get_l1_portal() -> pub EthAddress {
         storage.l1_portal.read()
     }

@@ -16,22 +16,8 @@ import { commonOpts } from '@turnstile-portal/deploy/commands';
 
 import {
   L2Token,
-  type IL2Client,
-  L2Client,
+  type L2Client,
 } from '@turnstile-portal/turnstile.js';
-
-// Create a proper L2Client from a Wallet
-function createL2ClientFromWallet(wallet: Wallet): L2Client {
-  // Get PXE from wallet's internal properties
-  // @ts-expect-error Accessing internal wallet properties for backward compatibility
-  const pxe = wallet.client || wallet.pxe;
-  if (!pxe) {
-    throw new Error('Cannot get PXE client from wallet');
-  }
-
-  // Create a new L2Client with the wallet and PXE
-  return new L2Client(pxe, wallet);
-}
 
 async function doTransfer(
   l2Client: L2Client,
@@ -82,7 +68,7 @@ export function registerAztecTransferPublic(program: Command) {
       const node = createAztecNodeClient(options.aztecNode);
 
       const keyData = await readKeyData(options.keys);
-      const l2Client = await createL2Client(pxe, node, keyData);
+      const l2Client = await createL2Client(node, keyData);
       const amount = BigInt(options.amount);
 
       const aztecTestWallets = await getInitialTestAccountsWallets(pxe);

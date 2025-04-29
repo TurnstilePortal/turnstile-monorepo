@@ -1,7 +1,7 @@
 use aztec::protocol_types::{
     address::EthAddress,
     hash::sha256_to_field,
-    traits::{FromField, ToField},
+    traits::ToField,
 };
 
 // bytes4(keccak256("withdraw(address,address,uint256)")) = 0xd9caed12

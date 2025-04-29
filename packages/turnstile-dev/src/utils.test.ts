@@ -44,7 +44,8 @@ describe('Turnstile Dev Utils', () => {
       l1PrivateKey: '0xabcd' as `0x${string}`,
       l2Address: '0x5678' as `0x${string}`,
       l2EncKey: '0xef01' as `0x${string}`,
-      l2SigningKey: '0x2345' as `0x${string}`,
+      l2SecretKey: '0x2345' as `0x${string}`,
+      l2SigningKey: '0x9876' as `0x${string}`,
       l2Salt: '0x6789' as `0x${string}`,
     });
 
@@ -59,7 +60,6 @@ describe('Turnstile Dev Utils', () => {
     // Call the function
     const result = await getClients(
       mockNode,
-      mockPXE,
       mockL1Config,
       'test-key.json',
     );

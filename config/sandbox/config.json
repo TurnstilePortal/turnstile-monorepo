@@ -1,5 +1,5 @@
 {
-  "name": "Sandbox Environment",
+  "name": "Local Sandbox Environment",
   "connection": {
     "ethereum": {
       "rpc": "http://localhost:8545",
@@ -65,5 +65,5 @@
       }
     }
   },
-  "setup": "SandboxSetup"
+  "setup": "LocalSandboxSetup"
 }

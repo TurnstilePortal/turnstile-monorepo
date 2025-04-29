@@ -15,7 +15,7 @@ pnpm update-aztec-version $new_version
 
 echo "Updating " aztec/{contracts,lib}/*/Nargo.toml "..."
 
-sed -i -e 's/"aztec-packages-v[^"/]*"/"aztec-packages-v'$new_version'"/' aztec/contracts/*/Nargo.toml aztec/lib/*/Nargo.toml
+sed -i -e 's;aztec-packages/", tag="v[^"]*";aztec-packages/", tag="v'$new_version'";' aztec/contracts/*/Nargo.toml aztec/lib/*/Nargo.toml
 
 echo "Updating .devcontainer/devcontainer.json..."
 

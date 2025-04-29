@@ -10,12 +10,7 @@ import {
   createDefaultConfig,
 } from '../config/config-loader.js';
 import type { DeployConfig } from '../config/types.js';
-import {
-  createAztecNodeClient,
-  createPXEClient,
-  Fq,
-  Fr,
-} from '@aztec/aztec.js';
+import { createAztecNodeClient, } from '@aztec/aztec.js';
 import { http } from 'viem';
 import {
   readDeploymentData,
@@ -31,32 +26,31 @@ import { getSetup, setupRegistry } from '../setup/index.js';
 export function registerDeployCommand(program: Command) {
   return program
     .command('deploy')
-    .description(
-      'Deploy Turnstile contracts using the unified config structure',
-    )
+    .description('Deploy Turnstile contracts with specified config')
     .requiredOption(
-      '-e, --env <environment>',
-      'Environment name (sandbox, devnet, testnet, etc.)',
-    )
-    .option(
       '-c, --config-dir <directory>',
-      'Config directory (default: ./config)',
+      'Config directory containing config.json, keys.json, etc.',
     )
     .option('-o, --overwrite', 'Overwrite existing deployments and keys', false)
     .action(async (options) => {
       try {
-        console.log(`Starting deployment for ${options.env} environment...`);
+        console.log(
+          `Starting deployment using config directory: ${options.configDir}`,
+        );
 
         // Setup config paths
-        const configPaths = getConfigPaths(options.env, options.configDir);
-        await ensureConfigDirectory(options.env, options.configDir);
+        const configPaths = getConfigPaths(options.configDir);
+        await ensureConfigDirectory(options.configDir);
 
         // Check if config exists, create if needed
         if (!existsSync(configPaths.configFile)) {
           console.log(
             `Config file not found, creating default: ${configPaths.configFile}`,
           );
-          await createDefaultConfig(configPaths.configFile, options.env);
+          await createDefaultConfig(configPaths.configFile, {
+            name: 'Default Environment',
+            setup: 'LocalSandboxSetup', // Use sandbox setup by default
+          });
         }
 
         // Load configuration
@@ -98,12 +92,6 @@ export function registerDeployCommand(program: Command) {
           console.log('No setup class specified in config');
         }
 
-        if (!config.aztecRollupAddresses) {
-          throw new Error(
-            'Aztec rollup addresses are required but not found in config',
-          );
-        }
-
         // Sanity check: ensure key file exists
         const keyFileExists = existsSync(configPaths.keysFile);
         if (!keyFileExists) {
@@ -131,15 +119,12 @@ async function runDeployment(
   config: DeployConfig,
   paths: { keysFile: string; deploymentFile: string },
 ): Promise<void> {
-  // Initialize PXE client
-  console.log(`Connecting to PXE at ${config.connection.aztec.pxe}`);
-  const pxe = createPXEClient(config.connection.aztec.pxe);
+  console.log(`Connecting to Aztec Node at ${config.connection.aztec.node}`);
   const node = createAztecNodeClient(config.connection.aztec.node);
 
   // Initialize clients
   const { l1Client, l2Client } = await getClients(
     node,
-    pxe,
     {
       chain: getChain(config.connection.ethereum.chainName),
       transport: http(config.connection.ethereum.rpc),
@@ -165,12 +150,8 @@ async function runDeployment(
     }
   }
 
-  // Validate Aztec registry address
-  if (!config.aztecRollupAddresses?.registryAddress) {
-    throw new Error('Aztec registry address not found in config');
-  }
-  const registryAddress = config.aztecRollupAddresses
-    .registryAddress as `0x${string}`;
+  const l1Addresses = await node.getL1ContractAddresses();
+  const registryAddress = l1Addresses.registryAddress.toString();;
 
   // Deploy Turnstile contracts
   console.log('Deploying Turnstile contracts...');

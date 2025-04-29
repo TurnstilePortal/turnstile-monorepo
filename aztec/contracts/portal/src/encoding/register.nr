@@ -2,7 +2,7 @@ use aztec::{
     protocol_types::{
         address::EthAddress,
         hash::sha256_to_field,
-        traits::{FromField, ToField},
+        traits::ToField,
     },
 };
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { AztecNode, Wallet, AztecAddress } from '@aztec/aztec.js';
+import type { AztecNode, PXE, Wallet } from '@aztec/aztec.js';
 import { L2Client } from './client.js';
 
 // Mock AztecAddress type
@@ -24,9 +24,10 @@ const mockWallet = {
 };
 
 // Mock the AztecNode
-const mockAztecNode = {
-  // Add any AztecNode methods that might be used
-};
+const mockAztecNode = {};
+
+// Mock the PXE
+const mockPxe = {};
 
 describe('L2Client', () => {
   let client: L2Client;
@@ -38,6 +39,7 @@ describe('L2Client', () => {
     // Create a new client for each test
     client = new L2Client(
       mockAztecNode as unknown as AztecNode,
+      mockPxe as unknown as PXE,
       mockWallet as unknown as Wallet,
     );
   });

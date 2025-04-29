@@ -1,7 +1,7 @@
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { DeploySetup } from './setup-interface.js';
-import type { AztecRollupAddresses, DeployConfig } from '../config/types.js';
+import type { DeployConfig } from '../config/types.js';
 import { registerSetup } from './setup-interface.js';
 
 const execAsync = promisify(exec);
@@ -10,16 +10,13 @@ export class LocalSandboxSetup implements DeploySetup {
   async setup(config: DeployConfig, keysFile: string): Promise<void> {
     console.log('Setting up sandbox environment...');
     await this.startOrResetSandbox();
-    await this.waitForSandboxReady(config.connection.aztec.pxe);
-
-    // // Get the Aztec Rollup addresses from the sandbox container logs
-    // const addresses = await this.getAztecRollupAddresses(config);
-    // console.log('Aztec core addresses:', addresses);
-    // config.aztecRollupAddresses = addresses;
+    await this.waitForSandboxReady(config.connection.aztec.node);
   }
 
   private async getContainerId(): Promise<string> {
-    const { stdout } = await execAsync('docker ps --filter name=aztec-start -q');
+    const { stdout } = await execAsync(
+      'docker ps --filter name=aztec-start -q',
+    );
     const containerId = stdout.trim();
     if (!containerId) {
       throw new Error('No aztec-start container found');
@@ -41,7 +38,9 @@ export class LocalSandboxSetup implements DeploySetup {
 
     console.log('Starting the sandbox...');
     try {
-      await execAsync('FORCE_COLOR=0 aztec start --sandbox --node.deployAztecContractsSalt 0x01 > /dev/null 2>&1 &');
+      await execAsync(
+        'FORCE_COLOR=0 aztec start --sandbox --node.deployAztecContractsSalt 0x01 > /dev/null 2>&1 &',
+      );
       // await execAsync('docker-compose up -d');
       console.log('Started sandbox container');
     } catch (error) {
@@ -82,29 +81,6 @@ export class LocalSandboxSetup implements DeploySetup {
     }
 
     throw new Error('Failed to start the sandbox');
-  }
-
-  /**
-   * Extract Aztec Rollup addresses from the sandbox container logs
-   */
-  private async getAztecRollupAddresses(
-    config: DeployConfig,
-  ): Promise<AztecRollupAddresses> {
-    const containerId = await this.getContainerId();
-    console.log(`Extracting Aztec Rollup addresses from container ${containerId} logs...`);
-
-    try {
-      const { stdout } = await execAsync(`docker logs ${containerId} 2>&1 | grep 'Aztec L1 contracts initialized' | grep -o '{.*}' | jq -r 'del(.severity)'`);
-
-      if (!stdout || stdout.trim() === '') {
-        throw new Error('Could not find Aztec Rollup addresses in logs');
-      }
-
-      const addresses = JSON.parse(stdout.trim()) as AztecRollupAddresses;
-      return addresses;
-    } catch (error) {
-      throw new Error(`Failed to extract Aztec Rollup addresses: ${error}`);
-    }
   }
 }
 

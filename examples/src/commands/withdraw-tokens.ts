@@ -160,7 +160,6 @@ export function registerWithdrawTokens(program: Command) {
     .command('withdraw-tokens')
     .description('Withdraw tokens from L2 to L1')
     .addOption(commonOpts.keys)
-    .addOption(commonOpts.pxe)
     .addOption(commonOpts.l1Chain)
     .addOption(commonOpts.rpc)
     .addOption(commonOpts.deploymentData)
@@ -177,12 +176,10 @@ export function registerWithdrawTokens(program: Command) {
       const l1TokenAddr = getAddress(tokenInfo.l1Address) as `0x${string}`;
       const l1RollupAddr = deploymentData.rollupAddress;
 
-      const pxe = createPXEClient(options.pxe);
       const node = createAztecNodeClient(options.pxe);
 
       const { l1Client, l2Client } = await getClients(
         node,
-        pxe,
         {
           chain: getChain(options.l1Chain),
           transport: http(options.rpc),

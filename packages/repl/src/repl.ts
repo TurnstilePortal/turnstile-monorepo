@@ -84,7 +84,6 @@ const keyData = await readKeyData(keyDataPath);
 
 const { l1Client, l2Client } = await getClients(
   node,
-  pxe,
   {
     chain: anvil,
     transport: http(RPC_URL),

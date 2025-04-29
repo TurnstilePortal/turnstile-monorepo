@@ -6,7 +6,7 @@ import {
   Fr,
   TxStatus,
 } from '@aztec/aztec.js';
-import type { Wallet } from '@aztec/aztec.js';
+import type { AztecNode, PXE, Wallet } from '@aztec/aztec.js';
 import { getInitialTestAccountsWallets } from '@aztec/accounts/testing';
 import {
   readDeploymentData,
@@ -23,16 +23,8 @@ import {
 } from '@turnstile-portal/turnstile.js';
 
 // Create a proper L2Client from a Wallet
-function createL2ClientFromWallet(wallet: Wallet): L2Client {
-  // Get PXE from wallet's internal properties
-  // @ts-expect-error Accessing internal wallet properties for backward compatibility
-  const pxe = wallet.client || wallet.pxe;
-  if (!pxe) {
-    throw new Error('Cannot get PXE client from wallet');
-  }
-
-  // Create a new L2Client with the wallet and PXE
-  return new L2Client(pxe, wallet);
+function createL2ClientFromWallet(wallet: Wallet, pxe: PXE, node: AztecNode): L2Client {
+  return new L2Client(node, pxe, wallet)
 }
 
 async function doTransfer(
@@ -118,10 +110,10 @@ export function registerAztecTransferPrivate(program: Command) {
       }
 
       const keyData = await readKeyData(options.keys);
-      const senderClient = await createL2Client(pxe, node, keyData);
+      const senderClient = await createL2Client(node, keyData);
       const amount = BigInt(options.amount);
 
-      const recipientClient = createL2ClientFromWallet(recipientWallet);
+      const recipientClient = createL2ClientFromWallet(recipientWallet, pxe, node);
       const initialRecipientBalance = await (
         await L2Token.fromAddress(tokenAddr, recipientClient)
       ).balanceOfPrivate(recipient);

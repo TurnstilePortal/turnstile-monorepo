@@ -16,33 +16,27 @@ export interface ConfigPaths {
 }
 
 /**
- * Get the paths for an environment's configuration files
+ * Get the paths for configuration files in a directory
  */
 export function getConfigPaths(
-  env: string,
   configDir: string = DEFAULT_CONFIG_DIR,
 ): ConfigPaths {
-  const envDir = path.join(configDir, env);
-
   return {
-    configFile: path.join(envDir, 'config.json'),
-    keysFile: path.join(envDir, 'keys.json'),
-    deploymentFile: path.join(envDir, 'deployment.json'),
+    configFile: path.join(configDir, 'config.json'),
+    keysFile: path.join(configDir, 'keys.json'),
+    deploymentFile: path.join(configDir, 'deployment.json'),
   };
 }
 
 /**
- * Ensure the environment's directory structure exists
+ * Ensure the config directory exists
  */
 export async function ensureConfigDirectory(
-  env: string,
   configDir: string = DEFAULT_CONFIG_DIR,
 ): Promise<void> {
-  const envDir = path.join(configDir, env);
-
-  // Create directories if they don't exist
-  if (!existsSync(envDir)) {
-    await fs.mkdir(envDir, { recursive: true });
+  // Create directory if it doesn't exist
+  if (!existsSync(configDir)) {
+    await fs.mkdir(configDir, { recursive: true });
   }
 }
 
@@ -59,61 +53,45 @@ export async function loadDeployConfig(
   const content = await fs.readFile(configPath, 'utf8');
   const config = JSON.parse(content) as DeployConfig;
 
-  // Apply defaults if needed
+  // Validate required properties
+  if (!config.name) throw new Error('Missing "name" in config');
+  if (!config.connection) throw new Error('Missing "connection" in config');
+  if (!config.connection.ethereum)
+    throw new Error('Missing "connection.ethereum" in config');
+  if (!config.connection.aztec)
+    throw new Error('Missing "connection.aztec" in config');
+  if (!config.deployment) throw new Error('Missing "deployment" in config');
+
+  // Apply defaults but preserve all other properties from the original config
   return {
-    name: config.name,
-    connection: {
-      ethereum: config.connection.ethereum,
-      aztec: config.connection.aztec,
-    },
+    ...config,
     deployment: {
+      ...config.deployment,
       overwrite: config.deployment.overwrite ?? false,
       tokens: config.deployment.tokens ?? {},
     },
-    // Preserve the setup field if it exists
-    ...(config.setup ? { setup: config.setup } : {}),
   };
 }
 
 /**
- * Create a default config file for an environment
+ * Create a default config file
  */
 export async function createDefaultConfig(
   configPath: string,
-  env: string,
   options: {
+    name?: string;
     ethereumRpc?: string;
     ethereumChainName?: string;
     aztecNode?: string;
-    aztecPxe?: string;
     withTokens?: boolean;
+    setup?: string;
   } = {},
 ): Promise<void> {
-  // Default values based on environment
+  // Default values
   const defaults = {
-    sandbox: {
-      ethereumRpc: 'http://localhost:8545',
-      ethereumChainName: 'anvil',
-      aztecNode: 'http://localhost:8080',
-      aztecPxe: 'http://localhost:8080',
-    },
-    devnet: {
-      ethereumRpc: 'https://devnet.aztec.network:8545',
-      ethereumChainName: 'devnet',
-      aztecNode: 'https://devnet.aztec.network:8080',
-      aztecPxe: 'https://devnet.aztec.network:8080',
-    },
-    testnet: {
-      ethereumRpc: 'https://sepolia.infura.io/v3/your-infura-id',
-      ethereumChainName: 'sepolia',
-      aztecNode: 'https://testnet.aztec.network:8080',
-      aztecPxe: 'https://testnet.aztec.network:8080',
-    },
-  }[env] || {
     ethereumRpc: 'http://localhost:8545',
     ethereumChainName: 'anvil',
     aztecNode: 'http://localhost:8080',
-    aztecPxe: 'http://localhost:8080',
   };
 
   const tokens: Record<string, TokenConfig> = {};
@@ -127,7 +105,7 @@ export async function createDefaultConfig(
   }
 
   const config: DeployConfig = {
-    name: `${env.charAt(0).toUpperCase() + env.slice(1)} Environment`,
+    name: options.name || 'Default Environment',
     connection: {
       ethereum: {
         rpc: options.ethereumRpc || defaults.ethereumRpc,
@@ -135,7 +113,6 @@ export async function createDefaultConfig(
       },
       aztec: {
         node: options.aztecNode || defaults.aztecNode,
-        pxe: options.aztecPxe || defaults.aztecPxe,
       },
     },
     deployment: {
@@ -144,9 +121,9 @@ export async function createDefaultConfig(
     },
   };
 
-  // Add setup for sandbox environment
-  if (env === 'sandbox') {
-    config.setup = 'SandboxSetup';
+  // Add setup if provided
+  if (options.setup) {
+    config.setup = options.setup;
   }
 
   // Create directory if it doesn't exist

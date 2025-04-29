@@ -17,12 +17,10 @@ import {
 
 import { commonOpts } from '@turnstile-portal/deploy/commands';
 
-import type { IL1Client } from '@turnstile-portal/turnstile.js';
 import {
   L1Portal,
   L2Portal,
   type L1Client,
-  L2Client,
 } from '@turnstile-portal/turnstile.js';
 
 async function l1MintAndDeposit({
@@ -108,7 +106,6 @@ export function registerDepositAndClaim(program: Command) {
 
       const { l1Client, l2Client } = await getClients(
         node,
-        pxe,
         {
           chain: getChain(options.l1Chain),
           transport: http(options.rpc),
@@ -133,7 +130,7 @@ export function registerDepositAndClaim(program: Command) {
       // We need to wait for the L2 block to be mined so that the L1ToL2Message is available on the L2 chain.
       // In a real scenario, we would wait for the L2 blocks to be mined naturally, but for testing purposes
       // we will advance the blocks ourselves.
-      await advanceBlocksUntil(pxe, l2Client.getWallet(), l2BlockNumber);
+      await advanceBlocksUntil(pxe, l2BlockNumber);
 
       // Convert string address to AztecAddress
       const aztecPortalAddr = AztecAddress.fromString(

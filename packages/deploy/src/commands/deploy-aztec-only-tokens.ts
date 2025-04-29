@@ -88,7 +88,6 @@ export function registerDeployAztecOnlyTokens(program: Command) {
       try {
         const { l2Client } = await getClients(
           node,
-          pxe,
           {
             chain: getChain('anvil'),
             transport: http(options.rpc),
@@ -144,7 +143,7 @@ export function registerDeployAztecOnlyTokens(program: Command) {
             `Minting ${amount} ${symbol} for ${minter.getAddress().toString()}`,
           );
           let sentTx = await token.methods
-            .mint_public(minter.getAddress(), amount)
+            .mint_to_public(minter.getAddress(), amount)
             .send();
           let receipt = await sentTx.wait();
           console.log(receipt.status);
@@ -153,7 +152,7 @@ export function registerDeployAztecOnlyTokens(program: Command) {
             `Minting ${amount} ${symbol} for ${l2Wallet.getAddress().toString()}`,
           );
           sentTx = await token.methods
-            .mint_public(l2Wallet.getAddress(), amount)
+            .mint_to_public(l2Wallet.getAddress(), amount)
             .send();
           receipt = await sentTx.wait();
           console.log(receipt.status);

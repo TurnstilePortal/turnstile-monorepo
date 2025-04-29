@@ -57,10 +57,13 @@ $(AZTEC_ARTIFACTS_PACKAGE_DIR)/index.ts: $(patsubst aztec/target/%,$(AZTEC_ARTIF
 	@echo "Regenerating $(AZTEC_ARTIFACTS_PACKAGE_DIR)/artifacts/index.ts..."
 	find $(AZTEC_ARTIFACTS_PACKAGE_DIR) -type f -name '*.ts' -not -name 'index.ts' -exec basename {} .ts \; | \
 		xargs -I % echo "export * from './%.js';" > $(AZTEC_ARTIFACTS_PACKAGE_DIR)/index.ts
+	# TODO: remove when https://github.com/AztecProtocol/aztec-packages/issues/13593 is fixed
+	sed -i -e 's/assert/with/' $(AZTEC_ARTIFACTS_PACKAGE_DIR)/*.ts
 
 $(AZTEC_ARTIFACTS_PACKAGE_DIR)/%.json: aztec/target/%.json
 	cp "$^" $(AZTEC_ARTIFACTS_PACKAGE_DIR)
 	aztec codegen --force $@ -o $(dir $@)
+
 
 .PHONY: sandbox
 sandbox:

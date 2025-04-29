@@ -1,7 +1,7 @@
 import { createPublicClient, createWalletClient, http } from 'viem';
 import type { Account, Chain, Transport, WalletClient } from 'viem';
 
-import { privateKeyToAccount } from 'viem/accounts';
+import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import { anvil } from 'viem/chains';
 
 // Keys/addresses are for the Turnstile local anvil test node setup
@@ -15,8 +15,8 @@ export const APPROVER_PRIVATE_KEY =
 
 const RPC_URL = process.env.RPC_URL || 'http://localhost:8545';
 
-export const bridgeUserAccount = privateKeyToAccount(BRIDGE_USER_PRIVATE_KEY);
-export const approverAccount = privateKeyToAccount(APPROVER_PRIVATE_KEY);
+export const bridgeUserAccount: PrivateKeyAccount = privateKeyToAccount(BRIDGE_USER_PRIVATE_KEY);
+export const approverAccount: PrivateKeyAccount = privateKeyToAccount(APPROVER_PRIVATE_KEY);
 
 export const bridgeUserWallet: WalletClient<Transport, Chain, Account> =
   createWalletClient({
