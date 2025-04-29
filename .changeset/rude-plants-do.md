@@ -9,5 +9,5 @@
 "@turnstile-portal/repl": minor
 ---
 
-- Update to aztec-packages v0.85.0-testnet-alpha.4
+- Update to aztec-packages v0.85.0-alpha-testnet.4
 - Rework turnstile.js so that it can work with an external PXE / wallet
