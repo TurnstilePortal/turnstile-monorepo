@@ -25,7 +25,7 @@ services:
       - ethereum
     command: "start --sandbox --node.deployAztecContractsSalt 0x01"
   turnstile-sandbox-deployer:
-    image: ghcr.io/turnstileportal/turnstile-sandbox-deployer:v0.0.37
+    image: ghcr.io/turnstileportal/turnstile-sandbox-deployer:v0.1.0
     depends_on:
       - ethereum
       - aztec

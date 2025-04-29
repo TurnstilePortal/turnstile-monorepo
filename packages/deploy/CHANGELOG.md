@@ -1,5 +1,22 @@
 # @turnstile-portal/deploy
 
+## 0.1.0
+
+### Minor Changes
+
+- 215fc73: - Update to aztec-packages v0.85.0-alpha-testnet.4
+  - Rework turnstile.js so that it can work with an external PXE / wallet
+
+### Patch Changes
+
+- Updated dependencies [215fc73]
+  - @turnstile-portal/l1-artifacts-bytecode@0.1.0
+  - @turnstile-portal/l1-artifacts-abi@0.1.0
+  - @turnstile-portal/l1-artifacts-dev@0.1.0
+  - @turnstile-portal/aztec-artifacts@0.1.0
+  - @turnstile-portal/turnstile-dev@0.1.0
+  - @turnstile-portal/turnstile.js@0.1.0
+
 ## 0.0.37
 
 ### Patch Changes

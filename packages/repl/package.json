@@ -1,7 +1,7 @@
 {
   "name": "@turnstile-portal/repl",
   "description": "REPL environment for Turnstile portal",
-  "version": "0.0.37",
+  "version": "0.1.0",
   "type": "module",
   "bin": {
     "turnstile-repl": "./dist/repl.js"
