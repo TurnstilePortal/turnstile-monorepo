@@ -14,10 +14,7 @@ import {
 
 import { commonOpts } from '@turnstile-portal/deploy/commands';
 
-import {
-  L2Token,
-  type L2Client,
-} from '@turnstile-portal/turnstile.js';
+import { L2Token, type L2Client } from '@turnstile-portal/turnstile.js';
 
 async function doTransfer(
   l2Client: L2Client,

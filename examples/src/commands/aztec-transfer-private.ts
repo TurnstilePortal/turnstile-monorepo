@@ -23,8 +23,12 @@ import {
 } from '@turnstile-portal/turnstile.js';
 
 // Create a proper L2Client from a Wallet
-function createL2ClientFromWallet(wallet: Wallet, pxe: PXE, node: AztecNode): L2Client {
-  return new L2Client(node, pxe, wallet)
+function createL2ClientFromWallet(
+  wallet: Wallet,
+  pxe: PXE,
+  node: AztecNode,
+): L2Client {
+  return new L2Client(node, pxe, wallet);
 }
 
 async function doTransfer(
@@ -113,7 +117,11 @@ export function registerAztecTransferPrivate(program: Command) {
       const senderClient = await createL2Client(node, keyData);
       const amount = BigInt(options.amount);
 
-      const recipientClient = createL2ClientFromWallet(recipientWallet, pxe, node);
+      const recipientClient = createL2ClientFromWallet(
+        recipientWallet,
+        pxe,
+        node,
+      );
       const initialRecipientBalance = await (
         await L2Token.fromAddress(tokenAddr, recipientClient)
       ).balanceOfPrivate(recipient);

@@ -10,7 +10,7 @@ import {
   createDefaultConfig,
 } from '../config/config-loader.js';
 import type { DeployConfig } from '../config/types.js';
-import { createAztecNodeClient, } from '@aztec/aztec.js';
+import { createAztecNodeClient } from '@aztec/aztec.js';
 import { http } from 'viem';
 import {
   readDeploymentData,
@@ -151,7 +151,7 @@ async function runDeployment(
   }
 
   const l1Addresses = await node.getL1ContractAddresses();
-  const registryAddress = l1Addresses.registryAddress.toString();;
+  const registryAddress = l1Addresses.registryAddress.toString();
 
   // Deploy Turnstile contracts
   console.log('Deploying Turnstile contracts...');

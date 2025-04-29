@@ -58,11 +58,7 @@ describe('Turnstile Dev Utils', () => {
     );
 
     // Call the function
-    const result = await getClients(
-      mockNode,
-      mockL1Config,
-      'test-key.json',
-    );
+    const result = await getClients(mockNode, mockL1Config, 'test-key.json');
 
     // Verify result
     expect(result).toBeDefined();

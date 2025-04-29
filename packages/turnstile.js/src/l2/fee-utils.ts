@@ -50,7 +50,9 @@ export async function bridgeL1FeeJuice(
     `Bridging ${amount} fee juice from ${l1Client.getAddress().toString()} to ${recipient}`,
   );
 
-  const extendedClient = l1Client.getWalletClient().extend(publicActions) as unknown as ExtendedViemWalletClient;
+  const extendedClient = l1Client
+    .getWalletClient()
+    .extend(publicActions) as unknown as ExtendedViemWalletClient;
 
   const portal = await L1FeeJuicePortalManager.new(
     l2Client.getWallet(),

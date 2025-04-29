@@ -31,7 +31,6 @@ import { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
 
 import { readKeyData, type KeyData } from './keyData.js';
 
-
 export async function createPXE(
   node: AztecNode,
   config?: PXEServiceConfig | undefined,
@@ -49,8 +48,9 @@ export async function createPXE(
       l1Contracts,
       l1ChainId,
       rollupVersion,
+      proverEnabled: l1ChainId !== 31337,
     } as PXEServiceConfig;
-  };
+  }
 
   const pxe = await createPXEService(node, config);
   return pxe;
@@ -160,7 +160,12 @@ export async function createL2Client(
     // biome-ignore lint/style/noParameterAssign: only assigning if undefined
     pxe = await createPXE(node);
   }
-  const account = await getSchnorrAccount(pxe, Fr.fromString(keyData.l2SecretKey), Fq.fromString(keyData.l2SigningKey), Fr.fromString(keyData.l2Salt));
+  const account = await getSchnorrAccount(
+    pxe,
+    Fr.fromString(keyData.l2SecretKey),
+    Fq.fromString(keyData.l2SigningKey),
+    Fr.fromString(keyData.l2Salt),
+  );
   const wallet = await account.register();
   const client = new L2Client(node, pxe, wallet);
   return client;
