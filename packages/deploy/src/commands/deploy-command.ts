@@ -2,7 +2,7 @@
  * Unified deploy command
  */
 import type { Command } from 'commander';
-import { existsSync, promises as fs } from 'node:fs';
+import { existsSync, promises as fs, write } from 'node:fs';
 import {
   getConfigPaths,
   ensureConfigDirectory,
@@ -201,12 +201,12 @@ async function runDeployment(
         l1Address: result.l1Address,
         l2Address: result.l2Address,
       };
-    }
 
-    // Save updated deployment with tokens
-    await writeDeploymentData(
-      paths.deploymentFile,
-      updatedData as DeploymentData,
-    );
+      // Save updated deployment data with tokens
+      await writeDeploymentData(
+        paths.deploymentFile,
+        updatedData as DeploymentData,
+      );
+    }
   }
 }

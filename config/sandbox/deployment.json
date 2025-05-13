@@ -2,78 +2,78 @@
   "l1AllowList": "0x700b6a60ce7eaaea56f065753d8dcb9653dbad35",
   "l1Portal": "0xa15bb66138824a1c7167f5e85b957d04dd34e468",
   "aztecTokenContractClassID": "0x29c6f5de5c4377c41d8e89c229cd35981f55e91cd706cf97dba2f2891c9bb55a",
-  "aztecPortal": "0x12ccd1adb368601ef26ed7f99c3cad8cdca2d8e60a5777a4250855609f73e731",
-  "aztecShieldGateway": "0x1a59967227f3f0570d14e0abc88d30a29008cf86dae1f894c2181b8e170820cb",
+  "aztecPortal": "0x04287e7411e8090f7be0826ff5a9725390e066a0a8633695b223895b476d454a",
+  "aztecShieldGateway": "0x1b65a2578e5ec7f5deff07e5d1fd5e28475e3158a9b35da845d25c3431ae1ec4",
   "tokens": {
     "DAI": {
       "name": "DAI",
       "symbol": "DAI",
       "decimals": 18,
       "l1Address": "0x8ce361602b935680e8dec218b820ff5056beb7af",
-      "l2Address": "0x1af3f27e95ebe09d8fe08171636f3b674bd2ed266dc313178e92fbede62e0593"
+      "l2Address": "0x2f557d08b0ec6f7b3699c3b593d0419f79f4135a69d8123940c4cac5df9a88a9"
     },
     "USDC": {
       "name": "USD Coin",
       "symbol": "USDC",
       "decimals": 6,
       "l1Address": "0xd04ff4a75edd737a73e92b2f2274cb887d96e110",
-      "l2Address": "0x00ad72a0ea270204d2d3fed5ce21cfeb265daab5aa98fbfce538443044816449"
+      "l2Address": "0x221fb7b4c1715fdd91aeeca2004dcab7cb0f74d45ae3196c4a86f4ffe903ae4e"
     },
     "USDT": {
       "name": "Tether USD",
       "symbol": "USDT",
       "decimals": 6,
       "l1Address": "0xdfd787c807dea8d7e53311b779bc0c6a4704d286",
-      "l2Address": "0x220ff6a1416fd31bea3c2c63154500205f6dc229c0f838b70847de1e6d782d39"
+      "l2Address": "0x05b661d508cf4fb479602c884fc531ad63d03d9e6884d3d26fd23208a61784ff"
     },
     "WETH": {
       "name": "Wrapped Ether",
       "symbol": "WETH",
       "decimals": 18,
       "l1Address": "0xe8ecf644d9a3432dab3a0725308f265990eedca9",
-      "l2Address": "0x02c541940801d36b58c3600d4a7c483c915e5d39f676f94ec803378622c597a9"
+      "l2Address": "0x1d180c429825cc0c2e65ce1e3a2ef6c0f98954479c392af1f1acb1560c1d7bf7"
     },
     "AZT": {
       "name": "Aztec Token",
       "symbol": "AZT",
       "decimals": 18,
       "l1Address": "0xbf3cd410aa5a3e9da22fd9109add5d3655fcb1c5",
-      "l2Address": "0x270863202912625eceb3f8206c90ef23ec8cb1d4cb1eb5495a8e02408aac0cf8"
+      "l2Address": "0x1d377a9efa547b1de87c533211535ad037c7474a1848e8745d32fa1e0e2ef04d"
     },
     "TT1": {
       "name": "Test Token 1",
       "symbol": "TT1",
       "decimals": 18,
       "l1Address": "0x49ea5126fd67f877b62ddc0144dbeb42591df7bb",
-      "l2Address": "0x08f00524da0289954bb0e6b711ab6e08b875e22bfbf4fb10ce74eb407be40597"
+      "l2Address": "0x06cfc885ad70be16c4f53bd04b9d072eddf948e32c2b8e26a8d0c3339402954a"
     },
     "TT2": {
       "name": "Test Token 2",
       "symbol": "TT2",
       "decimals": 18,
       "l1Address": "0x8b03e92900e9d2251a93e6640a79353e3e10df1c",
-      "l2Address": "0x01a7ef00a43020eb8a2bd223e200fb726bfb626b7d7763c1e69eef79878e6084"
+      "l2Address": "0x01ecbec4aa65a55e48128010b34b3557cba6fedc2d7b098559ae43edec655294"
     },
     "TT3": {
       "name": "Test Token 3",
       "symbol": "TT3",
       "decimals": 18,
       "l1Address": "0xe031a491d0ec16f32f9be25046956425034f0918",
-      "l2Address": "0x2534be39d227d2bbcda3201ca53f920e3e0a3c7416fe11b782c2878b597ff516"
+      "l2Address": "0x20dd8dc4091704b9b4c67e955d3a5c109cee7b6f6a5be1ab6bb5ff2e9d03c9fa"
     },
     "TT4": {
       "name": "Test Token 4",
       "symbol": "TT4",
       "decimals": 18,
       "l1Address": "0x32e0a4f5c9846c8c504103e41d7e8edf03ce8cbc",
-      "l2Address": "0x0906e549e2751c4da465637ab4644f5c70b7d5e72d7cf466c5ba857e0662dfd2"
+      "l2Address": "0x180a90f2c23512bb8ef8a7480e98a4242dccb0ed2493ac18fe5697a0d2343852"
     },
     "TT5": {
       "name": "Test Token 5",
       "symbol": "TT5",
       "decimals": 18,
       "l1Address": "0x240b9632a58219ec6d7a550ab8354ac3e60ac128",
-      "l2Address": "0x3051b56d76f32b441981969961823a0425084dfa3cf333c97892f407318bbf93"
+      "l2Address": "0x1b1a3b58c535e24a8bd23685441dc885a2f9f5775c8df976236a4af62b7c3535"
     }
   }
 }

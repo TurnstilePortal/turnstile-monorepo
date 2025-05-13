@@ -13,10 +13,15 @@ import {
 import {
   createPXEClient,
   Fr,
-  Fq,
+  GrumpkinScalar,
   createAztecNodeClient,
 } from '@aztec/aztec.js';
-import { createPXEService, type PXEServiceConfig } from '@aztec/pxe/server';
+import {
+  createPXEService,
+  getPXEServiceConfig,
+  type PXEServiceConfig,
+} from '@aztec/pxe/server';
+import { createStore } from '@aztec/kv-store/lmdb';
 import type {
   AccountWallet,
   AztecAddress,
@@ -37,56 +42,75 @@ export async function createPXE(
   node: AztecNode,
   config?: PXEServiceConfig | undefined,
 ): Promise<PXE> {
-  if (!config) {
+  let fullConfig: PXEServiceConfig;
+
+  if (config) {
+    fullConfig = config;
+  } else {
     console.log('Creating PXE service with default config...');
     const l1Contracts = await node.getL1ContractAddresses();
     const { l1ChainId, rollupVersion } = await node.getNodeInfo();
-    // biome-ignore lint/style/noParameterAssign: only assigning if undefined
-    config = {
-      l2BlockBatchSize: 200,
-      l2BlockPollingIntervalMS: 100,
-      dataDirectory: undefined,
-      dataStoreMapSizeKB: 1024 * 1024,
+    fullConfig = {
+      ...getPXEServiceConfig(),
       l1Contracts,
       l1ChainId,
       rollupVersion,
       proverEnabled: l1ChainId !== 31337 && l1ChainId !== 1337,
-    } as PXEServiceConfig;
+    };
   }
 
-  const pxe = await createPXEService(node, config);
+  const store = await createStore('pxe', {
+    dataDirectory: 'store',
+    dataStoreMapSizeKB: 1e6,
+  });
+
+  const pxe = await createPXEService(node, fullConfig, true, store);
   return pxe;
 }
 
-export async function generateAndDeployAztecAccountSchnorr(
-  pxe: PXE,
-): Promise<{ salt: Fr; encKey: Fr; signingKey: Fq; wallet: AztecWallet }> {
-  const { salt, encKey, signingKey } = await generateAztecAccountSchnorr(pxe);
-  const wallet = await deployAztecAccountSchnorr(pxe, encKey, signingKey, salt);
-  return { salt, encKey, signingKey, wallet };
+export async function generateAndDeployAztecAccountSchnorr(pxe: PXE): Promise<{
+  salt: Fr;
+  secretKey: Fr;
+  signingKey: GrumpkinScalar;
+  wallet: AztecWallet;
+}> {
+  const { salt, secretKey, signingKey } =
+    await generateAztecAccountSchnorr(pxe);
+  const wallet = await deployAztecAccountSchnorr(
+    pxe,
+    secretKey,
+    signingKey,
+    salt,
+  );
+  return { salt, secretKey, signingKey, wallet };
 }
 
 export async function generateAztecAccountSchnorr(
   pxe: PXE,
-): Promise<{ salt: Fr; encKey: Fr; signingKey: Fq }> {
+): Promise<{ salt: Fr; secretKey: Fr; signingKey: GrumpkinScalar }> {
   const salt = Fr.random();
-  const encKey = Fr.random();
-  const signingKey = deriveSigningKey(encKey);
+  const secretKey = Fr.random();
+  const signingKey = deriveSigningKey(secretKey);
   return {
     salt,
-    encKey,
+    secretKey,
     signingKey,
   };
 }
 
 export async function deployAztecAccountSchnorr(
   pxe: PXE,
-  encKey: Fr,
-  signingKey: Fq,
+  secretKey: Fr,
+  signingKey: GrumpkinScalar,
   salt: Fr,
 ): Promise<AztecWallet> {
   const deployWallet = (await getDeployedTestAccountsWallets(pxe))[0];
-  const accountManager = await getSchnorrAccount(pxe, encKey, signingKey, salt);
+  const accountManager = await getSchnorrAccount(
+    pxe,
+    secretKey,
+    signingKey,
+    salt,
+  );
   const wallet = await accountManager.deploy({ deployWallet }).getWallet();
   console.log(`Account deployed at ${wallet.getAddress()}`);
   return wallet;
@@ -95,7 +119,7 @@ export async function deployAztecAccountSchnorr(
 export async function getAztecSchnorrAccountFromSigningKey(
   pxe: PXE,
   address: AztecAddress,
-  signingKey: Fq,
+  signingKey: GrumpkinScalar,
 ): Promise<AccountWallet> {
   return getSchnorrWallet(pxe, address, signingKey);
 }
@@ -155,22 +179,13 @@ export async function createL2Client(
 ): Promise<L2Client> {
   const node = createAztecNodeClient(aztecNode);
   if (!pxe) {
-    // pxe = await createPXE(node);
-    const { l1ChainId } = await node.getNodeInfo();
-    // TODO: Figure out a better way to get the network name
-    const network = l1ChainId === 11155111 ? 'alpha-testnet' : undefined;
-
     // biome-ignore lint/style/noParameterAssign: only assigning if undefined
-    pxe = await startLocalPXE(
-      aztecNode,
-      network,
-      l1ChainId !== 31337 && l1ChainId !== 1337,
-    );
+    pxe = await createPXE(node);
   }
   const account = await getSchnorrAccount(
     pxe,
     Fr.fromString(keyData.l2SecretKey),
-    Fq.fromString(keyData.l2SigningKey),
+    GrumpkinScalar.fromString(keyData.l2SigningKey),
     Fr.fromString(keyData.l2Salt),
   );
   const wallet = await account.register();
@@ -237,6 +252,12 @@ export async function startLocalPXE(
   port = 8976,
 ): Promise<PXE> {
   console.log('Starting local PXE...');
+
+  const store = await createStore('pxe', {
+    dataDirectory: 'store',
+    dataStoreMapSizeKB: 1e6,
+  });
+
   const command = 'aztec';
   const args = [
     'start',

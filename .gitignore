@@ -7,3 +7,4 @@ codegenCache.json
 lerna-debug.log
 devnet/
 coverage/
+/store/

@@ -5,7 +5,7 @@ services:
     ports:
       - "8545:8545"
   aztec:
-    image: aztecprotocol/aztec:0.85.0-alpha-testnet.4
+    image: aztecprotocol/aztec:0.85.0-alpha-testnet.11
     ports:
       - "8080:8080"
     environment:
