@@ -24,11 +24,11 @@
   },
   "pnpm": {
     "overrides": {
-      "@aztec/**": "0.85.0-alpha-testnet.11"
+      "@aztec/**": "0.87.2"
     }
   },
   "resolutions": {
-    "@aztec/**": "0.85.0-alpha-testnet.11"
+    "@aztec/**": "0.87.2"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",

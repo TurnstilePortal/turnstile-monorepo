@@ -271,8 +271,8 @@ decimals: {
     /** shielded_supply() */
     shielded_supply: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** sync_notes() */
-    sync_notes: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** sync_private_state() */
+    sync_private_state: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** total_supply() */
     total_supply: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;

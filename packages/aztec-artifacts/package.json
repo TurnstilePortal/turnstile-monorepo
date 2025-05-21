@@ -20,6 +20,6 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@aztec/aztec.js": "0.85.0-alpha-testnet.11"
+    "@aztec/aztec.js": "0.87.2"
   }
 }

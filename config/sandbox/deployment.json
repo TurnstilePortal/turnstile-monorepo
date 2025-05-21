@@ -1,79 +1,79 @@
 {
   "l1AllowList": "0x700b6a60ce7eaaea56f065753d8dcb9653dbad35",
   "l1Portal": "0xa15bb66138824a1c7167f5e85b957d04dd34e468",
-  "aztecTokenContractClassID": "0x29c6f5de5c4377c41d8e89c229cd35981f55e91cd706cf97dba2f2891c9bb55a",
-  "aztecPortal": "0x285df92d1e263a741c0de6a64c5c77e1fcd503f72d0d0868c26de01ac12855e6",
-  "aztecShieldGateway": "0x0945e496d544496da820ffbb2856a016ec1c2391115c3f8a362167c1fadf8540",
+  "aztecTokenContractClassID": "0x2d48b87855ddb1e16c7eff0abc4c599044f2a12d15e2c62fae56a0a9ea13e939",
+  "aztecPortal": "0x2465a614988d3a31a4ef90e3efa87f62abb0b5c0da28accba7cd9894ab89f0ec",
+  "aztecShieldGateway": "0x2de0ba6b66c214a45d8d3f86d0ba8ea755ca4a27ee9ad7f4d02447f3bb4a91dd",
   "tokens": {
     "DAI": {
       "name": "DAI",
       "symbol": "DAI",
       "decimals": 18,
       "l1Address": "0xa15bb66138824a1c7167f5e85b957d04dd34e468",
-      "l2Address": "0x048114da42e95f5b7616c2ef90b3e981aac87ce40057e52c418703d77626541d"
+      "l2Address": "0x078e6f73645a6b00d9ebba0fb86e228087df8e72710fec57fd057ce4917b2bb2"
     },
     "USDC": {
       "name": "USD Coin",
       "symbol": "USDC",
       "decimals": 6,
       "l1Address": "0x05b4cb126885fb10464fdd12666feb25e2563b76",
-      "l2Address": "0x21150c4040eec9f68451083f77537d104de0ef2d4e8d8b3a295ba21818b2ff69"
+      "l2Address": "0x2eadedae605d9ce2cd7ad9be844a99b44b8c167bf90ea5ba7f6e426edac6ad55"
     },
     "USDT": {
       "name": "Tether USD",
       "symbol": "USDT",
       "decimals": 6,
       "l1Address": "0xf56aa3aceddf88ab12e494d0b96da3c09a5d264e",
-      "l2Address": "0x04be24e94686b67f8cb57afdba0b2863a432cd799e1b8eac0d0c94a8851fe0c8"
+      "l2Address": "0x196bc11d05884747c44a13071eeacf9f1af6e98b98aef486c6c9af4f0394e833"
     },
     "WETH": {
       "name": "Wrapped Ether",
       "symbol": "WETH",
       "decimals": 18,
       "l1Address": "0x150890d6984e98f408162ee65684779804bff858",
-      "l2Address": "0x1faf482cbe32b3ec884af44aae7313c48da3c33ac4229646ff202110f9e9e38a"
+      "l2Address": "0x073673a90adacd02b343dafc6db3bf23ed93f86a18909a153b66e12b0b1b7ab5"
     },
     "AZT": {
       "name": "Aztec Token",
       "symbol": "AZT",
       "decimals": 18,
       "l1Address": "0xa7b987f505366630109de019862c183e690a040b",
-      "l2Address": "0x1a7ece51e83b65f2263e9b3c827c37855a03c5a557779f597e598dc6bb56be55"
+      "l2Address": "0x25b5169069e3d6e05a77d2c9c8b73eccb1995d4987eb2d942a790e8ffd9b5573"
     },
     "TT1": {
       "name": "Test Token 1",
       "symbol": "TT1",
       "decimals": 18,
       "l1Address": "0x5d1ce2a19aa885765abcef89b7590e213422a8b9",
-      "l2Address": "0x2161d87669bd80d71b94010c91b333ebd9392a0190b538c540a39401b9e00161"
+      "l2Address": "0x0434cc876866da6fe5b7019dead88671be340c3a5fa4c34e845b0c01823f39a9"
     },
     "TT2": {
       "name": "Test Token 2",
       "symbol": "TT2",
       "decimals": 18,
       "l1Address": "0x1f9bcc15221eccc5204eb30b5a156031423700ac",
-      "l2Address": "0x2a48a50ad90dcb563ed81f74754fa1900042f4a8781816ec46832265b962a947"
+      "l2Address": "0x058c1a4d43fe05a49f6da3406c40177bf44080c26fd7b7f61aa2ec66eabfd2e8"
     },
     "TT3": {
       "name": "Test Token 3",
       "symbol": "TT3",
       "decimals": 18,
       "l1Address": "0xdb94b6e81e0b9f0874aba5f4f8258c31a9b97ce8",
-      "l2Address": "0x11497d531595438f96f9db29966ad1d3f1d0b9e2a434fe990bf847bbeb8fe651"
+      "l2Address": "0x082f89d4f732c2f7fdc59099328391652f0e180645546f2dbbf7ad0d6be4bddf"
     },
     "TT4": {
       "name": "Test Token 4",
       "symbol": "TT4",
       "decimals": 18,
       "l1Address": "0x4e97bf98a0301d0f53ba0846ad7bafffa334196c",
-      "l2Address": "0x1ebe5dba4a4298073bcd9965def8564bbb1efa32399493774be624b336f2f14e"
+      "l2Address": "0x08213a7ebf7a1da42b4733a5aef0f00a678fe581ea8743d8d296b344ff70b5ce"
     },
     "TT5": {
       "name": "Test Token 5",
       "symbol": "TT5",
       "decimals": 18,
       "l1Address": "0x52367cd230c7ea449827c72bc280000d1244403a",
-      "l2Address": "0x206d2a1b1c60b6be14ef2a20200df6d7835011e343bcd917455713d8aecc3708"
+      "l2Address": "0x0dcf44638e2fef1952f05d25db965f6d30e1f10cd98f4869e107b750d9b7a76a"
     }
   }
 }

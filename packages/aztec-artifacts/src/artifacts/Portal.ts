@@ -199,8 +199,8 @@ shield_gateway_beacon: {
     /** register_private(eth_token: field, aztec_token: struct, name: string, name_len: integer, symbol: string, symbol_len: integer, decimals: integer, message_leaf_index: field) */
     register_private: ((eth_token: FieldLike, aztec_token: AztecAddressLike, name: string, name_len: (bigint | number), symbol: string, symbol_len: (bigint | number), decimals: (bigint | number), message_leaf_index: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** sync_notes() */
-    sync_notes: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** sync_private_state() */
+    sync_private_state: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** withdraw_public(eth_token: struct, from: struct, recipient: struct, amount: integer, withdrawNonce: field, burnNonce: field) */
     withdraw_public: ((eth_token: EthAddressLike, from: AztecAddressLike, recipient: EthAddressLike, amount: (bigint | number), withdrawNonce: FieldLike, burnNonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;

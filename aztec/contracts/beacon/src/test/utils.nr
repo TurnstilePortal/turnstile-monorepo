@@ -10,7 +10,7 @@ pub unconstrained fn deploy_beacon(
 ) -> AztecAddress {
     let init_call = Beacon::interface().init(admin, target);
     let beacon_address =
-        env.deploy("./@beacon", "Beacon").with_public_void_initializer(init_call).to_address();
+        env.deploy("./@beacon", "Beacon").with_public_void_initializer(admin, init_call).to_address();
 
     // Advance to when the private state is updated
     env.advance_block_by(Beacon::CHANGE_DELAY_BLOCKS + 1);
