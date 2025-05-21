@@ -2,78 +2,78 @@
   "l1AllowList": "0x700b6a60ce7eaaea56f065753d8dcb9653dbad35",
   "l1Portal": "0xa15bb66138824a1c7167f5e85b957d04dd34e468",
   "aztecTokenContractClassID": "0x29c6f5de5c4377c41d8e89c229cd35981f55e91cd706cf97dba2f2891c9bb55a",
-  "aztecPortal": "0x04287e7411e8090f7be0826ff5a9725390e066a0a8633695b223895b476d454a",
-  "aztecShieldGateway": "0x1b65a2578e5ec7f5deff07e5d1fd5e28475e3158a9b35da845d25c3431ae1ec4",
+  "aztecPortal": "0x0f1ae8c13ed517e8aaed1519cd1f334651ca408be86a96586cf539836c048136",
+  "aztecShieldGateway": "0x0e6b1ea64fc3a0f0f63382b3af63295d40eeb19c8cb8a36d3e94cdac4066022d",
   "tokens": {
     "DAI": {
       "name": "DAI",
       "symbol": "DAI",
       "decimals": 18,
-      "l1Address": "0x8ce361602b935680e8dec218b820ff5056beb7af",
-      "l2Address": "0x2f557d08b0ec6f7b3699c3b593d0419f79f4135a69d8123940c4cac5df9a88a9"
+      "l1Address": "0xa15bb66138824a1c7167f5e85b957d04dd34e468",
+      "l2Address": "0x03be96501699dd8da018a746636cae41b94541ebd78f64d134ee56ded982e335"
     },
     "USDC": {
       "name": "USD Coin",
       "symbol": "USDC",
       "decimals": 6,
-      "l1Address": "0xd04ff4a75edd737a73e92b2f2274cb887d96e110",
-      "l2Address": "0x221fb7b4c1715fdd91aeeca2004dcab7cb0f74d45ae3196c4a86f4ffe903ae4e"
+      "l1Address": "0x05b4cb126885fb10464fdd12666feb25e2563b76",
+      "l2Address": "0x14035f0e4e459b222db970c00d26121d34f3adc1848dacb067c593583672fb37"
     },
     "USDT": {
       "name": "Tether USD",
       "symbol": "USDT",
       "decimals": 6,
-      "l1Address": "0xdfd787c807dea8d7e53311b779bc0c6a4704d286",
-      "l2Address": "0x05b661d508cf4fb479602c884fc531ad63d03d9e6884d3d26fd23208a61784ff"
+      "l1Address": "0xf56aa3aceddf88ab12e494d0b96da3c09a5d264e",
+      "l2Address": "0x18d454120d63b1d4357b0ab27913a1b37aa99becd0cc1a9246ff274807ba3f2a"
     },
     "WETH": {
       "name": "Wrapped Ether",
       "symbol": "WETH",
       "decimals": 18,
-      "l1Address": "0xe8ecf644d9a3432dab3a0725308f265990eedca9",
-      "l2Address": "0x1d180c429825cc0c2e65ce1e3a2ef6c0f98954479c392af1f1acb1560c1d7bf7"
+      "l1Address": "0x150890d6984e98f408162ee65684779804bff858",
+      "l2Address": "0x21ccaf0e7e32f65893d4d0f1ae60e3730be96f3e415fa1063f7a4aa592f064d8"
     },
     "AZT": {
       "name": "Aztec Token",
       "symbol": "AZT",
       "decimals": 18,
-      "l1Address": "0xbf3cd410aa5a3e9da22fd9109add5d3655fcb1c5",
-      "l2Address": "0x1d377a9efa547b1de87c533211535ad037c7474a1848e8745d32fa1e0e2ef04d"
+      "l1Address": "0xa7b987f505366630109de019862c183e690a040b",
+      "l2Address": "0x15c8659a131db41fbb110f267f4bb62c6e6e8cbc5ad3e993fc521fecb8a2eec8"
     },
     "TT1": {
       "name": "Test Token 1",
       "symbol": "TT1",
       "decimals": 18,
-      "l1Address": "0x49ea5126fd67f877b62ddc0144dbeb42591df7bb",
-      "l2Address": "0x06cfc885ad70be16c4f53bd04b9d072eddf948e32c2b8e26a8d0c3339402954a"
+      "l1Address": "0x5d1ce2a19aa885765abcef89b7590e213422a8b9",
+      "l2Address": "0x07c6bd32704c8bd88b80692ff6821610f615bdac6e3cb7a8f1cde38718b2f9f8"
     },
     "TT2": {
       "name": "Test Token 2",
       "symbol": "TT2",
       "decimals": 18,
-      "l1Address": "0x8b03e92900e9d2251a93e6640a79353e3e10df1c",
-      "l2Address": "0x01ecbec4aa65a55e48128010b34b3557cba6fedc2d7b098559ae43edec655294"
+      "l1Address": "0x1f9bcc15221eccc5204eb30b5a156031423700ac",
+      "l2Address": "0x22b86caefd0c79b1428a3a3925dc9e6a28f608c61fe2c5a109393340afbf3855"
     },
     "TT3": {
       "name": "Test Token 3",
       "symbol": "TT3",
       "decimals": 18,
-      "l1Address": "0xe031a491d0ec16f32f9be25046956425034f0918",
-      "l2Address": "0x20dd8dc4091704b9b4c67e955d3a5c109cee7b6f6a5be1ab6bb5ff2e9d03c9fa"
+      "l1Address": "0xdb94b6e81e0b9f0874aba5f4f8258c31a9b97ce8",
+      "l2Address": "0x29c427d89815569d18162bb83bfeba5fd4e305ccc2b5320ac483ccacb27bfeee"
     },
     "TT4": {
       "name": "Test Token 4",
       "symbol": "TT4",
       "decimals": 18,
-      "l1Address": "0x32e0a4f5c9846c8c504103e41d7e8edf03ce8cbc",
-      "l2Address": "0x180a90f2c23512bb8ef8a7480e98a4242dccb0ed2493ac18fe5697a0d2343852"
+      "l1Address": "0x4e97bf98a0301d0f53ba0846ad7bafffa334196c",
+      "l2Address": "0x0313fe1374380b7285c36249cd7f22872dd0c5707fd17bd66e2a6a56ce911a68"
     },
     "TT5": {
       "name": "Test Token 5",
       "symbol": "TT5",
       "decimals": 18,
-      "l1Address": "0x240b9632a58219ec6d7a550ab8354ac3e60ac128",
-      "l2Address": "0x1b1a3b58c535e24a8bd23685441dc885a2f9f5775c8df976236a4af62b7c3535"
+      "l1Address": "0x52367cd230c7ea449827c72bc280000d1244403a",
+      "l2Address": "0x1515ccdd92e4c941c5b837e843e8bb2d0a1232b802f493c6070091e78392ccb6"
     }
   }
 }

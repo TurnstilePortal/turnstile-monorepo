@@ -43,9 +43,7 @@ export class LocalSandboxSetup implements DeploySetup {
 
     console.log('Starting the sandbox...');
     try {
-      await execAsync(
-        'FORCE_COLOR=0 aztec start --sandbox --node.deployAztecContractsSalt 0x01 > /dev/null 2>&1 &',
-      );
+      await execAsync('FORCE_COLOR=0 aztec start --sandbox > /dev/null 2>&1 &');
       // await execAsync('docker-compose up -d');
       console.log('Started sandbox container');
     } catch (error) {

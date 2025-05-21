@@ -15,6 +15,8 @@ import {
   Fr,
   GrumpkinScalar,
   createAztecNodeClient,
+  waitForNode,
+  waitForPXE,
 } from '@aztec/aztec.js';
 import {
   createPXEService,
@@ -38,33 +40,24 @@ import { readKeyData, type KeyData } from './keyData.js';
 import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 
-export async function createPXE(
-  node: AztecNode,
-  config?: PXEServiceConfig | undefined,
-): Promise<PXE> {
-  let fullConfig: PXEServiceConfig;
+export async function createPXE(node: AztecNode): Promise<PXE> {
+  const l1Contracts = await node.getL1ContractAddresses();
+  const { l1ChainId } = await node.getNodeInfo();
 
-  if (config) {
-    fullConfig = config;
-  } else {
-    console.log('Creating PXE service with default config...');
-    const l1Contracts = await node.getL1ContractAddresses();
-    const { l1ChainId, rollupVersion } = await node.getNodeInfo();
-    fullConfig = {
-      ...getPXEServiceConfig(),
-      l1Contracts,
-      l1ChainId,
-      rollupVersion,
-      proverEnabled: l1ChainId !== 31337 && l1ChainId !== 1337,
-    };
-  }
+  const config = getPXEServiceConfig();
+  const fullConfig = { ...config, l1Contracts };
+  fullConfig.proverEnabled = l1ChainId !== 31337 && l1ChainId !== 1337;
+  console.log(fullConfig);
 
   const store = await createStore('pxe', {
-    dataDirectory: 'store',
+    dataDirectory: undefined, // ephemeral data store
     dataStoreMapSizeKB: 1e6,
   });
 
   const pxe = await createPXEService(node, fullConfig, true, store);
+  console.log('Waiting for PXE service to be ready...');
+  await waitForPXE(pxe);
+  console.log('PXE service ready');
   return pxe;
 }
 
@@ -178,6 +171,9 @@ export async function createL2Client(
   pxe?: PXE,
 ): Promise<L2Client> {
   const node = createAztecNodeClient(aztecNode);
+  console.log(`Connecting to Aztec Node at ${aztecNode}`);
+  await waitForNode(node);
+  console.log('Aztec Node is ready');
   if (!pxe) {
     // biome-ignore lint/style/noParameterAssign: only assigning if undefined
     pxe = await createPXE(node);
@@ -252,11 +248,6 @@ export async function startLocalPXE(
   port = 8976,
 ): Promise<PXE> {
   console.log('Starting local PXE...');
-
-  const store = await createStore('pxe', {
-    dataDirectory: 'store',
-    dataStoreMapSizeKB: 1e6,
-  });
 
   const command = 'aztec';
   const args = [
