@@ -25,6 +25,3 @@ mv $tmpfile .devcontainer/devcontainer.json
 
 echo "Updating AztecProtocol/l1-contracts dependency to v$new_version..."
 cd l1 ; forge install AztecProtocol/l1-contracts@tag=v$new_version ; cd -
-
-echo "Updating docker/turnstile-sandbox/docker-compose.yaml..."
-sed -i -e "s;image: aztecprotocol/aztec:.*$;image: aztecprotocol/aztec:${new_version};" docker/turnstile-sandbox/docker-compose.yaml

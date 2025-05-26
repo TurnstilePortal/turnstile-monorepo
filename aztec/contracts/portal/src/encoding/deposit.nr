@@ -1,9 +1,7 @@
-use aztec::{
-    protocol_types::{
-        address::{AztecAddress, EthAddress},
-        hash::sha256_to_field,
-        traits::{FromField, ToField},
-    },
+use aztec::protocol_types::{
+    address::{AztecAddress, EthAddress},
+    hash::sha256_to_field,
+    traits::{FromField, ToField},
 };
 
 // bytes4(keccak256("deposit(address,bytes32,uint256)")) = 0xeb2243f8

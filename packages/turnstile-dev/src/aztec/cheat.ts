@@ -6,7 +6,9 @@ export async function advanceBlocksUntil(node: AztecNode, endBlock: number) {
   console.log(`Advancing blocks to ${endBlock}`);
 
   const initialBlockNumber = await node.getBlockNumber();
-  await retryUntil(async () => (await node.getBlockNumber()) >= initialBlockNumber + 1);
+  await retryUntil(
+    async () => (await node.getBlockNumber()) >= initialBlockNumber + 1,
+  );
 
   console.log(`Current block is now ${await node.getBlockNumber()}`);
 }

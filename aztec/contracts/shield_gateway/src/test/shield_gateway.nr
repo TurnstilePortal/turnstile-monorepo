@@ -21,20 +21,11 @@ unconstrained fn test_binned() {
 
     let binned = ShieldGateway::_binned(5_000_000_000_000_000_000_000);
     // Bin amount is 1_000_000_000
-    assert(
-        binned == 5_000_000_000_000,
-        f"Bin amount {binned} is not 5_000_000_000_000",
-    );
+    assert(binned == 5_000_000_000_000, f"Bin amount {binned} is not 5_000_000_000_000");
     let binned = ShieldGateway::_binned(1_000_000_000_000_000_000_000);
-    assert(
-        binned == 1_000_000_000_000,
-        f"Bin amount {binned} is not 1_000_000_000_000",
-    );
+    assert(binned == 1_000_000_000_000, f"Bin amount {binned} is not 1_000_000_000_000");
     let binned = ShieldGateway::_binned(1_000_000_000_000_000_000);
-    assert(
-        binned == 1_000_000_000,
-        f"Bin amount {binned} is not 1_000_000_000",
-    );
+    assert(binned == 1_000_000_000, f"Bin amount {binned} is not 1_000_000_000");
     let binned = ShieldGateway::_binned(1_000_000_000_000);
     assert(binned == 1_000, f"Bin amount {binned} is not 1_000");
     let binned = ShieldGateway::_binned(1_000_000_000);

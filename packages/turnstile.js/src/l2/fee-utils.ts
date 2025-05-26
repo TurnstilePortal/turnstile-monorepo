@@ -15,9 +15,7 @@ import type { AztecAddress, L2AmountClaim } from '@aztec/aztec.js';
 import type { L1Client } from '../l1/client.js';
 import type { L2Client } from './client.js';
 import { ErrorCode, TurnstileError } from '../errors.js';
-import type {
-  ExtendedViemWalletClient,
-} from '@aztec/ethereum';
+import type { ExtendedViemWalletClient } from '@aztec/ethereum';
 import { ExecutionPayload } from '@aztec/entrypoints/payload';
 import {
   SponsoredFPCContract,

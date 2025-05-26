@@ -21,14 +21,10 @@
       "version": "nightly"
     },
     "ghcr.io/devcontainers/features/node:1": {
-      "version": "20"
+      "version": "22"
     },
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
-  "forwardPorts": [
-    8080,
-    8545
-  ],
   "containerEnv": {
     "npm_config_store_dir": "/home/vscode/.pnpm-store",
     "COMPOSE_PROJECT_NAME": "aztec-sandbox",
