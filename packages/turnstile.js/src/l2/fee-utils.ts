@@ -15,11 +15,7 @@ import type { AztecAddress, L2AmountClaim } from '@aztec/aztec.js';
 import type { L1Client } from '../l1/client.js';
 import type { L2Client } from './client.js';
 import { ErrorCode, TurnstileError } from '../errors.js';
-import type {
-  ExtendedViemWalletClient,
-  ViemPublicClient,
-  ViemWalletClient,
-} from '@aztec/ethereum';
+import type { ExtendedViemWalletClient } from '@aztec/ethereum';
 import { ExecutionPayload } from '@aztec/entrypoints/payload';
 import {
   SponsoredFPCContract,
@@ -60,9 +56,7 @@ export async function bridgeL1FeeJuice(
 
   const portal = await L1FeeJuicePortalManager.new(
     l2Client.getWallet(),
-    l1Client.getPublicClient() as unknown as ViemPublicClient,
-    l1Client.getWalletClient() as unknown as ViemWalletClient,
-    // extendedClient,
+    extendedClient,
     createLogger('turnstile.js:fee-utils'),
   );
   const claim = await portal.bridgeTokensPublic(

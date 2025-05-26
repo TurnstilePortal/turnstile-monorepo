@@ -12,7 +12,7 @@
     "build-artifacts": "pnpm recursive run --filter \"@turnstile-portal/*artifacts*\" build",
     "build-packages": "pnpm recursive run --filter \"@turnstile-portal/*\" build",
     "changeset": "changeset",
-    "version": "changeset version && bash scripts/update-sandbox-version.sh && pnpm install --no-frozen-lockfile",
+    "version": "changeset version && pnpm install --no-frozen-lockfile",
     "publish-packages": "changeset publish",
     "clean": "pnpm recursive run clean ; rm -rf node_modules/*",
     "repl": "tsx packages/repl/src/repl.ts",
@@ -24,11 +24,11 @@
   },
   "pnpm": {
     "overrides": {
-      "@aztec/**": "0.85.0-alpha-testnet.4"
+      "@aztec/**": "0.87.2"
     }
   },
   "resolutions": {
-    "@aztec/**": "0.85.0-alpha-testnet.4"
+    "@aztec/**": "0.87.2"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",

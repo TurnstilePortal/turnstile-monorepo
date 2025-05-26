@@ -53,7 +53,8 @@ pub contract ShieldGateway {
             ._log_transfer(
                 0, // TODO: using dummy serial number. Switch to verified_id[0] when available
                 token,
-                _binned(amount))
+                _binned(amount),
+            )
             .enqueue(&mut context);
     }
 

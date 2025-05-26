@@ -144,8 +144,8 @@ export class ShieldGatewayContract extends ContractBase {
     /** public_dispatch(selector: field) */
     public_dispatch: ((selector: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** sync_notes() */
-    sync_notes: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** sync_private_state() */
+    sync_private_state: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** verify_id_private(verified_id: array) */
     verify_id_private: ((verified_id: FieldLike[]) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;

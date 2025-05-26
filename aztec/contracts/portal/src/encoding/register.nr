@@ -1,10 +1,4 @@
-use aztec::{
-    protocol_types::{
-        address::EthAddress,
-        hash::sha256_to_field,
-        traits::ToField,
-    },
-};
+use aztec::protocol_types::{address::EthAddress, hash::sha256_to_field, traits::ToField};
 
 // bytes4(keccak256(register(address,string,string,uint8))) = 0x611a7a19
 comptime global REGISTER_SIGNATURE: [u8; 4] = [0x61, 0x1a, 0x7a, 0x19];

@@ -1,5 +1,5 @@
 {
-  "name": "Local Sandbox Environment",
+  "name": "Hosted Sandbox Environment",
   "connection": {
     "ethereum": {
       "rpc": "https://sandbox.ethereum.walletmesh.com/api/v1/public",

@@ -44,7 +44,6 @@ pub contract Token {
 
     use crate::types::balance_set::BalanceSet;
 
-
     // In the first transfer iteration we are computing a lot of additional information (validating inputs, retrieving
     // keys, etc.), so the gate count is already relatively high. We therefore only read a few notes to keep the happy
     // case with few constraints.
@@ -61,7 +60,6 @@ pub contract Token {
         to: AztecAddress,
         amount: u128,
     }
-
 
     #[derive(Serialize)]
     #[event]
@@ -118,7 +116,6 @@ pub contract Token {
         storage.shield_gateway_beacon.initialize(beacon);
     }
 
-
     #[public]
     #[view]
     fn public_get_name() -> FieldCompressedString {
@@ -173,13 +170,11 @@ pub contract Token {
         storage.shielded_supply.read()
     }
 
-
     #[public]
     #[view]
     fn balance_of_public(owner: AztecAddress) -> u128 {
         storage.public_balances.at(owner).read()
     }
-
 
     #[public]
     fn mint_to_public(to: AztecAddress, amount: u128) {
@@ -208,10 +203,14 @@ pub contract Token {
         // function argument to a message sender, guaranteeing that only a message sender with minter permissions
         // can successfully execute the function.
         token
-            ._finalize_mint_shielded_unsafe(context.msg_sender(), context.msg_sender(), amount, partial_note)
+            ._finalize_mint_shielded_unsafe(
+                context.msg_sender(),
+                context.msg_sender(),
+                amount,
+                partial_note,
+            )
             .enqueue(&mut context);
     }
-
 
     /// Finalizes a mint of token `amount` to a private balance of `to`. The mint must be prepared by calling
     /// `prepare_private_balance_increase` first and the resulting
@@ -259,7 +258,6 @@ pub contract Token {
         Mint { to, amount: amount }.emit(encode_event(context));
     }
 
-
     #[public]
     fn transfer_in_public(from: AztecAddress, to: AztecAddress, amount: u128, nonce: Field) {
         if (!from.eq(context.msg_sender())) {
@@ -273,11 +271,8 @@ pub contract Token {
         storage.public_balances.at(to).write(to_balance);
     }
 
-
-
     #[public]
     fn burn_public(from: AztecAddress, amount: u128, nonce: Field) {
-
         if (!from.eq(context.msg_sender())) {
             assert_current_call_valid_authwit_public(&mut context, from);
         } else {
@@ -289,8 +284,6 @@ pub contract Token {
         let new_supply = storage.total_supply.read().sub(amount);
         storage.total_supply.write(new_supply);
     }
-
-
 
     #[private]
     fn transfer_to_public(from: AztecAddress, to: AztecAddress, amount: u128, nonce: Field) {
@@ -309,8 +302,6 @@ pub contract Token {
         ));
         Token::at(context.this_address())._increase_public_balance(to, amount).enqueue(&mut context);
     }
-
-
 
     #[private]
     fn transfer(to: AztecAddress, amount: u128) {
@@ -350,9 +341,7 @@ pub contract Token {
             to,
             from,
         ));
-
     }
-
 
     #[contract_library_method]
     fn subtract_balance(
@@ -415,11 +404,8 @@ pub contract Token {
         context.push_nullifier(nullifier);
     }
 
-
-
     #[private]
     fn transfer_in_private(from: AztecAddress, to: AztecAddress, amount: u128, nonce: Field) {
-
         if (!from.eq(context.msg_sender())) {
             assert_current_call_valid_authwit(&mut context, from);
         } else {
@@ -462,9 +448,7 @@ pub contract Token {
             assert(nonce == 0, "invalid nonce");
         }
 
-        Token::at(context.this_address())._transfer_to_private(from, from, amount).call(
-            &mut context,
-        );
+        Token::at(context.this_address())._transfer_to_private(from, from, amount).call(&mut context);
 
         Token::at(context.this_address())._log_shield(from, amount).enqueue(&mut context);
     }
@@ -493,11 +477,8 @@ pub contract Token {
     fn _transfer_to_private(from: AztecAddress, to: AztecAddress, amount: u128) {
         let token = Token::at(context.this_address());
         let partial_note = _prepare_private_balance_increase(from, to, &mut context, storage);
-        token._finalize_transfer_to_private_unsafe(from, amount, partial_note).enqueue(
-            &mut context,
-        );
+        token._finalize_transfer_to_private_unsafe(from, amount, partial_note).enqueue(&mut context);
     }
-
 
     // Transfers token `amount` from public balance of message sender to a private balance of `to`.
     #[private]
@@ -525,7 +506,6 @@ pub contract Token {
         // ideally we'd not have `from` here, but we do need a `from` address to produce a tagging secret with `to`.
         _prepare_private_balance_increase(from, to, &mut context, storage)
     }
-
 
     /// This function exists separately from `prepare_private_balance_increase` solely as an optimization as it allows
     /// us to have it inlined in the `transfer_to_private` function which results in one fewer kernel iteration.
@@ -559,7 +539,6 @@ pub contract Token {
         partial_note
     }
 
-
     /// Finalizes a transfer of token `amount` from public balance of `from` to a private balance of `to`.
     /// The transfer must be prepared by calling `prepare_private_balance_increase` first and the resulting
     /// `partial_note` must be passed as an argument to this function.
@@ -568,8 +547,6 @@ pub contract Token {
         let from = context.msg_sender();
         _finalize_transfer_to_private(from, amount, partial_note, &mut context, storage);
     }
-
-
 
     /// This is a wrapper around `_finalize_transfer_to_private` placed here so that a call
     /// to `_finalize_transfer_to_private` can be enqueued. Called unsafe as it does not check `from` (this has to be
@@ -583,7 +560,6 @@ pub contract Token {
     ) {
         _finalize_transfer_to_private(from, amount, partial_note, &mut context, storage);
     }
-
 
     #[contract_library_method]
     fn _finalize_transfer_to_private(
@@ -604,7 +580,6 @@ pub contract Token {
         assert(context.storage_read(partial_note.commitment()), "Invalid partial note");
         partial_note.complete(amount, context);
     }
-
 
     /// Mints token `amount` to a private balance of `to`. Message sender has to have minter permissions (checked
     /// in the enqueued call).
@@ -627,8 +602,6 @@ pub contract Token {
         );
     }
 
-
-
     /// Finalizes a mint of token `amount` to a private balance of `to`. The mint must be prepared by calling
     /// `prepare_private_balance_increase` first and the resulting
     /// `partial_note` must be passed as an argument to this function.
@@ -642,8 +615,6 @@ pub contract Token {
         _finalize_mint_to_private(amount, partial_note, &mut context, storage);
     }
 
-
-
     #[public]
     #[internal]
     fn _finalize_mint_to_private_unsafe(
@@ -655,7 +626,6 @@ pub contract Token {
         assert(storage.minter.read().eq(context.msg_sender()), "caller is not minter");
         _finalize_mint_to_private(amount, partial_note, &mut context, storage);
     }
-
 
     #[contract_library_method]
     fn _finalize_mint_to_private(
@@ -696,7 +666,6 @@ pub contract Token {
         _increase_public_balance_inner(to, amount, storage);
     }
 
-
     #[contract_library_method]
     fn _increase_public_balance_inner(
         to: AztecAddress,
@@ -707,8 +676,7 @@ pub contract Token {
         storage.public_balances.at(to).write(new_balance);
     }
 
-
-   #[contract_library_method]
+    #[contract_library_method]
     fn get_shield_gateway(
         context: &mut PrivateContext,
         storage: Storage<&mut PrivateContext>,
@@ -717,7 +685,6 @@ pub contract Token {
             .get_target_private(context.this_address())
             .view(context)
     }
-
 
     #[contract_library_method]
     fn assert_shield_gateway_permitted(
@@ -777,7 +744,6 @@ pub contract Token {
         let new_supply = storage.total_supply.read().sub(amount);
         storage.total_supply.write(new_supply);
     }
-
 
     #[utility]
     pub(crate) unconstrained fn balance_of_private(owner: AztecAddress) -> u128 {

@@ -188,8 +188,8 @@ admin: {
     /** set_target_override(from: struct, source: struct, target: struct, nonce: field) */
     set_target_override: ((from: AztecAddressLike, source: AztecAddressLike, target: AztecAddressLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** sync_notes() */
-    sync_notes: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** sync_private_state() */
+    sync_private_state: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
   };
 
   

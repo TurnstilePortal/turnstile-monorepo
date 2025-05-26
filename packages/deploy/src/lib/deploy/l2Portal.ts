@@ -6,8 +6,6 @@ import {
 } from '@aztec/aztec.js';
 import type { L2Client } from '@turnstile-portal/turnstile.js';
 
-import { getInitialTestAccountsWallets } from '@aztec/accounts/testing';
-
 import {
   PortalContract,
   ShieldGatewayContract,
