@@ -123,12 +123,13 @@ describe('L2Token', () => {
         balance_of_private: vi.fn().mockReturnValue({
           simulate: vi.fn().mockResolvedValue(BigInt(2000)),
         }),
-        transfer_public_to_public: vi.fn().mockReturnValue({
+        transfer_in_public: vi.fn().mockReturnValue({
           send: vi
             .fn()
             .mockResolvedValue({ txHash: '0xabcd' } as unknown as SentTx),
         }),
-        transfer_private_to_private: vi.fn().mockReturnValue({
+        transfer_in_private: vi.fn().mockReturnValue({
+          with: vi.fn().mockReturnThis(),
           send: vi
             .fn()
             .mockResolvedValue({ txHash: '0xbcde' } as unknown as SentTx),
@@ -329,11 +330,14 @@ describe('L2Token', () => {
       expect(mockL2Client.getAddress).toHaveBeenCalled();
 
       // Check that the contract method was called with the correct parameters
+      expect(mockTokenContract.methods.transfer_in_public).toHaveBeenCalledWith(
+        accountAddr,
+        recipient,
+        amount,
+        Fr.ZERO,
+      );
       expect(
-        mockTokenContract.methods.transfer_public_to_public,
-      ).toHaveBeenCalledWith(accountAddr, recipient, amount, Fr.ZERO);
-      expect(
-        mockTokenContract.methods.transfer_public_to_public().send,
+        mockTokenContract.methods.transfer_in_public().send,
       ).toHaveBeenCalled();
 
       // Check that the result is the expected transaction
@@ -348,7 +352,7 @@ describe('L2Token', () => {
         { amount: amount.toString() },
       );
       mockTokenContract.methods
-        .transfer_public_to_public()
+        .transfer_in_public()
         .send.mockRejectedValueOnce(mockError);
 
       // Check that the error is thrown with the correct code
@@ -389,11 +393,6 @@ describe('L2Token', () => {
 
       // Check the client methods were called
       expect(mockL2Client.getAddress).toHaveBeenCalled();
-      expect(mockL2Client.getWallet).toHaveBeenCalled();
-
-      // For storeCapsule, we just check it's called but don't verify the exact parameters
-      // since the VP_SLOT constant is defined in the module
-      expect(mockWallet.storeCapsule).toHaveBeenCalled();
 
       // Indirectly check that getShieldGatewayAddress was called via the simulate method
       expect(
@@ -402,10 +401,10 @@ describe('L2Token', () => {
 
       // Check that the contract method was called with the correct parameters
       expect(
-        mockTokenContract.methods.transfer_private_to_private,
+        mockTokenContract.methods.transfer_in_private,
       ).toHaveBeenCalledWith(accountAddr, recipient, amount, Fr.ZERO);
       expect(
-        mockTokenContract.methods.transfer_private_to_private().send,
+        mockTokenContract.methods.transfer_in_private().send,
       ).toHaveBeenCalled();
 
       // Check that the result is the expected transaction
@@ -420,7 +419,7 @@ describe('L2Token', () => {
         { amount: amount.toString() },
       );
       mockTokenContract.methods
-        .transfer_private_to_private()
+        .transfer_in_private()
         .send.mockRejectedValueOnce(mockError);
 
       // Check that the error is thrown with the correct code
@@ -440,10 +439,10 @@ describe('L2Token', () => {
         .get_shield_gateway_public()
         .simulate.mockRejectedValueOnce(mockError);
 
-      // Check that the error is thrown with the correct code (function implementation throws L2_TOKEN_OPERATION)
+      // Check that the error is thrown with the correct code (function implementation throws L2_CONTRACT_INTERACTION)
       await expect(
         token.transferPrivate(recipient, amount, verifiedID),
-      ).rejects.toHaveProperty('code', ErrorCode.L2_TOKEN_OPERATION);
+      ).rejects.toHaveProperty('code', ErrorCode.L2_CONTRACT_INTERACTION);
     });
 
     // Additional test to cover the edge case in transferPrivate method
@@ -453,10 +452,12 @@ describe('L2Token', () => {
         .get_shield_gateway_public()
         .simulate.mockResolvedValue(portalAddr);
 
-      // Mock storeCapsule to throw an error
-      mockWallet.storeCapsule.mockImplementationOnce(() => {
-        throw new Error('Failed to store capsule');
-      });
+      // Mock the with method to throw an error
+      mockTokenContract.methods
+        .transfer_in_private()
+        .with.mockImplementationOnce(() => {
+          throw new Error('Failed to set capsule');
+        });
 
       // The error should be wrapped in a TurnstileError with the L2_TOKEN_OPERATION code
       await expect(
@@ -476,7 +477,7 @@ describe('L2Token', () => {
 
       // Verify the contract method was called with the provided parameters
       expect(
-        mockTokenContract.methods.transfer_private_to_private,
+        mockTokenContract.methods.transfer_in_private,
       ).toHaveBeenCalledWith(accountAddr, nullAddr, amount, Fr.ZERO);
     });
 
@@ -492,18 +493,18 @@ describe('L2Token', () => {
 
       // Verify the contract method was called with the provided parameters
       expect(
-        mockTokenContract.methods.transfer_private_to_private,
+        mockTokenContract.methods.transfer_in_private,
       ).toHaveBeenCalledWith(accountAddr, recipient, negativeAmount, Fr.ZERO);
 
       // Reset the mock
-      mockTokenContract.methods.transfer_private_to_private.mockClear();
+      mockTokenContract.methods.transfer_in_private.mockClear();
 
       // Call with zero amount
       await token.transferPrivate(recipient, zeroAmount, verifiedID);
 
       // Verify the contract method was called with the provided parameters
       expect(
-        mockTokenContract.methods.transfer_private_to_private,
+        mockTokenContract.methods.transfer_in_private,
       ).toHaveBeenCalledWith(accountAddr, recipient, zeroAmount, Fr.ZERO);
     });
   });

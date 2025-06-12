@@ -109,7 +109,6 @@ describe('L2Portal', () => {
       getNode: vi.fn().mockReturnValue(mockAztecNode),
       getWallet: vi.fn().mockReturnValue(mockWallet),
       getAddress: vi.fn().mockReturnValue(walletAddr),
-      getPxe: vi.fn().mockRejectedValue(mockPxe),
     };
 
     // Create portal instance
@@ -310,11 +309,7 @@ describe('L2Portal', () => {
       expect(mockAztecNode.getBlockNumber).toHaveBeenCalled();
       expect(
         mockAztecNode.getL1ToL2MessageMembershipWitness,
-      ).toHaveBeenCalledWith(
-        portalAddr,
-        expect.anything(),
-        L2Portal.PUBLIC_NOT_SECRET_SECRET,
-      );
+      ).toHaveBeenCalledWith('latest', expect.anything());
       expect(result).toBe(false);
     });
 
