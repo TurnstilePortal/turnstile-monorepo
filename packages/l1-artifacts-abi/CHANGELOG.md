@@ -1,5 +1,7 @@
 # @turnstile-portal/l1-artifacts-abi
 
+## 0.2.2
+
 ## 0.2.1
 
 ### Patch Changes

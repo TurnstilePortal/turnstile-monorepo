@@ -1,5 +1,13 @@
 # @turnstile-portal/turnstile.js
 
+## 0.2.2
+
+### Patch Changes
+
+- 69da996: Remove PXE from turnstile.js L2Client
+  - @turnstile-portal/aztec-artifacts@0.2.2
+  - @turnstile-portal/l1-artifacts-abi@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes
