@@ -4,6 +4,6 @@ type = "contract"
 authors = [""]
 
 [dependencies]
-aztec = { git="https://github.com/AztecProtocol/aztec-packages/", tag="v0.87.2", directory="noir-projects/aztec-nr/aztec" }
-authwit={ git="https://github.com/AztecProtocol/aztec-packages/", tag="v0.87.2", directory="noir-projects/aztec-nr/authwit"}
+aztec = { git="https://github.com/AztecProtocol/aztec-packages/", tag="v0.87.8", directory="noir-projects/aztec-nr/aztec" }
+authwit={ git="https://github.com/AztecProtocol/aztec-packages/", tag="v0.87.8", directory="noir-projects/aztec-nr/authwit"}
 test_common = { path = "../../lib/test_common" }
