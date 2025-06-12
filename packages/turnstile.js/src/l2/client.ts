@@ -2,7 +2,6 @@ import {
   FeeJuicePaymentMethod,
   type AztecAddress,
   type AztecNode,
-  type PXE,
   type Wallet,
 } from '@aztec/aztec.js';
 import type { UserFeeOptions } from '@aztec/entrypoints/interfaces';
@@ -38,7 +37,7 @@ export class L2Client implements IL2Client {
    * @param node The AztecNode client
    * @param wallet The wallet
    */
-  constructor(node: AztecNode, pxe: PXE, wallet: Wallet) {
+  constructor(node: AztecNode, wallet: Wallet) {
     this.node = node;
     this.wallet = wallet;
   }

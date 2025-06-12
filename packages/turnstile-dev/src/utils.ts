@@ -18,11 +18,7 @@ import {
   waitForNode,
   waitForPXE,
 } from '@aztec/aztec.js';
-import {
-  createPXEService,
-  getPXEServiceConfig,
-  type PXEServiceConfig,
-} from '@aztec/pxe/server';
+import { createPXEService, getPXEServiceConfig } from '@aztec/pxe/server';
 import { createStore } from '@aztec/kv-store/lmdb';
 import type {
   AccountWallet,
@@ -194,7 +190,7 @@ export async function createL2Client(
     Fr.fromString(keyData.l2Salt),
   );
   const wallet = await account.register();
-  const client = new L2Client(node, pxe, wallet);
+  const client = new L2Client(node, wallet);
   return client;
 }
 

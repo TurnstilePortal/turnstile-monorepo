@@ -11,6 +11,7 @@
     "build": "pnpm recursive run build",
     "build-artifacts": "pnpm recursive run --filter \"@turnstile-portal/*artifacts*\" build",
     "build-packages": "pnpm recursive run --filter \"@turnstile-portal/*\" build",
+    "test": "pnpm -r run test",
     "changeset": "changeset",
     "version": "changeset version && pnpm install --no-frozen-lockfile",
     "publish-packages": "changeset publish",

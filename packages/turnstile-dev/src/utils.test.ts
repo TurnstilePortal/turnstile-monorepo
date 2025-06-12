@@ -11,10 +11,72 @@ import type {
 
 // Mock the imports
 vi.mock('@turnstile-portal/turnstile.js');
-vi.mock('@aztec/aztec.js');
-vi.mock('@aztec/accounts/schnorr');
+vi.mock('@aztec/aztec.js', () => {
+  return {
+    createAztecNodeClient: vi.fn(() => ({
+      getL1ContractAddresses: vi.fn().mockResolvedValue({
+        registryAddress: '0x1234',
+        inboxAddress: '0x5678',
+        outboxAddress: '0x9abc',
+        availabilityOracleAddress: '0xdef0',
+        rollupAddress: '0x1111',
+        gasTokenAddress: '0x2222',
+        gasPortalAddress: '0x3333',
+      }),
+      getNodeInfo: vi.fn().mockResolvedValue({
+        rollupAddress: '0x1111',
+        l1ChainId: 31337,
+        rollupVersion: 1,
+      }),
+      waitFor: vi.fn().mockResolvedValue(true),
+    })),
+    waitForNode: vi.fn().mockResolvedValue(true),
+    createPXEClient: vi.fn().mockResolvedValue({}),
+    waitForPXE: vi.fn().mockResolvedValue(true),
+    Fr: {
+      fromString: vi.fn().mockReturnValue({}),
+      fromHexString: vi.fn().mockReturnValue({}),
+      ZERO: {},
+    },
+    GrumpkinScalar: {
+      fromString: vi.fn().mockReturnValue({}),
+    },
+    loadContractArtifact: vi.fn().mockReturnValue({
+      name: 'TestContract',
+      functions: [],
+    }),
+    ContractBase: vi.fn(),
+    Contract: vi.fn(),
+    BatchCall: vi.fn(),
+  };
+});
+vi.mock('@aztec/accounts/schnorr', () => ({
+  getSchnorrAccount: vi.fn().mockReturnValue({
+    register: vi.fn().mockResolvedValue({}),
+  }),
+  getSchnorrWallet: vi.fn().mockResolvedValue({}),
+}));
+vi.mock('@aztec/pxe/server', () => ({
+  createPXEService: vi.fn().mockResolvedValue({
+    getPXEInfo: vi.fn().mockResolvedValue({}),
+  }),
+  getPXEServiceConfig: vi.fn().mockReturnValue({}),
+}));
+vi.mock('@aztec/kv-store/lmdb', () => ({
+  createStore: vi.fn().mockResolvedValue({}),
+}));
+vi.mock('@aztec/accounts/testing', () => ({
+  getDeployedTestAccountsWallets: vi.fn().mockResolvedValue([]),
+}));
+vi.mock('@aztec/stdlib/keys', () => ({
+  deriveSigningKey: vi.fn().mockReturnValue({}),
+}));
 vi.mock('./keyData.js');
-vi.mock('viem/accounts');
+vi.mock('viem/accounts', () => ({
+  privateKeyToAccount: vi.fn().mockReturnValue({
+    address: '0x1234',
+  }),
+}));
 vi.mock('viem', () => {
   return {
     createPublicClient: vi.fn(),
