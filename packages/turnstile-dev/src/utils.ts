@@ -42,19 +42,28 @@ import type { ChildProcess } from 'node:child_process';
 
 export async function createPXE(node: AztecNode): Promise<PXE> {
   const l1Contracts = await node.getL1ContractAddresses();
-  const { l1ChainId } = await node.getNodeInfo();
+  const nodeInfo = await node.getNodeInfo();
 
-  const config = getPXEServiceConfig();
-  const fullConfig = { ...config, l1Contracts };
-  fullConfig.proverEnabled = l1ChainId !== 31337 && l1ChainId !== 1337;
-  console.log(fullConfig);
-
+  // Manually creating data store due to missing native bindings files
+  // https://github.com/AztecProtocol/aztec-packages/issues/13904
   const store = await createStore('pxe', {
-    dataDirectory: undefined, // ephemeral data store
+    dataDirectory: undefined, // ephemeral store
     dataStoreMapSizeKB: 1e6,
   });
 
-  const pxe = await createPXEService(node, fullConfig, true, store);
+  const config = getPXEServiceConfig();
+  const fullConfig = {
+    ...config,
+    l1Contracts,
+    l1ChainId: nodeInfo.l1ChainId,
+    rollupVersion: nodeInfo.rollupVersion,
+  };
+
+  // TODO(twt): make this configurable so we can prove in sandbox when desired
+  fullConfig.proverEnabled =
+    nodeInfo.l1ChainId !== 31337 && nodeInfo.l1ChainId !== 1337;
+
+  const pxe = await createPXEService(node, fullConfig, { store });
   console.log('Waiting for PXE service to be ready...');
   await waitForPXE(pxe);
   console.log('PXE service ready');
