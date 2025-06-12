@@ -20,12 +20,6 @@ export interface IL2Client {
   getWallet(): Wallet;
 
   /**
-   * Gets the PXE client
-   * @returns The PXE client
-   */
-  getPxe(): PXE;
-
-  /**
    * Gets the account address
    * @returns The account address
    */
@@ -37,7 +31,6 @@ export interface IL2Client {
  */
 export class L2Client implements IL2Client {
   private node: AztecNode;
-  private pxe: PXE;
   private wallet: Wallet;
 
   /**
@@ -47,7 +40,6 @@ export class L2Client implements IL2Client {
    */
   constructor(node: AztecNode, pxe: PXE, wallet: Wallet) {
     this.node = node;
-    this.pxe = pxe;
     this.wallet = wallet;
   }
 
@@ -57,10 +49,6 @@ export class L2Client implements IL2Client {
    */
   getNode(): AztecNode {
     return this.node;
-  }
-
-  getPxe(): PXE {
-    return this.pxe;
   }
 
   /**
