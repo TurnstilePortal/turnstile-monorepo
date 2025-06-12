@@ -1,5 +1,11 @@
 # @turnstile-portal/l1-artifacts-abi
 
+## 0.2.1
+
+### Patch Changes
+
+- 9cbbe25: aztec packages -> 0.87.8
+
 ## 0.2.0
 
 ### Minor Changes
