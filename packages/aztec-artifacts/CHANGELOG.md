@@ -1,5 +1,11 @@
 # @turnstile-portal/aztec-artifacts
 
+## 0.2.4
+
+### Patch Changes
+
+- 26851cc: Add `get_portal()` method to the Token contract & a helper for creating public authwit for the burn transaction to turnstile.js
+
 ## 0.2.3
 
 ## 0.2.2
