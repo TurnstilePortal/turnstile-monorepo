@@ -1,6 +1,6 @@
 {
   "name": "@turnstile-portal/turnstile-dev",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Turnstile Portal DEV Library",
   "repository": {
     "type": "git",
