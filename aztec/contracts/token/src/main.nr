@@ -110,6 +110,11 @@ pub contract Token {
         storage.decimals.initialize(decimals);
     }
 
+    #[utility]
+    pub unconstrained fn get_portal() -> AztecAddress {
+        storage.minter.read()
+    }
+
     #[public]
     fn set_shield_gateway_beacon(beacon: AztecAddress) {
         assert(storage.minter.read().eq(context.msg_sender()), "caller is not minter");

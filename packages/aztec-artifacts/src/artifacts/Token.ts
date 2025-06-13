@@ -208,6 +208,9 @@ decimals: {
     /** finalize_transfer_to_private(amount: integer, partial_note: struct) */
     finalize_transfer_to_private: ((amount: (bigint | number), partial_note: { commitment: FieldLike }) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
+    /** get_portal() */
+    get_portal: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
     /** get_shield_gateway_beacon_private() */
     get_shield_gateway_beacon_private: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 

@@ -1,10 +1,18 @@
 import {
   Capsule,
+  ContractFunctionInteraction,
+  computeAuthWitMessageHash,
   Fr,
+  ProtocolContractAddress,
   type AztecAddress,
-  type ContractFunctionInteraction,
+  type IntentAction,
   type SentTx,
 } from '@aztec/aztec.js';
+import {
+  type ABIParameterVisibility,
+  type FunctionAbi,
+  FunctionType,
+} from '@aztec/stdlib/abi';
 import { TokenContract } from '@turnstile-portal/aztec-artifacts';
 import { readFieldCompressedString } from '@aztec/aztec.js';
 import { ErrorCode, createL2Error, isTurnstileError } from '../errors.js';
@@ -101,6 +109,17 @@ export interface IL2Token {
     from: AztecAddress,
     amount: bigint,
   ): Promise<{ action: ContractFunctionInteraction; nonce: Fr }>;
+
+  /**
+   * Creates a public authwit action for burning tokens (used for withdrawals)
+   * @param from The address to burn tokens from
+   * @param amount The amount to burn
+   * @returns The burn action and nonce
+   */
+  createPublicBurnAuthwitAction(
+    from: AztecAddress,
+    amount: bigint,
+  ): Promise<{ action: ContractFunctionInteraction; nonce: Fr }>;
 }
 
 /**
@@ -109,6 +128,7 @@ export interface IL2Token {
 export class L2Token implements IL2Token {
   private client: L2Client;
   private token: TokenContract;
+  private portal: AztecAddress | undefined;
 
   /**
    * Creates a new L2Token
@@ -126,6 +146,15 @@ export class L2Token implements IL2Token {
    */
   getAddress(): AztecAddress {
     return this.token.address;
+  }
+
+  async getPortal(): Promise<AztecAddress> {
+    if (!this.portal) {
+      this.portal = (await this.token.methods
+        .get_portal()
+        .simulate()) as AztecAddress;
+    }
+    return this.portal;
   }
 
   /**
@@ -379,6 +408,60 @@ export class L2Token implements IL2Token {
   }
 
   /**
+   * Creates a public authwit action for burning tokens (used for withdrawals)
+   * @param from The address to burn tokens from
+   * @param amount The amount to burn
+   * @returns The public authwit action for the burn, the original burn intent, and nonce
+   */
+  async createPublicBurnAuthwitAction(
+    from: AztecAddress,
+    amount: bigint,
+  ): Promise<{
+    action: ContractFunctionInteraction;
+    intent: IntentAction;
+    nonce: Fr;
+  }> {
+    try {
+      const { action, nonce } = await this.createBurnAction(from, amount);
+
+      const intent: IntentAction = {
+        caller: await this.getPortal(),
+        action,
+      };
+
+      const intentMetadata = {
+        chainId: this.client.getWallet().getChainId(),
+        version: this.client.getWallet().getVersion(),
+      };
+      const messageHash = computeAuthWitMessageHash(intent, intentMetadata);
+
+      const authWitAction = new ContractFunctionInteraction(
+        this.client.getWallet(),
+        ProtocolContractAddress.AuthRegistry,
+        getSetAuthorizedAbi(),
+        [messageHash, true],
+      );
+
+      return {
+        action: authWitAction,
+        intent,
+        nonce,
+      };
+    } catch (error) {
+      throw createL2Error(
+        ErrorCode.L2_BURN_OPERATION,
+        `Failed to burn ${amount} tokens from ${from} for token ${this.token.address}`,
+        {
+          tokenAddress: this.token.address.toString(),
+          amount: amount.toString(),
+          userAddress: from.toString(),
+        },
+        error,
+      );
+    }
+  }
+
+  /**
    * Gets the shield gateway address
    * @returns The shield gateway address
    */
@@ -463,4 +546,28 @@ export class L2Token implements IL2Token {
       );
     }
   }
+}
+
+function getSetAuthorizedAbi(): FunctionAbi {
+  return {
+    name: 'set_authorized',
+    isInitializer: false,
+    functionType: FunctionType.PUBLIC,
+    isInternal: true,
+    isStatic: false,
+    parameters: [
+      {
+        name: 'message_hash',
+        type: { kind: 'field' },
+        visibility: 'private' as ABIParameterVisibility,
+      },
+      {
+        name: 'authorize',
+        type: { kind: 'boolean' },
+        visibility: 'private' as ABIParameterVisibility,
+      },
+    ],
+    returnTypes: [],
+    errorTypes: {},
+  };
 }

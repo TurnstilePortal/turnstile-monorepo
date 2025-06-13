@@ -49,19 +49,21 @@ async function initiateL2Withdrawal({
   );
 
   // Create burn action
-  const { action, nonce } = await l2Token.createBurnAction(
+  const { action, nonce } = await l2Token.createPublicBurnAuthwitAction(
     l2Client.getAddress(),
     amount,
   );
 
-  // Authorize the burn action
-  // The authorization approach has changed significantly in the new API
-  // Simplified this to avoid setting auth wit directly since the API might have changed
   console.log('Setting up burn authorization...');
+  const burnAuthTx = await action.send();
 
-  // Most likely, the L2Portal's withdrawPublic method will handle the authorization internally
-  // or the burn functionality itself will handle it
-  console.log('Proceeding directly to withdrawal since the API has changed...');
+  console.log(
+    `Waiting for burn authorization transaction ${await burnAuthTx.getTxHash()}...`,
+  );
+  const burnAuthReceipt = await burnAuthTx.wait();
+  console.log(
+    `Burn authorization sent. Status: ${burnAuthReceipt.status.toString()}`,
+  );
 
   // Use the L2Portal
   const l2Portal = new L2Portal(l2PortalAddr, l2Client);
