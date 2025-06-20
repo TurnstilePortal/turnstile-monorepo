@@ -1,5 +1,36 @@
 # @turnstile-portal/deploy
 
+## 0.3.0
+
+### Minor Changes
+
+- 2f3fe9e: feat: Overhaul deployment and upgrade to Aztec 0.87.9
+
+  This release includes a significant number of breaking changes and new features.
+
+  **BREAKING CHANGES**
+
+  - **Architecture**: The L2 `Beacon` contract has been removed to simplify the architecture. The `Token` contract now directly stores the `ShieldGateway` address.
+  - **Deployment**: The deployment scripts and process have been completely overhauled. A new CLI in `@turnstile-portal/deploy` is now the canonical way to deploy the system.
+  - **L1 Contracts**: The L1 contracts have been updated to use the official Aztec interface packages, which may affect downstream integrations.
+  - **Dependencies**: All Aztec dependencies have been upgraded to version `0.87.9`.
+
+  **Features**
+
+  - **CI/CD**: New GitHub Actions workflow to build and publish a `turnstile-sandbox-deployer` Docker image.
+  - **DX**: Improved REPL, dev utilities, and a more robust local sandbox setup.
+  - **Refactoring**: L2 contracts have been refactored for clarity and gas efficiency, such as the `Portal` contract now using a `Config` struct.
+
+### Patch Changes
+
+- Updated dependencies [2f3fe9e]
+  - @turnstile-portal/aztec-artifacts@0.3.0
+  - @turnstile-portal/l1-artifacts-abi@0.3.0
+  - @turnstile-portal/l1-artifacts-bytecode@0.3.0
+  - @turnstile-portal/l1-artifacts-dev@0.3.0
+  - @turnstile-portal/turnstile-dev@0.3.0
+  - @turnstile-portal/turnstile.js@0.3.0
+
 ## 0.2.4
 
 ### Patch Changes
