@@ -68,7 +68,7 @@ $(AZTEC_ARTIFACTS_PACKAGE_DIR)/%.json: aztec/target/%.json
 .PHONY: sandbox
 sandbox:
 	@echo "Starting sandbox..."
-	bash scripts/deploy-sandbox.sh
+	bash scripts/deploy.sh sandbox-local
 
 .PHONY: turnstile-deploy-docker-image
 turnstile-deploy-docker-image:

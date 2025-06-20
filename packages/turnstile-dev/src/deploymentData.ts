@@ -6,6 +6,7 @@ export interface DeploymentDataToken {
   decimals: number;
   l2Address: Hex;
   l1Address: Hex;
+  serializedL2TokenInstance: Hex;
 }
 
 export interface DeploymentData {
@@ -27,7 +28,9 @@ export interface DeploymentData {
   l1AllowList: Hex;
   aztecTokenContractClassID: Hex;
   aztecPortal: Hex;
+  serializedAztecPortalInstance: Hex;
   aztecShieldGateway: Hex;
+  serializedShieldGatewayInstance: Hex;
   aztecShieldGatewayStorage: Hex;
   devAdvanceBlock: Hex;
 

@@ -1,8 +1,19 @@
 import { getContract, type Hex, type Address } from 'viem';
-import type { AztecAddress, Wallet as AztecWallet } from '@aztec/aztec.js';
+import { AztecAddress, Fr, TxStatus, retryUntil } from '@aztec/aztec.js';
 
-import type { L1Client } from '@turnstile-portal/turnstile.js';
-import { TokenContract } from '@turnstile-portal/aztec-artifacts';
+import { waitForL2Block } from '@turnstile-portal/turnstile-dev';
+
+import type { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
+import {
+  L1Portal,
+  L1AllowList,
+  L2Portal,
+  L2Token,
+} from '@turnstile-portal/turnstile.js';
+import {
+  InsecureMintableTokenABI,
+  InsecureMintableTokenBytecode,
+} from '@turnstile-portal/l1-artifacts-dev';
 
 const ADDITIONAL_L1_ADDRESSES_TO_FUND: `0x${string}`[] = [
   '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
@@ -23,10 +34,7 @@ export async function deployL1DevToken(
   symbol: string,
   decimals: number,
 ) {
-  // Import the artifacts directly
-  const { InsecureMintableTokenABI, InsecureMintableTokenBytecode } =
-    await import('@turnstile-portal/l1-artifacts-dev');
-
+  console.log(`Deploying L1 Token ${name} (${symbol})...`);
   // Deploy the token using the wallet client directly
   const walletClient = client.getWalletClient();
   const account = walletClient.account;
@@ -65,11 +73,6 @@ export async function fundL1DevToken(
   tokenAddr: Hex,
   amount: bigint,
 ) {
-  // Import the artifacts to get the ABI
-  const { InsecureMintableTokenABI } = await import(
-    '@turnstile-portal/l1-artifacts-dev'
-  );
-
   const walletClient = client.getWalletClient();
   const publicClient = client.getPublicClient();
   const account = walletClient.account;
@@ -122,27 +125,169 @@ export async function fundL1DevToken(
   }
 }
 
+function getL1AllowList(client: L1Client, l1AllowList: Address) {
+  return new L1AllowList(l1AllowList, client);
+}
+
+export async function proposeL1DevToken(
+  client: L1Client,
+  tokenAddr: Address,
+  l1AllowList: Address,
+) {
+  console.log(`Proposing token ${tokenAddr} to L1 allowlist ${l1AllowList}`);
+
+  const allowList = getL1AllowList(client, l1AllowList);
+
+  // Propose the token to the allowlist
+  const proposeReceipt = await allowList.propose(tokenAddr);
+  if (proposeReceipt.status !== 'success') {
+    throw new Error(`propose() failed: ${proposeReceipt}`);
+  }
+  console.log(
+    `Proposed token to portal in tx ${proposeReceipt.transactionHash}`,
+  );
+}
+
+export async function acceptL1DevToken(
+  client: L1Client,
+  tokenAddr: Address,
+  l1AllowList: Address,
+) {
+  // In a real scenario, the approver would be a different actor than the proposer and there
+  // would be a process to approve the proposal.
+  // For testing, we're using the same client as the approver
+  const allowList = getL1AllowList(client, l1AllowList);
+
+  const acceptReceipt = await allowList.accept(tokenAddr, client);
+  if (acceptReceipt.status !== 'success') {
+    throw new Error(`accept() failed: ${acceptReceipt}`);
+  }
+  console.log(`Accepted proposal in tx ${acceptReceipt.transactionHash}`);
+}
+
+export async function registerL1DevToken(
+  client: L1Client,
+  tokenAddr: Address,
+  l1PortalAddr: Address,
+) {
+  console.log(`Registering token ${tokenAddr} with L1 Portal ${l1PortalAddr}`);
+  const l1Portal = new L1Portal(l1PortalAddr, client);
+  const { txHash, messageHash, messageIndex, l2BlockNumber } =
+    await l1Portal.register(tokenAddr);
+  console.log(
+    `L1 registration tx: ${txHash}, messageHash: ${messageHash}, messageIndex: ${messageIndex}`,
+  );
+  return { txHash, messageHash, messageIndex, l2BlockNumber };
+}
+
+/**
+ * Registers a token on L2 with the Turnstile Portal
+ *
+ * @param l2Client The L2 client
+ * @param aztecPortalAddr The Aztec Portal address on L2
+ * @param l1TokenAddr The L1 token address
+ * @param l2TokenAddr The L2 token address
+ * @param name The token name
+ * @param symbol The token symbol
+ * @param decimals The token decimals
+ * @param index The message index from L1 registration
+ * @param l2BlockNumber The L2 block number where the L1->L2 message is included
+ */
+export async function registerL2DevToken(
+  l2Client: L2Client,
+  aztecPortalAddr: string,
+  l1TokenAddr: string,
+  l2TokenAddr: string,
+  name: string,
+  symbol: string,
+  decimals: number,
+  index: bigint,
+  l2BlockNumber: number,
+  msgHash: string,
+): Promise<void> {
+  console.log(
+    `registerL2DevToken: Registering L2 token ${symbol} (${l2TokenAddr})...`,
+  );
+  // In sandbox environment, we cheat to get to the desired block number.
+  // For non-sandbox environment, we'd want to throw an error
+  await waitForL2Block(l2Client, l2BlockNumber);
+
+  const portal = new L2Portal(
+    AztecAddress.fromString(aztecPortalAddr),
+    l2Client,
+  );
+
+  const l1ToL2Message = Fr.fromHexString(msgHash);
+
+  // Wait for the L1 to L2 message to be be available
+  console.log(
+    `Waiting for L1 to L2 message ${l1ToL2Message.toString()} to be available...`,
+  );
+  await retryUntil(
+    async () => {
+      console.log('Still waiting...');
+      return await l2Client.getNode().isL1ToL2MessageSynced(l1ToL2Message);
+    },
+    'L1 to L2 message to be synced',
+    30,
+  );
+
+  /*
+  // Now wait for 2 more blocks, copying the technique from https://github.com/AztecProtocol/aztec-packages/pull/12386
+  // that fixed https://github.com/AztecProtocol/aztec-packages/issues/12366
+  const currentBlock = await l2Client.getNode().getBlockNumber();
+  const targetBlock = currentBlock + 2;
+  console.log(`Waiting for 2 more blocks to reach block ${targetBlock}...`);
+  await waitForL2Block(l2Client, targetBlock);
+  */
+
+  // Now actually register the token
+  const registerTokenTx = await portal.registerToken(
+    l1TokenAddr,
+    l2TokenAddr,
+    name,
+    symbol,
+    decimals,
+    index,
+  );
+
+  console.log(`Transaction submitted: ${await registerTokenTx.getTxHash()}`);
+  console.log('Waiting for receipt...');
+
+  const aztecRegisterReceipt = await registerTokenTx.wait();
+  if (aztecRegisterReceipt.status !== TxStatus.SUCCESS) {
+    throw new Error(
+      `registerToken() failed. status: ${aztecRegisterReceipt.status}`,
+    );
+  }
+  console.log(
+    `Token ${symbol} registered with the Aztec Portal in tx ${aztecRegisterReceipt.txHash}`,
+  );
+}
+
 export async function deployL2DevToken(
-  wallet: AztecWallet,
+  l2Client: L2Client,
   aztecPortal: AztecAddress,
   name: string,
   symbol: string,
   decimals: number,
-): Promise<Hex> {
+): Promise<L2Token> {
   try {
-    // Using the aztec-artifacts TokenContract directly
-    const token = await TokenContract.deploy(
-      wallet,
+    console.log(`Deploying L2 Token ${name} (${symbol})...`);
+    const token = await L2Token.deploy(
+      l2Client,
       aztecPortal,
       name,
       symbol,
       decimals,
-    )
-      .send()
-      .deployed();
+    );
 
-    console.log(`TokenContract deployed at ${token.address.toString()}`);
-    return token.address.toString();
+    console.log(
+      `L2 Token ${name} (${symbol}) partial address: ${(await token.getContract().partialAddress).toString()}`,
+    );
+
+    console.log(`TokenContract deployed at ${token.getAddress().toString()}`);
+    return token;
   } catch (error) {
     console.error(`Error deploying L2 token: ${error}`);
     throw error;

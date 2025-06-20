@@ -28,7 +28,10 @@ pub contract Token {
             note::{encode_and_encrypt_note, encode_and_encrypt_note_unconstrained},
         },
         prelude::{AztecAddress, Map, PublicContext, PublicImmutable, PublicMutable},
-        protocol_types::traits::Serialize,
+        protocol_types::traits::{
+            Serialize,
+            ToField,
+        },
         unencrypted_logs::unencrypted_event_emission::encode_event,
     };
 
@@ -39,7 +42,6 @@ pub contract Token {
         compute_authwit_nullifier,
     };
 
-    use beacon::Beacon;
     use shield_gateway::ShieldGateway;
 
     use crate::types::balance_set::BalanceSet;
@@ -85,7 +87,7 @@ pub contract Token {
     #[storage]
     struct Storage<Context> {
         minter: PublicImmutable<AztecAddress, Context>,
-        shield_gateway_beacon: PublicImmutable<AztecAddress, Context>,
+        shield_gateway: PublicImmutable<AztecAddress, Context>,
         balances: Map<AztecAddress, BalanceSet<Context>, Context>,
         public_balances: Map<AztecAddress, PublicMutable<u128, Context>, Context>,
 
@@ -104,6 +106,12 @@ pub contract Token {
         assert(name.as_bytes().len() > 0, "Name cannot be empty");
         assert(symbol.as_bytes().len() > 0, "Symbol cannot be empty");
 
+        aztec::oracle::debug_log::debug_log("Initializing token...");
+        aztec::oracle::debug_log::debug_log_format("Minter: {0}", [minter.to_field()]);
+        aztec::oracle::debug_log::debug_log_format("Name: {0}", [name.to_field()]);
+        aztec::oracle::debug_log::debug_log_format("Symbol: {0}", [symbol.to_field()]);
+        aztec::oracle::debug_log::debug_log_format("Decimals: {0}", [decimals.to_field()]);
+
         storage.minter.initialize(minter);
         storage.name.initialize(FieldCompressedString::from_string(name));
         storage.symbol.initialize(FieldCompressedString::from_string(symbol));
@@ -116,9 +124,10 @@ pub contract Token {
     }
 
     #[public]
-    fn set_shield_gateway_beacon(beacon: AztecAddress) {
+    fn set_shield_gateway(shield_gateway: AztecAddress) {
+        aztec::oracle::debug_log::debug_log_format("Setting shield gateway to {0}", [shield_gateway.to_field()]);
         assert(storage.minter.read().eq(context.msg_sender()), "caller is not minter");
-        storage.shield_gateway_beacon.initialize(beacon);
+        storage.shield_gateway.initialize(shield_gateway);
     }
 
     #[public]
@@ -656,16 +665,6 @@ pub contract Token {
     }
 
     #[contract_library_method]
-    fn get_shield_gateway(
-        context: &mut PrivateContext,
-        storage: Storage<&mut PrivateContext>,
-    ) -> AztecAddress {
-        Beacon::at(storage.shield_gateway_beacon.read())
-            .get_target_private(context.this_address())
-            .view(context)
-    }
-
-    #[contract_library_method]
     fn assert_shield_gateway_permitted(
         context: &mut PrivateContext,
         storage: Storage<&mut PrivateContext>,
@@ -673,35 +672,21 @@ pub contract Token {
         recipient: AztecAddress,
         amount: u128,
     ) {
-        ShieldGateway::at(get_shield_gateway(context, storage))
+        ShieldGateway::at(storage.shield_gateway.read())
             .check_transfer(sender, recipient, amount)
             .call(context);
     }
 
     #[public]
     #[view]
-    fn get_shield_gateway_beacon_public() -> AztecAddress {
-        storage.shield_gateway_beacon.read()
-    }
-
-    #[public]
-    #[view]
     fn get_shield_gateway_public() -> AztecAddress {
-        Beacon::at(storage.shield_gateway_beacon.read())
-            .get_target_public(context.this_address())
-            .view(&mut context)
+        storage.shield_gateway.read()
     }
 
     #[private]
     #[view]
     fn get_shield_gateway_private() -> AztecAddress {
-        get_shield_gateway(&mut context, storage)
-    }
-
-    #[private]
-    #[view]
-    fn get_shield_gateway_beacon_private() -> AztecAddress {
-        storage.shield_gateway_beacon.read()
+        storage.shield_gateway.read()
     }
 
     #[public]
@@ -730,8 +715,7 @@ pub contract Token {
     }
 
     #[utility]
-    pub unconstrained fn get_shield_gateway_beacon_unconstrained() -> AztecAddress {
-        storage.shield_gateway_beacon.read()
+    pub unconstrained fn get_shield_gateway_unconstrained() -> AztecAddress {
+        storage.shield_gateway.read()
     }
-
 }

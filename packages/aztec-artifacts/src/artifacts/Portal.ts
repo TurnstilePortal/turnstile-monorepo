@@ -91,14 +91,14 @@ export class PortalContract extends ContractBase {
   /**
    * Creates a tx to deploy a new instance of this contract.
    */
-  public static deploy(wallet: Wallet, l1_portal: FieldLike, token_contract_class: FieldLike, shield_gateway_beacon: AztecAddressLike) {
+  public static deploy(wallet: Wallet, l1_portal: EthAddressLike, token_contract_class_id: WrappedFieldLike, shield_gateway: AztecAddressLike) {
     return new DeployMethod<PortalContract>(PublicKeys.default(), wallet, PortalContractArtifact, PortalContract.at, Array.from(arguments).slice(1));
   }
 
   /**
    * Creates a tx to deploy a new instance of this contract using the specified public keys hash to derive the address.
    */
-  public static deployWithPublicKeys(publicKeys: PublicKeys, wallet: Wallet, l1_portal: FieldLike, token_contract_class: FieldLike, shield_gateway_beacon: AztecAddressLike) {
+  public static deployWithPublicKeys(publicKeys: PublicKeys, wallet: Wallet, l1_portal: EthAddressLike, token_contract_class_id: WrappedFieldLike, shield_gateway: AztecAddressLike) {
     return new DeployMethod<PortalContract>(publicKeys, wallet, PortalContractArtifact, PortalContract.at, Array.from(arguments).slice(2));
   }
 
@@ -136,24 +136,18 @@ export class PortalContract extends ContractBase {
   }
   
 
-  public static get storage(): ContractStorageLayout<'l1_portal' | 'l1_tokens' | 'l2_tokens' | 'token_contract_class_id' | 'shield_gateway_beacon'> {
+  public static get storage(): ContractStorageLayout<'config' | 'l1_tokens' | 'l2_tokens'> {
       return {
-        l1_portal: {
+        config: {
       slot: new Fr(1n),
     },
 l1_tokens: {
-      slot: new Fr(3n),
-    },
-l2_tokens: {
-      slot: new Fr(4n),
-    },
-token_contract_class_id: {
       slot: new Fr(5n),
     },
-shield_gateway_beacon: {
-      slot: new Fr(7n),
+l2_tokens: {
+      slot: new Fr(6n),
     }
-      } as ContractStorageLayout<'l1_portal' | 'l1_tokens' | 'l2_tokens' | 'token_contract_class_id' | 'shield_gateway_beacon'>;
+      } as ContractStorageLayout<'config' | 'l1_tokens' | 'l2_tokens'>;
     }
     
 
@@ -169,35 +163,38 @@ shield_gateway_beacon: {
   /** Type-safe wrappers for the public methods exposed by the contract. */
   public declare methods: {
     
-    /** claim_public(eth_token: field, recipient: struct, amount: integer, message_leaf_index: field) */
-    claim_public: ((eth_token: FieldLike, recipient: AztecAddressLike, amount: (bigint | number), message_leaf_index: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** claim_public(eth_token: struct, recipient: struct, amount: integer, message_leaf_index: field) */
+    claim_public: ((eth_token: EthAddressLike, recipient: AztecAddressLike, amount: (bigint | number), message_leaf_index: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** claim_shielded(eth_token: field, recipient: struct, amount: integer, message_leaf_index: field) */
-    claim_shielded: ((eth_token: FieldLike, recipient: AztecAddressLike, amount: (bigint | number), message_leaf_index: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** claim_shielded(eth_token: struct, recipient: struct, amount: integer, message_leaf_index: field) */
+    claim_shielded: ((eth_token: EthAddressLike, recipient: AztecAddressLike, amount: (bigint | number), message_leaf_index: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** constructor(l1_portal: field, token_contract_class: field, shield_gateway_beacon: struct) */
-    constructor: ((l1_portal: FieldLike, token_contract_class: FieldLike, shield_gateway_beacon: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** constructor(l1_portal: struct, token_contract_class_id: struct, shield_gateway: struct) */
+    constructor: ((l1_portal: EthAddressLike, token_contract_class_id: WrappedFieldLike, shield_gateway: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** get_l1_portal() */
-    get_l1_portal: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** get_config_private() */
+    get_config_private: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** get_l1_token(aztec_token: struct) */
-    get_l1_token: ((aztec_token: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** get_config_public() */
+    get_config_public: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** get_l2_token(eth_token: field) */
-    get_l2_token: ((eth_token: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** get_l1_token_unconstrained(aztec_token: struct) */
+    get_l1_token_unconstrained: ((aztec_token: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** is_registered_l1(eth_token: field) */
-    is_registered_l1: ((eth_token: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** get_l2_token_unconstrained(eth_token: struct) */
+    get_l2_token_unconstrained: ((eth_token: EthAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** is_registered_l2(aztec_token: struct) */
-    is_registered_l2: ((aztec_token: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** is_registered_l1_unconstrained(eth_token: struct) */
+    is_registered_l1_unconstrained: ((eth_token: EthAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
+    /** is_registered_l2_unconstrained(aztec_token: struct) */
+    is_registered_l2_unconstrained: ((aztec_token: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** public_dispatch(selector: field) */
     public_dispatch: ((selector: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** register_private(eth_token: field, aztec_token: struct, name: string, name_len: integer, symbol: string, symbol_len: integer, decimals: integer, message_leaf_index: field) */
-    register_private: ((eth_token: FieldLike, aztec_token: AztecAddressLike, name: string, name_len: (bigint | number), symbol: string, symbol_len: (bigint | number), decimals: (bigint | number), message_leaf_index: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** register_private(eth_token: struct, aztec_token: struct, name: string, name_len: integer, symbol: string, symbol_len: integer, decimals: integer, message_leaf_index: field) */
+    register_private: ((eth_token: EthAddressLike, aztec_token: AztecAddressLike, name: string, name_len: (bigint | number), symbol: string, symbol_len: (bigint | number), decimals: (bigint | number), message_leaf_index: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** sync_private_state() */
     sync_private_state: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;

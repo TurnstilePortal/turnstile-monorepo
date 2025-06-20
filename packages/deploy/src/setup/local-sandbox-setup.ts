@@ -31,8 +31,10 @@ export class LocalSandboxSetup implements DeploySetup {
   private async startOrResetSandbox(): Promise<void> {
     console.log('Checking the sandbox...');
     try {
-      // await execAsync('docker-compose down -v');
       const containerIds = await this.getContainerIds();
+      console.log(
+        `Found existing sandbox containers: ${containerIds.join(', ')}`,
+      );
       for (const containerId of containerIds) {
         await execAsync(`docker stop ${containerId}`);
         console.log(`Stopped existing sandbox container ${containerId}`);
@@ -44,7 +46,6 @@ export class LocalSandboxSetup implements DeploySetup {
     console.log('Starting the sandbox...');
     try {
       await execAsync('FORCE_COLOR=0 aztec start --sandbox > /dev/null 2>&1 &');
-      // await execAsync('docker-compose up -d');
       console.log('Started sandbox container');
     } catch (error) {
       throw new Error(`Failed to start sandbox: ${error}`);

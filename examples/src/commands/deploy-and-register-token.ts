@@ -8,7 +8,7 @@ import {
 } from '@aztec/aztec.js';
 import { http, getAddress } from 'viem';
 import {
-  advanceBlocksUntil,
+  waitForL2Block,
   getChain,
   getClients,
   readDeploymentData,
@@ -95,7 +95,7 @@ export function registerDeployAndRegisterToken(program: Command) {
 
         // Advance L2 blocks if needed
         console.log(`Waiting for L2 block ${l2BlockNumber}...`);
-        await advanceBlocksUntil(l2Client.getNode(), Number(l2BlockNumber));
+        await waitForL2Block(l2Client, Number(l2BlockNumber));
 
         // Register token on L2
         console.log('Registering token on L2...');

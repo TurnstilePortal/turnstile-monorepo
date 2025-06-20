@@ -1,7 +1,9 @@
 import {
+  computeAuthWitMessageHash,
+  getContractInstanceFromDeployParams,
+  readFieldCompressedString,
   Capsule,
   ContractFunctionInteraction,
-  computeAuthWitMessageHash,
   Fr,
   ProtocolContractAddress,
   type AztecAddress,
@@ -13,8 +15,11 @@ import {
   type FunctionAbi,
   FunctionType,
 } from '@aztec/stdlib/abi';
-import { TokenContract } from '@turnstile-portal/aztec-artifacts';
-import { readFieldCompressedString } from '@aztec/aztec.js';
+import {
+  TokenContract,
+  TokenContractArtifact,
+} from '@turnstile-portal/aztec-artifacts';
+
 import { ErrorCode, createL2Error, isTurnstileError } from '../errors.js';
 import type { L2Client } from './client.js';
 
@@ -146,6 +151,14 @@ export class L2Token implements IL2Token {
    */
   getAddress(): AztecAddress {
     return this.token.address;
+  }
+
+  /**
+   * Gets the TokenContract
+   * @returns The TokenContract
+   */
+  getContract(): TokenContract {
+    return this.token;
   }
 
   async getPortal(): Promise<AztecAddress> {
@@ -487,9 +500,13 @@ export class L2Token implements IL2Token {
   static async fromAddress(
     address: AztecAddress,
     client: L2Client,
+    register = true,
   ): Promise<L2Token> {
     try {
       const token = await TokenContract.at(address, client.getWallet());
+      if (register) {
+        await client.getWallet().registerContract(token);
+      }
       return new L2Token(token, client);
     } catch (error) {
       throw createL2Error(

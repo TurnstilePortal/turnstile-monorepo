@@ -1,10 +1,14 @@
-import type { Hex } from 'viem';
 import type { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
 import { AztecAddress } from '@aztec/aztec.js';
+import { SerializableContractInstance } from '@aztec/stdlib/contract';
 import type { TokenDeploymentResult } from '../config/types.js';
 
 // Import the existing token deployment functions
-import { deployL1DevToken, deployL2DevToken } from './deploy/devTokens.js';
+import {
+  deployL1DevToken,
+  deployL2DevToken,
+  proposeL1DevToken,
+} from './deploy/devTokens.js';
 
 // Standard token configurations
 export const DEV_TOKENS = {
@@ -46,12 +50,16 @@ export async function deployToken(
   );
 
   // Deploy L2 token
-  const l2TokenAddress = await deployL2DevToken(
-    l2Client.getWallet(),
+  const l2Token = await deployL2DevToken(
+    l2Client,
     AztecAddress.fromString(aztecPortalAddress),
     config.name,
     config.symbol,
     config.decimals,
+  );
+
+  const serializableL2TokenInstance = new SerializableContractInstance(
+    l2Token.getContract().instance,
   );
 
   return {
@@ -59,7 +67,8 @@ export async function deployToken(
     symbol: config.symbol,
     decimals: config.decimals,
     l1Address: l1TokenAddress,
-    l2Address: l2TokenAddress,
+    l2Address: l2Token.getAddress().toString(),
+    serializedL2TokenInstance: `0x${serializableL2TokenInstance.toBuffer().toString('hex')}`,
   };
 }
 

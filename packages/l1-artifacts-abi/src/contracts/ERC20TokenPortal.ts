@@ -5,7 +5,7 @@ export const ERC20TokenPortalABI = [
       {
         "name": "_aztecRegistry",
         "type": "address",
-        "internalType": "contract IMinimalAztecRegistry"
+        "internalType": "contract IRegistry"
       },
       {
         "name": "_allowList",
@@ -41,7 +41,7 @@ export const ERC20TokenPortalABI = [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract IMinimalAztecRegistry"
+        "internalType": "contract IRegistry"
       }
     ],
     "stateMutability": "view"
@@ -145,7 +145,7 @@ export const ERC20TokenPortalABI = [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract IMinimalAztecInbox"
+        "internalType": "contract IInbox"
       }
     ],
     "stateMutability": "view"
@@ -158,7 +158,7 @@ export const ERC20TokenPortalABI = [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract IMinimalAztecOutbox"
+        "internalType": "contract IOutbox"
       }
     ],
     "stateMutability": "view"
@@ -171,7 +171,7 @@ export const ERC20TokenPortalABI = [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract IMinimalAztecRegistry"
+        "internalType": "contract IRegistry"
       }
     ],
     "stateMutability": "view"
@@ -184,7 +184,7 @@ export const ERC20TokenPortalABI = [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract IMinimalAztecRollup"
+        "internalType": "contract IRollup"
       }
     ],
     "stateMutability": "view"

@@ -4,10 +4,11 @@ pragma solidity ^0.8.28;
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {IMinimalAztecRegistry} from "./interfaces/IMinimalAztecRegistry.sol";
-import {IMinimalAztecRollup} from "./interfaces/IMinimalAztecRollup.sol";
-import {IMinimalAztecInbox} from "./interfaces/IMinimalAztecInbox.sol";
-import {IMinimalAztecOutbox} from "./interfaces/IMinimalAztecOutbox.sol";
+import {IRegistry} from "@aztec/governance/interfaces/IRegistry.sol";
+import {IRollup} from "@aztec/core/interfaces/IRollup.sol";
+import {IInbox} from "@aztec/core/interfaces/messagebridge/IInbox.sol";
+import {IOutbox} from "@aztec/core/interfaces/messagebridge/IOutbox.sol";
+
 import {DataStructures} from "@aztec/core/libraries/DataStructures.sol";
 import {Hash} from "@aztec/core/libraries/crypto/Hash.sol";
 
@@ -37,7 +38,7 @@ contract ERC20TokenPortal is ITokenPortal {
     /// @dev Used once to set the L2 Portal address post-deployment.
     address public immutable L2_PORTAL_INITIALIZER;
 
-    IMinimalAztecRegistry public immutable AZTEC_REGISTRY;
+    IRegistry public immutable AZTEC_REGISTRY;
     IAllowList public immutable ALLOW_LIST;
 
     /// Hash of the string "public" used to send messages to L2. Computed with `computeSecretHash()` from aztec.js
@@ -69,13 +70,13 @@ contract ERC20TokenPortal is ITokenPortal {
     /// @param _aztecRegistry the L1 Aztec Rollup Registry
     /// @param _allowList token allow list
     constructor(
-        IMinimalAztecRegistry _aztecRegistry,
+        IRegistry _aztecRegistry,
         IAllowList _allowList,
         address _l2PortalInitializer
     ) {
         L2_PORTAL_INITIALIZER = _l2PortalInitializer;
 
-        AZTEC_REGISTRY = IMinimalAztecRegistry(_aztecRegistry);
+        AZTEC_REGISTRY = IRegistry(_aztecRegistry);
         emit SetAztecRegistry(address(_aztecRegistry));
 
         ALLOW_LIST = _allowList;
@@ -109,33 +110,23 @@ contract ERC20TokenPortal is ITokenPortal {
     }
 
     /// @inheritdoc ITokenPortal
-    function aztecRegistry()
-        external
-        view
-        override
-        returns (IMinimalAztecRegistry)
-    {
+    function aztecRegistry() external view override returns (IRegistry) {
         return AZTEC_REGISTRY;
     }
 
     /// @inheritdoc ITokenPortal
-    function aztecRollup()
-        external
-        view
-        override
-        returns (IMinimalAztecRollup)
-    {
-        return AZTEC_REGISTRY.getRollup();
+    function aztecRollup() external view override returns (IRollup) {
+        return AZTEC_REGISTRY.getCanonicalRollup();
     }
 
     /// @inheritdoc ITokenPortal
-    function aztecInbox() public view override returns (IMinimalAztecInbox) {
-        return AZTEC_REGISTRY.getRollup().getInbox();
+    function aztecInbox() public view override returns (IInbox) {
+        return AZTEC_REGISTRY.getCanonicalRollup().getInbox();
     }
 
     /// @inheritdoc ITokenPortal
-    function aztecOutbox() public view override returns (IMinimalAztecOutbox) {
-        return AZTEC_REGISTRY.getRollup().getOutbox();
+    function aztecOutbox() public view override returns (IOutbox) {
+        return AZTEC_REGISTRY.getCanonicalRollup().getOutbox();
     }
 
     /// @inheritdoc ITokenPortal
@@ -212,7 +203,10 @@ contract ERC20TokenPortal is ITokenPortal {
 
         // Verify & consume the message
         DataStructures.L2ToL1Msg memory message = DataStructures.L2ToL1Msg({
-            sender: DataStructures.L2Actor(l2Portal, 1),
+            sender: DataStructures.L2Actor(
+                l2Portal,
+                AZTEC_REGISTRY.getCanonicalRollup().getVersion()
+            ),
             recipient: DataStructures.L1Actor(address(this), block.chainid),
             content: contentHash
         });
@@ -232,7 +226,7 @@ contract ERC20TokenPortal is ITokenPortal {
     ) internal virtual returns (bytes32 leaf, uint256 index) {
         DataStructures.L2Actor memory actor = DataStructures.L2Actor(
             l2Portal,
-            1
+            AZTEC_REGISTRY.getCanonicalRollup().getVersion()
         );
 
         (leaf, index) = aztecInbox().sendL2Message(

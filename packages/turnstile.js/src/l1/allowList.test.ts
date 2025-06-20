@@ -14,6 +14,7 @@ vi.mock('viem', async () => {
 // Import after mocking
 import { getContract } from 'viem';
 import { L1AllowList, getL1AllowListContract } from './allowList.js';
+import { L1Client } from './client.js';
 
 // Mock console.debug to avoid cluttering test output
 const originalConsoleDebug = console.debug;
@@ -70,6 +71,8 @@ const mockContract = {
 
 describe('L1AllowList', () => {
   let allowList: L1AllowList;
+  let mockL1Client: L1Client;
+  let mockApproverL1Client: L1Client;
 
   beforeEach(() => {
     // Reset mocks
@@ -81,12 +84,15 @@ describe('L1AllowList', () => {
     // Set up default success receipt
     mockWaitForTransactionReceipt.mockResolvedValue(mockSuccessReceipt);
 
+    // Create L1Client wrappers
+    mockL1Client = new L1Client(mockPublicClient, mockWalletClient);
+    mockApproverL1Client = new L1Client(mockPublicClient, mockApproverWalletClient);
+
     // Create a new L1AllowList for each test with the real implementation
     allowList = new L1AllowList(
       mockAllowListAddress,
-      mockWalletClient,
-      mockPublicClient,
-      mockApproverWalletClient
+      mockL1Client,
+      mockApproverL1Client
     );
   });
 
@@ -95,15 +101,9 @@ describe('L1AllowList', () => {
     console.debug = originalConsoleDebug;
   });
 
-  describe('allowListContract', () => {
+  describe('contract property', () => {
     it('should return an AllowList contract instance', () => {
       expect(allowList.contract).toBe(mockContract);
-    });
-
-    it('should use the provided wallet client if specified', () => {
-      const customWalletClient = { ...mockWalletClient } as WalletClient<Transport, Chain, Account>;
-      const contract = allowList.allowListContract(customWalletClient);
-      expect(contract).toBe(mockContract);
     });
   });
 
@@ -115,7 +115,7 @@ describe('L1AllowList', () => {
       // Verify the contract calls
       expect(mockContractWrite.propose).toHaveBeenCalledTimes(1);
       expect(mockContractWrite.propose).toHaveBeenCalledWith([mockAddressToPropose], {
-        account: mockAccount,
+        account: mockAccount.address,
         chain: mockWalletClient.chain,
       });
 
@@ -141,7 +141,7 @@ describe('L1AllowList', () => {
       // Verify the contract calls
       expect(mockContractWrite.accept).toHaveBeenCalledTimes(1);
       expect(mockContractWrite.accept).toHaveBeenCalledWith([mockAddressToPropose], {
-        account: mockApproverAccount,
+        account: mockApproverAccount.address,
         chain: mockApproverWalletClient.chain,
       });
 
@@ -152,12 +152,12 @@ describe('L1AllowList', () => {
 
     it('should accept an address to the allowlist using a provided approver', async () => {
       // Call the method with a specific approver
-      const receipt = await allowList.accept(mockAddressToPropose, mockApproverWalletClient);
+      const receipt = await allowList.accept(mockAddressToPropose, mockApproverL1Client);
 
       // Verify the contract calls
       expect(mockContractWrite.accept).toHaveBeenCalledTimes(1);
       expect(mockContractWrite.accept).toHaveBeenCalledWith([mockAddressToPropose], {
-        account: mockApproverAccount,
+        account: mockApproverAccount.address,
         chain: mockApproverWalletClient.chain,
       });
 
@@ -170,13 +170,12 @@ describe('L1AllowList', () => {
       // Create a new L1AllowList without an approver
       const allowListWithoutApprover = new L1AllowList(
         mockAllowListAddress,
-        mockWalletClient,
-        mockPublicClient
+        mockL1Client
       );
 
       // Call the method and expect it to throw
       await expect(allowListWithoutApprover.accept(mockAddressToPropose)).rejects.toThrow(
-        'Approver wallet client not provided'
+        'Approver L1Client not provided'
       );
     });
 
@@ -192,32 +191,38 @@ describe('L1AllowList', () => {
 
 describe('getL1AllowListContract', () => {
   it('should call getContract with the correct parameters', () => {
+    // Create an L1Client
+    const mockL1Client = new L1Client(mockPublicClient, mockWalletClient);
+    
     // Call the function
-    getL1AllowListContract(mockAllowListAddress, mockPublicClient);
+    getL1AllowListContract(mockAllowListAddress, mockL1Client);
 
     // Verify getContract was called with the right parameters
     expect(getContract).toHaveBeenCalledWith({
       address: mockAllowListAddress,
       abi: expect.anything(), // We can't easily check the ABI, but we can verify it's passed
-      client: mockPublicClient,
+      client: {
+        public: mockPublicClient,
+        wallet: mockWalletClient
+      },
     });
   });
 
-  it('should work with a client object containing public and wallet clients', () => {
-    // Create a client object with public and wallet clients
-    const client = {
-      public: mockPublicClient,
-      wallet: mockWalletClient
-    };
+  it('should work with L1Client passed to getContract', () => {
+    // Create an L1Client
+    const mockL1Client = new L1Client(mockPublicClient, mockWalletClient);
 
     // Call the function
-    getL1AllowListContract(mockAllowListAddress, client);
+    getL1AllowListContract(mockAllowListAddress, mockL1Client);
 
     // Verify getContract was called with the right parameters
     expect(getContract).toHaveBeenCalledWith({
       address: mockAllowListAddress,
       abi: expect.anything(),
-      client,
+      client: {
+        public: mockPublicClient,
+        wallet: mockWalletClient
+      },
     });
   });
 });
