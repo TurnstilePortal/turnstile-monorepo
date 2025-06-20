@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity >=0.8.24;
+pragma solidity >=0.8.27;
 
 import "forge-std/Test.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {IMinimalAztecRegistry} from "../src/interfaces/IMinimalAztecRegistry.sol";
 import {Hash} from "@aztec/core/libraries/crypto/Hash.sol";
+import {IRegistry} from "@aztec/governance/interfaces/IRegistry.sol";
 
-import {ERC20TokenPortal} from "../src/ERC20TokenPortal.sol";
 import {ERC20AllowList} from "../src/ERC20AllowList.sol";
+import {ERC20TokenPortal} from "../src/ERC20TokenPortal.sol";
 import {InsecurePortalTestToken} from "./InsecurePortalTestToken.sol";
 
 // test harness so we can call internal functions
 contract ERC20TokenPortalHarness is ERC20TokenPortal {
     constructor(
-        IMinimalAztecRegistry _aztecRegistry,
+        IRegistry _aztecRegistry,
         ERC20AllowList _allowList,
         address _l2PortalInitializer
     ) ERC20TokenPortal(_aztecRegistry, _allowList, _l2PortalInitializer) {}
@@ -76,7 +76,7 @@ contract ERC20TokenPortalTest is Test {
 
         allowList = new ERC20AllowList(admin, approver);
         tokenPortal = new ERC20TokenPortalHarness(
-            IMinimalAztecRegistry(address(0)), // aztec registry
+            IRegistry(address(0)), // aztec registry
             allowList,
             address(this) // l2 portal initializer
         );

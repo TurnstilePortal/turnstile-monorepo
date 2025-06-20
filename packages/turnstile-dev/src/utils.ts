@@ -30,11 +30,12 @@ import type {
 import { getSchnorrAccount, getSchnorrWallet } from '@aztec/accounts/schnorr';
 import { getDeployedTestAccountsWallets } from '@aztec/accounts/testing';
 import { deriveSigningKey } from '@aztec/stdlib/keys';
-import { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
+import { L1Client } from '@turnstile-portal/turnstile.js';
 
 import { readKeyData, type KeyData } from './keyData.js';
 import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
+import { DevL2Client } from './aztec/devL2Client.js';
 
 export async function createPXE(node: AztecNode): Promise<PXE> {
   const l1Contracts = await node.getL1ContractAddresses();
@@ -132,12 +133,13 @@ export function generateEthAccount(): { privateKey: Hex; address: Hex } {
 }
 
 export async function getClients(
-  aztecNode: string,
+  l2Config: { node: string },
   l1Config: { chain: Chain; transport: Transport },
   keyDataFile: string,
+  pxe?: PXE,
 ): Promise<{
   l1Client: L1Client;
-  l2Client: L2Client;
+  l2Client: DevL2Client;
 }> {
   const keyData = await readKeyData(keyDataFile);
   if (!keyData || !keyData.l1PrivateKey) {
@@ -148,7 +150,7 @@ export async function getClients(
 
   return {
     l1Client: await createL1Client(l1Config, keyData),
-    l2Client: await createL2Client(aztecNode, keyData),
+    l2Client: await createL2Client(l2Config, keyData),
   };
 }
 
@@ -171,12 +173,12 @@ export async function createL1Client(
 }
 
 export async function createL2Client(
-  aztecNode: string,
+  l2Config: { node: string },
   keyData: KeyData,
   pxe?: PXE,
-): Promise<L2Client> {
-  const node = createAztecNodeClient(aztecNode);
-  console.log(`Connecting to Aztec Node at ${aztecNode}`);
+): Promise<DevL2Client> {
+  const node = createAztecNodeClient(l2Config.node);
+  console.log(`Connecting to Aztec Node at ${l2Config.node}`);
   await waitForNode(node);
   console.log('Aztec Node is ready');
   if (!pxe) {
@@ -190,8 +192,7 @@ export async function createL2Client(
     Fr.fromString(keyData.l2Salt),
   );
   const wallet = await account.register();
-  const client = new L2Client(node, wallet);
-  return client;
+  return new DevL2Client(node, wallet, pxe);
 }
 
 const devnet = defineChain({

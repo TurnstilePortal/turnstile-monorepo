@@ -10,26 +10,7 @@ import {
   PortalContract,
   ShieldGatewayContract,
   TokenContractArtifact,
-  BeaconContract,
 } from '@turnstile-portal/aztec-artifacts';
-
-export async function deployBeacon(
-  l2Client: L2Client,
-  adminAddr: AztecAddress,
-  targetAddr: AztecAddress,
-): Promise<BeaconContract> {
-  console.log('Deploying Beacon...');
-  const beacon = await BeaconContract.deploy(
-    l2Client.getWallet(),
-    adminAddr,
-    targetAddr,
-  )
-    .send({ fee: l2Client.getFeeOpts() })
-    .deployed();
-
-  console.log(`Beacon deployed at ${beacon.address.toString()}`);
-  return beacon;
-}
 
 export async function deployShieldGateway(
   l2ClientAdmin: L2Client,
@@ -49,13 +30,13 @@ export async function deployTurnstileTokenPortal(
   l2Client: L2Client,
   l1Portal: EthAddress,
   tokenContractClass: Fr,
-  shieldGatewayBeaconAddr: AztecAddress,
+  ShieldGatewayAddr: AztecAddress,
 ): Promise<PortalContract> {
   const portal = await PortalContract.deploy(
     l2Client.getWallet(),
     l1Portal,
     tokenContractClass,
-    shieldGatewayBeaconAddr,
+    ShieldGatewayAddr,
   )
     .send({ fee: l2Client.getFeeOpts() })
     .deployed();

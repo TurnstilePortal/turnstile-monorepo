@@ -1,0 +1,53 @@
+name: Publish Docker Images
+on:
+  workflow_call: # Allow this workflow to be called by others
+  workflow_dispatch: # Allow manual trigger
+
+env:
+  REGISTRY: ghcr.io
+  ORG_NAME: turnstileportal
+  DOCKERFILE: ./docker/turnstile-sandbox/Dockerfile
+  DOCKERCONTEXT: ./docker/turnstile-sandbox
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          sparse-checkout: |
+            docker/
+            packages/deploy/package.json
+
+      - name: Get Version
+        id: version
+        run: echo "version=v$(jq -r .version packages/deploy/package.json)" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push turnstile-sandbox-deployer image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.DOCKERCONTEXT }}
+          file: ${{ env.DOCKERFILE }}
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.ORG_NAME }}/turnstile-sandbox-deployer:latest
+            ${{ env.REGISTRY }}/${{ env.ORG_NAME }}/turnstile-sandbox-deployer:${{ steps.version.outputs.version }}
+          build-args: |
+            PACKAGE_VERSION=${{ steps.version.outputs.version }}

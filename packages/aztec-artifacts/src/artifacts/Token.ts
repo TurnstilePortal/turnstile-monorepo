@@ -139,12 +139,12 @@ export class TokenContract extends ContractBase {
   }
   
 
-  public static get storage(): ContractStorageLayout<'minter' | 'shield_gateway_beacon' | 'balances' | 'public_balances' | 'total_supply' | 'shielded_supply' | 'symbol' | 'name' | 'decimals'> {
+  public static get storage(): ContractStorageLayout<'minter' | 'shield_gateway' | 'balances' | 'public_balances' | 'total_supply' | 'shielded_supply' | 'symbol' | 'name' | 'decimals'> {
       return {
         minter: {
       slot: new Fr(1n),
     },
-shield_gateway_beacon: {
+shield_gateway: {
       slot: new Fr(3n),
     },
 balances: {
@@ -168,7 +168,7 @@ name: {
 decimals: {
       slot: new Fr(13n),
     }
-      } as ContractStorageLayout<'minter' | 'shield_gateway_beacon' | 'balances' | 'public_balances' | 'total_supply' | 'shielded_supply' | 'symbol' | 'name' | 'decimals'>;
+      } as ContractStorageLayout<'minter' | 'shield_gateway' | 'balances' | 'public_balances' | 'total_supply' | 'shielded_supply' | 'symbol' | 'name' | 'decimals'>;
     }
     
 
@@ -211,20 +211,14 @@ decimals: {
     /** get_portal() */
     get_portal: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** get_shield_gateway_beacon_private() */
-    get_shield_gateway_beacon_private: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** get_shield_gateway_beacon_public() */
-    get_shield_gateway_beacon_public: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** get_shield_gateway_beacon_unconstrained() */
-    get_shield_gateway_beacon_unconstrained: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
     /** get_shield_gateway_private() */
     get_shield_gateway_private: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** get_shield_gateway_public() */
     get_shield_gateway_public: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
+    /** get_shield_gateway_unconstrained() */
+    get_shield_gateway_unconstrained: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** init(minter: struct, name: string, symbol: string, decimals: integer) */
     init: ((minter: AztecAddressLike, name: string, symbol: string, decimals: (bigint | number)) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
@@ -265,8 +259,8 @@ decimals: {
     /** public_get_symbol() */
     public_get_symbol: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** set_shield_gateway_beacon(beacon: struct) */
-    set_shield_gateway_beacon: ((beacon: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** set_shield_gateway(shield_gateway: struct) */
+    set_shield_gateway: ((shield_gateway: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** shield(from: struct, amount: integer, nonce: field) */
     shield: ((from: AztecAddressLike, amount: (bigint | number), nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;

@@ -1,15 +1,31 @@
 import {
   encodeFunctionData,
+  getContract,
   parseEventLogs,
   type Address,
+  type Client,
+  type GetContractReturnType,
   type TransactionReceipt,
   type TransactionRequest,
   type Hash,
 } from 'viem';
 import { SiblingPath } from '@aztec/aztec.js';
-import { ErrorCode, createL1Error } from '../errors.js';
+import { ErrorCode, createL1Error, createBridgeError } from '../errors.js';
 import { validateWallet } from '../validator.js';
 import { IL1Client } from './client.js';
+import { ERC20TokenPortalABI, ITokenPortalABI } from '@turnstile-portal/l1-artifacts-abi';
+import { InboxAbi, OutboxAbi, RollupAbi } from "@aztec/l1-artifacts";
+
+
+/**
+ * TokenPortal contract instance type
+ */
+export type L1TokenPortalContract = GetContractReturnType<
+  typeof ERC20TokenPortalABI,
+  Client,
+  Address
+>;
+
 
 /**
  * Interface for L1 portal operations
@@ -108,6 +124,7 @@ export class L1Portal implements IL1Portal {
   private address: Address;
   private client: IL1Client;
   private rollupAddress?: Address;
+  private portal: L1TokenPortalContract | undefined;
 
   /**
    * Creates a new L1Portal
@@ -130,27 +147,31 @@ export class L1Portal implements IL1Portal {
   }
 
   /**
+   * Get the TokenPortal contract instance
+   * @returns TokenPortal contract instance
+   */
+  async tokenPortal(): Promise<L1TokenPortalContract> {
+    if (!this.portal) {
+      this.portal = await getContract({
+        address: this.getAddress(),
+        abi: ERC20TokenPortalABI,
+        client: {
+          public: this.client.getPublicClient(),
+          wallet: this.client.getWalletClient()
+        },
+      });
+    }
+    return this.portal;
+  }
+
+  /**
    * Gets the L2 portal address
    * @returns The L2 portal address
    */
   async getL2Portal(): Promise<`0x${string}`> {
     try {
-      const publicClient = this.client.getPublicClient();
-
-      // Define the ABI for the l2Portal function
-      const abi = [{
-        name: 'l2Portal',
-        type: 'function',
-        stateMutability: 'view',
-        inputs: [],
-        outputs: [{ type: 'bytes32' }]
-      }] as const;
-
-      return await publicClient.readContract({
-        address: this.address,
-        abi,
-        functionName: 'l2Portal',
-      }) as `0x${string}`;
+      const tokenPortal = await this.tokenPortal();
+      return tokenPortal.read.l2Portal()
     } catch (error) {
       throw createL1Error(
         ErrorCode.L1_CONTRACT_INTERACTION,
@@ -171,32 +192,11 @@ export class L1Portal implements IL1Portal {
     l2Portal: `0x${string}`
   ): Promise<TransactionReceipt> {
     try {
-      const walletClient = this.client.getWalletClient();
 
-      validateWallet(walletClient, 'Cannot set L2 portal: No account connected to wallet');
+      const l1Portal = await this.tokenPortal();
+      const txHash = await l1Portal.write.setL2Portal([l2Portal], { account: this.client.getAddress(), chain: this.client.getWalletClient().chain });
 
-      // Define the ABI for the setL2Portal function
-      const abi = [{
-        name: 'setL2Portal',
-        type: 'function',
-        stateMutability: 'nonpayable',
-        inputs: [
-          { name: 'l2Portal', type: 'bytes32' }
-        ],
-        outputs: []
-      }] as const;
-
-      // Execute the transaction
-      const hash = await walletClient.writeContract({
-        address: this.address,
-        abi,
-        functionName: 'setL2Portal',
-        args: [l2Portal],
-        account: walletClient.account!,
-        chain: walletClient.chain || null,
-      });
-
-      return await this.client.getPublicClient().waitForTransactionReceipt({ hash });
+      return await this.client.getPublicClient().waitForTransactionReceipt({ hash: txHash });
     } catch (error) {
       throw createL1Error(
         ErrorCode.L1_CONTRACT_INTERACTION,
@@ -232,25 +232,10 @@ export class L1Portal implements IL1Portal {
       // Encode the deposit data
       const encodedData = this.encodeDepositData(tokenAddr, l2RecipientAddr, amount);
 
-      // Define the ABI for the deposit function
-      const abi = [{
-        name: 'deposit',
-        type: 'function',
-        stateMutability: 'nonpayable',
-        inputs: [
-          { name: '_data', type: 'bytes' }
-        ],
-        outputs: [{ name: 'key', type: 'bytes32' }]
-      }] as const;
-
-      // Execute the transaction
-      const hash = await walletClient.writeContract({
-        address: this.address,
-        abi,
-        functionName: 'deposit',
-        args: [encodedData],
-        account: walletClient.account!,
-        chain: walletClient.chain || null,
+      const tokenPortal = await this.tokenPortal();
+      const hash = await tokenPortal.write.deposit([encodedData], {
+        account: this.client.getAddress(),
+        chain: walletClient.chain
       });
 
       const receipt = await this.client.getPublicClient().waitForTransactionReceipt({ hash });
@@ -290,45 +275,33 @@ export class L1Portal implements IL1Portal {
     txHash: Hash;
     messageHash: `0x${string}`;
     messageIndex: bigint;
+    l2BlockNumber: bigint;
   }> {
     try {
-      const walletClient = this.client.getWalletClient();
-
-      validateWallet(walletClient, 'Cannot register token: No account connected to wallet');
-
-      // Define the ABI for the register function
-      const abi = [{
-        name: 'register',
-        type: 'function',
-        stateMutability: 'nonpayable',
-        inputs: [
-          { name: 'token', type: 'address' }
-        ],
-        outputs: [{ name: 'key', type: 'bytes32' }]
-      }] as const;
-
-      // Execute the transaction
-      const hash = await walletClient.writeContract({
-        address: this.address,
-        abi,
-        functionName: 'register',
-        args: [tokenAddr],
-        account: walletClient.account!,
-        chain: walletClient.chain || null,
+      const tokenPortal = await this.tokenPortal();
+      const hash = await tokenPortal.write.register([tokenAddr], {
+        account: this.client.getAddress(),
+        chain: this.client.getWalletClient().chain
       });
 
       const receipt = await this.client.getPublicClient().waitForTransactionReceipt({ hash });
+      if (receipt.status !== 'success') {
+        throw new Error(`Transaction ${hash} failed with status: ${receipt.status}`);
+      }
 
       // Parse the register log
       const registerLog = this.parseRegisterLog(receipt);
+      // Parse the message sent log so we can get the L2 block number
+      const messageSentLog = this.parseMessageSentLog(receipt);
 
       return {
         txHash: hash,
         messageHash: registerLog.hash,
         messageIndex: registerLog.index,
+        l2BlockNumber: messageSentLog.l2BlockNumber,
       };
     } catch (error) {
-      throw createL1Error(
+      throw createBridgeError(
         ErrorCode.BRIDGE_REGISTER,
         `Failed to register token ${tokenAddr}`,
         { portalAddress: this.address, tokenAddress: tokenAddr },
@@ -362,28 +335,12 @@ export class L1Portal implements IL1Portal {
         .toBufferArray()
         .map((buf: Buffer) => `0x${buf.toString('hex')}`) as readonly `0x${string}`[];
 
-      // Define the ABI for the withdraw function
-      const abi = [{
-        name: 'withdraw',
-        type: 'function',
-        stateMutability: 'nonpayable',
-        inputs: [
-          { name: 'leaf', type: 'bytes32' },
-          { name: 'l2BlockNumber', type: 'uint256' },
-          { name: 'leafIndex', type: 'uint256' },
-          { name: 'siblingPath', type: 'bytes32[]' }
-        ],
-        outputs: []
-      }] as const;
-
-      // Execute the transaction
-      const hash = await walletClient.writeContract({
-        address: this.address,
-        abi,
-        functionName: 'withdraw',
-        args: [leaf, l2BlockNumber, leafIndex, siblingPathHex],
-        account: walletClient.account!,
-        chain: walletClient.chain || null,
+      const tokenPortal = await this.tokenPortal();
+      // Note: The ABI expects _data as first parameter, but we're passing leaf
+      // This matches the current implementation
+      const hash = await tokenPortal.write.withdraw([leaf, l2BlockNumber, leafIndex, siblingPathHex], {
+        account: this.client.getAddress(),
+        chain: walletClient.chain
       });
 
       return hash;
@@ -412,32 +369,13 @@ export class L1Portal implements IL1Portal {
       const rollupAddress = await this.getRollupAddress();
       const publicClient = this.client.getPublicClient();
 
-      // Define the ABI for the getChainTips function
-      const abi = [{
-        name: 'getChainTips',
-        type: 'function',
-        stateMutability: 'view',
-        inputs: [],
-        outputs: [
-          {
-            type: 'tuple',
-            components: [
-              { name: 'provenL2BlockNumber', type: 'uint256' },
-              { name: 'provenL2BlockHash', type: 'bytes32' },
-              { name: 'finalizedL2BlockNumber', type: 'uint256' },
-              { name: 'finalizedL2BlockHash', type: 'bytes32' }
-            ]
-          }
-        ]
-      }] as const;
-
       const chainTips = await publicClient.readContract({
         address: rollupAddress,
-        abi,
-        functionName: 'getChainTips',
-      }) as { provenL2BlockNumber: bigint };
+        abi: RollupAbi,
+        functionName: 'getTips',
+      });
 
-      return l2BlockNumber <= chainTips.provenL2BlockNumber;
+      return l2BlockNumber <= chainTips.provenBlockNumber;
     } catch (error) {
       throw createL1Error(
         ErrorCode.BRIDGE_MESSAGE,
@@ -532,22 +470,8 @@ export class L1Portal implements IL1Portal {
     }
 
     try {
-      const publicClient = this.client.getPublicClient();
-
-      // Define the ABI for the aztecRollup function
-      const abi = [{
-        name: 'aztecRollup',
-        type: 'function',
-        stateMutability: 'view',
-        inputs: [],
-        outputs: [{ type: 'address' }]
-      }] as const;
-
-      this.rollupAddress = await publicClient.readContract({
-        address: this.address,
-        abi,
-        functionName: 'aztecRollup',
-      }) as Address;
+      const tokenPortal = await this.tokenPortal();
+      this.rollupAddress = await tokenPortal.read.aztecRollup();
 
       return this.rollupAddress;
     } catch (error) {
@@ -604,21 +528,9 @@ export class L1Portal implements IL1Portal {
     hash: `0x${string}`;
     index: bigint;
   } {
-    // Define the ABI for the Deposit event
-    const abi = [{
-      name: 'Deposit',
-      type: 'event',
-      inputs: [
-        { name: 'token', type: 'address', indexed: true },
-        { name: 'sender', type: 'address', indexed: true },
-        { name: 'leaf', type: 'bytes32', indexed: false },
-        { name: 'index', type: 'uint256', indexed: false }
-      ]
-    }] as const;
-
     // Parse the logs
     const logs = parseEventLogs({
-      abi,
+      abi: ERC20TokenPortalABI,
       eventName: 'Deposit',
       logs: receipt.logs,
     });
@@ -658,20 +570,9 @@ export class L1Portal implements IL1Portal {
     hash: `0x${string}`;
     index: bigint;
   } {
-    // Define the ABI for the Registered event
-    const abi = [{
-      name: 'Registered',
-      type: 'event',
-      inputs: [
-        { name: 'token', type: 'address', indexed: true },
-        { name: 'leaf', type: 'bytes32', indexed: false },
-        { name: 'index', type: 'uint256', indexed: false }
-      ]
-    }] as const;
-
     // Parse the logs
     const logs = parseEventLogs({
-      abi,
+      abi: ERC20TokenPortalABI,
       eventName: 'Registered',
       logs: receipt.logs,
     });
@@ -710,20 +611,9 @@ export class L1Portal implements IL1Portal {
     index: bigint;
     hash: `0x${string}`;
   } {
-    // Define the ABI for the MessageSent event
-    const abi = [{
-      name: 'MessageSent',
-      type: 'event',
-      inputs: [
-        { name: 'l2BlockNumber', type: 'uint256', indexed: false },
-        { name: 'index', type: 'uint256', indexed: false },
-        { name: 'hash', type: 'bytes32', indexed: false }
-      ]
-    }] as const;
-
     // Parse the logs
     const logs = parseEventLogs({
-      abi,
+      abi: InboxAbi,
       eventName: 'MessageSent',
       logs: receipt.logs,
     });

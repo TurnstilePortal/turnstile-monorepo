@@ -2,26 +2,32 @@
  * Unified deploy command
  */
 import type { Command } from 'commander';
-import { existsSync, promises as fs, write } from 'node:fs';
+import { existsSync } from 'node:fs';
 import {
   getConfigPaths,
   ensureConfigDirectory,
   loadDeployConfig,
   createDefaultConfig,
 } from '../config/config-loader.js';
-import type { DeployConfig, DeploymentResult } from '../config/types.js';
+import type { DeployConfig } from '../config/types.js';
 import { createAztecNodeClient } from '@aztec/aztec.js';
 import { http } from 'viem';
 import {
-  readDeploymentData,
   writeDeploymentData,
   getChain,
   getClients,
   type DeploymentData,
 } from '@turnstile-portal/turnstile-dev';
 import { deployTurnstileContracts } from '../lib/deployment.js';
-import { deployTokens, deployToken } from '../lib/tokens.js';
+import { deployToken } from '../lib/tokens.js';
 import { getSetup, setupRegistry } from '../setup/index.js';
+
+import {
+  proposeL1DevToken,
+  acceptL1DevToken,
+  registerL1DevToken,
+  registerL2DevToken,
+} from '../lib/deploy/devTokens.js';
 
 export function registerDeployCommand(program: Command) {
   return program
@@ -72,9 +78,7 @@ export function registerDeployCommand(program: Command) {
           if (config.deployment.overwrite) {
             console.log('Overwrite enabled: Will redeploy all components');
           } else {
-            console.log(
-              'Overwrite disabled: Will continue any incomplete deployments',
-            );
+            console.log('Deployment will fail without --overwrite flag');
           }
         }
 
@@ -127,9 +131,18 @@ async function runDeployment(
 ): Promise<void> {
   console.log(`Using Aztec Node at ${config.connection.aztec.node}`);
 
+  const deploymentExists = existsSync(paths.deploymentFile);
+
+  // Check if deployment exists and overwrite is not enabled
+  if (deploymentExists && !config.deployment.overwrite) {
+    throw new Error(
+      `Deployment file already exists at ${paths.deploymentFile}. Use --overwrite to redeploy.`,
+    );
+  }
+
   // Initialize clients
   const { l1Client, l2Client } = await getClients(
-    config.connection.aztec.node,
+    config.connection.aztec,
     {
       chain: getChain(config.connection.ethereum.chainName),
       transport: http(config.connection.ethereum.rpc),
@@ -140,102 +153,39 @@ async function runDeployment(
   console.log(`L1 Address: ${l1Client.getAddress()}`);
   console.log(`L2 Address: ${l2Client.getAddress()}`);
 
-  const deploymentExists = existsSync(paths.deploymentFile);
-
-  // Load existing deployment data or create new
+  // Initialize fresh deployment data
   let deploymentData: Partial<DeploymentData> = {};
-  if (deploymentExists) {
-    try {
-      deploymentData = await readDeploymentData(paths.deploymentFile);
-      console.log(
-        `Loaded existing deployment data from ${paths.deploymentFile}`,
-      );
-    } catch (error) {
-      console.log(`Error reading deployment data, starting fresh: ${error}`);
-    }
+
+  if (deploymentExists && config.deployment.overwrite) {
+    console.log('Overwrite enabled: Starting fresh deployment');
   }
 
   const node = createAztecNodeClient(config.connection.aztec.node);
   const l1Addresses = await node.getL1ContractAddresses();
   const registryAddress = l1Addresses.registryAddress.toString();
 
-  // Check if we need to deploy or complete a partial deployment
-  const needsFullDeployment =
-    config.deployment.overwrite || !deploymentData.l1Portal;
-  const isPartialDeployment =
-    deploymentData.l1Portal && !deploymentData.aztecPortal;
+  console.log('Starting deployment of all Turnstile contracts...');
 
-  if (needsFullDeployment || isPartialDeployment) {
-    if (needsFullDeployment) {
-      console.log('Starting fresh deployment of all Turnstile contracts...');
-    } else if (isPartialDeployment) {
-      console.log(
-        'Found partial deployment (L1 only). Completing L2 deployment...',
-      );
-    }
-
-    // Start or continue the deployment process
-    console.log(
-      isPartialDeployment
-        ? 'Continuing deployment with existing L1 contracts...'
-        : 'Deploying L1 contracts...',
-    );
+  try {
+    // Deploy all contracts
     const deploymentResult = await deployTurnstileContracts(
       l1Client,
       l2Client,
       { registryAddress },
-      deploymentData as Partial<DeploymentResult>,
     );
 
-    // Check if we got a partial result (only L1 deployed)
-    const isL1OnlyResult =
-      deploymentResult.aztecPortal ===
-      '0x0000000000000000000000000000000000000000';
-
-    if (isL1OnlyResult) {
-      console.log(
-        'L1 contracts deployed successfully. Saving intermediate state...',
-      );
-      // Update deployment data with L1 contract addresses
-      deploymentData = {
-        ...deploymentData,
-        l1AllowList: deploymentResult.l1AllowList,
-        l1Portal: deploymentResult.l1Portal,
-      };
-
-      // Save after L1 deployment
-      await writeDeploymentData(
-        paths.deploymentFile,
-        deploymentData as DeploymentData,
-      );
-
-      // Continue with L2 deployment
-      console.log('Proceeding with L2 contract deployment...');
-      const completeResult = await deployTurnstileContracts(
-        l1Client,
-        l2Client,
-        { registryAddress },
-        deploymentData as Partial<DeploymentResult>,
-      );
-
-      // Update with complete deployment data
-      deploymentData = {
-        ...deploymentData,
-        aztecTokenContractClassID: completeResult.aztecTokenContractClassID,
-        aztecPortal: completeResult.aztecPortal,
-        aztecShieldGateway: completeResult.aztecShieldGateway,
-      };
-    } else {
-      // We got a complete result in one go
-      deploymentData = {
-        ...deploymentData,
-        l1AllowList: deploymentResult.l1AllowList,
-        l1Portal: deploymentResult.l1Portal,
-        aztecTokenContractClassID: deploymentResult.aztecTokenContractClassID,
-        aztecPortal: deploymentResult.aztecPortal,
-        aztecShieldGateway: deploymentResult.aztecShieldGateway,
-      };
-    }
+    // Update deployment data with all results
+    deploymentData = {
+      l1AllowList: deploymentResult.l1AllowList,
+      l1Portal: deploymentResult.l1Portal,
+      aztecTokenContractClassID: deploymentResult.aztecTokenContractClassID,
+      aztecPortal: deploymentResult.aztecPortal,
+      serializedAztecPortalInstance:
+        deploymentResult.serializedAztecPortalInstance,
+      aztecShieldGateway: deploymentResult.aztecShieldGateway,
+      serializedShieldGatewayInstance:
+        deploymentResult.serializedShieldGatewayInstance,
+    };
 
     // Save deployment data
     console.log('Saving deployment data...');
@@ -243,8 +193,19 @@ async function runDeployment(
       paths.deploymentFile,
       deploymentData as DeploymentData,
     );
-  } else {
-    console.log('Using existing complete Turnstile contract deployments');
+    console.log('Turnstile contracts deployed successfully!');
+  } catch (error) {
+    // If deployment failed but we have partial data, save it for debugging
+    if (Object.keys(deploymentData).length > 0) {
+      console.log(
+        'Deployment failed. Saving partial deployment data for debugging...',
+      );
+      await writeDeploymentData(
+        paths.deploymentFile,
+        deploymentData as DeploymentData,
+      );
+    }
+    throw error;
   }
 
   // Check if tokens should be deployed
@@ -282,6 +243,43 @@ async function runDeployment(
           tokenConfig,
         );
 
+        // Propose the token
+        await proposeL1DevToken(
+          l1Client,
+          result.l1Address,
+          deploymentData.l1AllowList as `0x${string}`,
+        );
+
+        // Accept the token
+        await acceptL1DevToken(
+          l1Client,
+          result.l1Address,
+          deploymentData.l1AllowList as `0x${string}`,
+        );
+
+        // Register the token on L1 via the L2 portal
+        // This initiates an L1 Portal -> L2 Portal message with the registration confirmation
+        const { messageHash, messageIndex, l2BlockNumber } =
+          await registerL1DevToken(
+            l1Client,
+            result.l1Address,
+            deploymentData.l1Portal as `0x${string}`,
+          );
+
+        // Register the token with the L2 Portal
+        await registerL2DevToken(
+          l2Client,
+          deploymentData.aztecPortal,
+          result.l1Address,
+          result.l2Address,
+          tokenConfig.name,
+          tokenConfig.symbol,
+          tokenConfig.decimals,
+          messageIndex,
+          Number(l2BlockNumber),
+          messageHash,
+        );
+
         // Update token data in deployment data
         deploymentData.tokens[symbol] = {
           name: result.name,
@@ -289,6 +287,7 @@ async function runDeployment(
           decimals: result.decimals,
           l1Address: result.l1Address,
           l2Address: result.l2Address,
+          serializedL2TokenInstance: result.serializedL2TokenInstance,
         };
 
         // Save after each token deployment

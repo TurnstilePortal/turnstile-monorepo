@@ -43,8 +43,8 @@ export interface IL1Client {
  * Implementation of IL1Client using Viem
  */
 export class L1Client implements IL1Client {
-  private publicClient: PublicClient;
-  private walletClient: WalletClient<Transport, Chain, Account>;
+  public readonly public: PublicClient;
+  public readonly wallet: WalletClient<Transport, Chain, Account>;
 
   /**
    * Creates a new L1Client
@@ -55,8 +55,8 @@ export class L1Client implements IL1Client {
     publicClient: PublicClient,
     walletClient: WalletClient<Transport, Chain, Account>
   ) {
-    this.publicClient = publicClient;
-    this.walletClient = walletClient;
+    this.public = publicClient;
+    this.wallet = walletClient;
   }
 
   /**
@@ -64,15 +64,15 @@ export class L1Client implements IL1Client {
    * @returns The public client
    */
   getPublicClient(): PublicClient {
-    return this.publicClient;
+    return this.public;
   }
 
   /**
    * Gets the wallet client for write operations
    * @returns The wallet client
    */
-  getWalletClient(): WalletClient {
-    return this.walletClient;
+  getWalletClient(): WalletClient<Transport, Chain, Account> {
+    return this.wallet;
   }
 
   /**
@@ -80,7 +80,7 @@ export class L1Client implements IL1Client {
    * @returns The chain ID
    */
   async getChainId(): Promise<number> {
-    return this.publicClient.getChainId();
+    return this.public.getChainId();
   }
 
   /**
@@ -88,9 +88,9 @@ export class L1Client implements IL1Client {
    * @returns The account address
    */
   getAddress(): Address {
-    validateWallet(this.walletClient, 'Cannot get address: No account connected to wallet client');
+    validateWallet(this.wallet, 'Cannot get address: No account connected to wallet client');
 
     // Since validateWallet checks that account exists, we can safely use non-null assertion
-    return this.walletClient.account!.address;
+    return this.wallet.account!.address;
   }
 }

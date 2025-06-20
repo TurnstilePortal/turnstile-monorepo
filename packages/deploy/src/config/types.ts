@@ -59,7 +59,9 @@ export interface DeploymentResult {
   l1Portal: Hex;
   aztecTokenContractClassID: `0x${string}`;
   aztecPortal: `0x${string}`;
+  serializedAztecPortalInstance: `0x${string}`;
   aztecShieldGateway: `0x${string}`;
+  serializedShieldGatewayInstance: `0x${string}`;
 }
 
 /**
@@ -71,4 +73,5 @@ export interface TokenDeploymentResult {
   decimals: number;
   l1Address: Hex;
   l2Address: Hex;
+  serializedL2TokenInstance: Hex;
 }

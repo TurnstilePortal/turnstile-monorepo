@@ -1,14 +1,13 @@
-import {
-  Fr,
-  EthAddress,
-  AztecAddress,
-  type PXE,
-  type SentTx,
-  type Wallet,
-} from '@aztec/aztec.js';
+import { Fr, EthAddress, AztecAddress, type SentTx } from '@aztec/aztec.js';
 import { PortalContract } from '@turnstile-portal/aztec-artifacts';
 import { ErrorCode, createL2Error, isTurnstileError } from '../errors.js';
 import type { IL2Client } from './client.js';
+
+export type PortalConfig = {
+  l1_portal: EthAddress;
+  shield_gateway: AztecAddress;
+  token_contract_class_id: Fr;
+};
 
 /**
  * Interface for L2 portal operations
@@ -137,6 +136,7 @@ export class L2Portal implements IL2Portal {
   private portalAddr: AztecAddress;
   private client: IL2Client;
   private portal?: PortalContract;
+  private config?: PortalConfig;
 
   /**
    * Creates a new L2Portal
@@ -170,25 +170,37 @@ export class L2Portal implements IL2Portal {
     return this.portal;
   }
 
+  async getConfig(): Promise<PortalConfig> {
+    if (this.config) {
+      return this.config;
+    }
+
+    try {
+      const portal = await this.getPortalContract();
+      const config = await portal.methods.get_config_public().simulate();
+      this.config = {
+        l1_portal: EthAddress.fromField(new Fr(config.l1_portal.inner)),
+        shield_gateway: config.shield_gateway,
+        token_contract_class_id: new Fr(config.token_contract_class_id.inner),
+      };
+      return this.config;
+    } catch (error) {
+      throw createL2Error(
+        ErrorCode.L2_CONTRACT_INTERACTION,
+        `Failed to get portal configuration from ${this.portalAddr}`,
+        { portalAddress: this.portalAddr.toString() },
+        error,
+      );
+    }
+  }
+
   /**
    * Gets the L1 portal address
    * @returns The L1 portal address
    */
   async getL1Portal(): Promise<EthAddress> {
-    try {
-      const portal = await this.getPortalContract();
-      const result = await portal.methods.get_l1_portal().simulate();
-      return EthAddress.fromString(
-        `0x${result.inner.toString(16).padStart(40, '0')}`,
-      );
-    } catch (error) {
-      throw createL2Error(
-        ErrorCode.L2_CONTRACT_INTERACTION,
-        `Failed to get L1 portal address from ${this.portalAddr}`,
-        { portalAddress: this.portalAddr.toString() },
-        error,
-      );
-    }
+    const config = await this.getConfig();
+    return config.l1_portal;
   }
 
   /**
@@ -324,7 +336,7 @@ export class L2Portal implements IL2Portal {
       const portal = await this.getPortalContract();
       return await portal.methods
         .register_private(
-          Fr.fromHexString(l1TokenAddr),
+          EthAddress.fromString(l1TokenAddr),
           AztecAddress.fromString(l2TokenAddr),
           name,
           name.length,
@@ -369,7 +381,7 @@ export class L2Portal implements IL2Portal {
       const from = this.client.getAddress();
 
       const l2TokenAddr = await portal.methods
-        .get_l2_token(EthAddress.fromString(l1TokenAddr))
+        .get_l2_token_unconstrained(EthAddress.fromString(l1TokenAddr))
         .simulate();
 
       const tx = await portal.methods
@@ -413,7 +425,7 @@ export class L2Portal implements IL2Portal {
     try {
       const portal = await this.getPortalContract();
       const result = await portal.methods
-        .get_l2_token(EthAddress.fromString(l1TokenAddr))
+        .get_l2_token_unconstrained(EthAddress.fromString(l1TokenAddr))
         .simulate();
       return AztecAddress.fromBigInt(result);
     } catch (error) {
@@ -435,7 +447,7 @@ export class L2Portal implements IL2Portal {
     try {
       const portal = await this.getPortalContract();
       const result = await portal.methods
-        .get_l1_token(AztecAddress.fromString(l2TokenAddr))
+        .get_l1_token_unconstrained(AztecAddress.fromString(l2TokenAddr))
         .simulate();
       return EthAddress.fromString(
         `0x${result.inner.toString(16).padStart(40, '0')}`,
@@ -459,7 +471,7 @@ export class L2Portal implements IL2Portal {
     try {
       const portal = await this.getPortalContract();
       return await portal.methods
-        .is_registered_l1(EthAddress.fromString(l1TokenAddr))
+        .is_registered_l1_unconstrained(EthAddress.fromString(l1TokenAddr))
         .simulate();
     } catch (error) {
       throw createL2Error(
@@ -480,7 +492,7 @@ export class L2Portal implements IL2Portal {
     try {
       const portal = await this.getPortalContract();
       return await portal.methods
-        .is_registered_l2(AztecAddress.fromString(l2TokenAddr))
+        .is_registered_l2_unconstrained(AztecAddress.fromString(l2TokenAddr))
         .simulate();
     } catch (error) {
       throw createL2Error(
