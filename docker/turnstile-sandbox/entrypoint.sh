@@ -2,7 +2,9 @@
 
 set -e
 
-aztec_node=$(jq -r .connection.aztec.node /turnstile/config.json)
+DEPLOY_CONFIG_DIR="/turnstile/deploy-config"
+
+aztec_node=$(jq -r .connection.aztec.node ${DEPLOY_CONFIG_DIR}/config.json)
 
 # Wait for the Aztec Sandbox to be ready
 echo "turnstile: Waiting for Aztec Sandbox at ${aztec_node} to start..."
@@ -16,7 +18,7 @@ echo "turnstile: Aztec Sandbox is up, starting Turnstile contract deployment"
 deploy_dir=$(mktemp -d)
 echo "OK" > ${deploy_dir}/status
 echo "turnstile: Temporary deployment directory created at $deploy_dir"
-cp -v /turnstile/deploy-config/*.json $deploy_dir
+cp -v ${DEPLOY_CONFIG_DIR}/*.json $deploy_dir
 
 echo "turnstile: Running Turnstile Sandbox deployment"
 npx turnstile-deploy deploy -c $deploy_dir --overwrite
