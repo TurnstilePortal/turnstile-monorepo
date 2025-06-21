@@ -28,4 +28,4 @@ RUN npm install serve
 # After deploying the Turnstile contracts, this container will serve the deployment artifacts on port 3000
 EXPOSE 3000
 
-ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "/turnstile/entrypoint.sh"]
