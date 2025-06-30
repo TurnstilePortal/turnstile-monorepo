@@ -17,4 +17,5 @@ export * from './l1/allowList.js';
 export * from './l2/client.js';
 export * from './l2/token.js';
 export * from './l2/portal.js';
+export * from './l2/constants.js';
 export { getFeeJuiceFromFaucet } from './l2/fee-utils.js';
