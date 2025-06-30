@@ -1,5 +1,13 @@
 # @turnstile-portal/turnstile.js
 
+## 0.3.2
+
+### Patch Changes
+
+- 93bca89: Export constants
+  - @turnstile-portal/aztec-artifacts@0.3.2
+  - @turnstile-portal/l1-artifacts-abi@0.3.2
+
 ## 0.3.1
 
 ### Patch Changes
