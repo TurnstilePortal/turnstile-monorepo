@@ -1,5 +1,11 @@
 # @turnstile-portal/aztec-artifacts
 
+## 0.3.1
+
+### Patch Changes
+
+- 3d56727: Add contract registration functionality & config system
+
 ## 0.3.0
 
 ### Minor Changes
