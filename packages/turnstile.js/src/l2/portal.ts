@@ -1,7 +1,33 @@
-import { Fr, EthAddress, AztecAddress, type SentTx } from '@aztec/aztec.js';
-import { PortalContract } from '@turnstile-portal/aztec-artifacts';
-import { ErrorCode, createL2Error, isTurnstileError } from '../errors.js';
+import {
+  Fr,
+  EthAddress,
+  AztecAddress,
+  type IntentAction,
+  type SentTx,
+  computeAuthWitMessageHash,
+  getContractInstanceFromDeployParams,
+  PublicKeys,
+  ContractFunctionInteraction,
+  ProtocolContractAddress,
+} from '@aztec/aztec.js';
+import {
+  PortalContract,
+  PortalContractArtifact,
+  ShieldGatewayContractArtifact,
+} from '@turnstile-portal/aztec-artifacts';
+import {
+  ErrorCode,
+  createL2Error,
+  isTurnstileError,
+  createBridgeError,
+} from '../errors.js';
 import type { IL2Client } from './client.js';
+import { L2_CONTRACT_DEPLOYMENT_SALT } from './constants.js';
+import type {
+  FunctionAbi,
+  FunctionType,
+  ABIParameterVisibility,
+} from '@aztec/stdlib/abi';
 
 export type PortalConfig = {
   l1_portal: EthAddress;
@@ -403,7 +429,7 @@ export class L2Portal implements IL2Portal {
 
       return { tx, leaf };
     } catch (error) {
-      throw createL2Error(
+      throw createBridgeError(
         ErrorCode.BRIDGE_WITHDRAW,
         `Failed to withdraw ${amount} tokens to ${l1RecipientAddr}`,
         {
@@ -585,7 +611,7 @@ export class L2Portal implements IL2Portal {
       const combinedBuffer = Buffer.concat(leafData);
       return Fr.fromBuffer(combinedBuffer);
     } catch (error) {
-      throw createL2Error(
+      throw createBridgeError(
         ErrorCode.BRIDGE_MESSAGE,
         `Failed to get L2ToL1Message leaf for token ${l1TokenAddr} to recipient ${l1RecipientAddr}`,
         {
@@ -630,5 +656,143 @@ export class L2Portal implements IL2Portal {
     ].join('');
 
     return `0x${Buffer.from(functionSignature).toString('hex')}${encodedParams}`;
+  }
+
+  static async registerShieldGateway(client: IL2Client) {
+    const instance = await getContractInstanceFromDeployParams(
+      ShieldGatewayContractArtifact,
+      {
+        salt: L2_CONTRACT_DEPLOYMENT_SALT,
+        deployer: AztecAddress.ZERO,
+        publicKeys: PublicKeys.default(),
+      },
+    );
+    await client
+      .getWallet()
+      .registerContract({ instance, artifact: ShieldGatewayContractArtifact });
+
+    return instance;
+  }
+
+  static async registerPortal(
+    client: IL2Client,
+    l1Portal: EthAddress,
+    tokenContractClassId: Fr,
+    shieldGateway: AztecAddress,
+  ) {
+    const instance = await getContractInstanceFromDeployParams(
+      PortalContractArtifact,
+      {
+        constructorArgs: [l1Portal, tokenContractClassId, shieldGateway],
+        salt: L2_CONTRACT_DEPLOYMENT_SALT,
+        deployer: AztecAddress.ZERO,
+        publicKeys: PublicKeys.default(),
+      },
+    );
+    await client
+      .getWallet()
+      .registerContract({ instance, artifact: PortalContractArtifact });
+
+    return instance;
+  }
+
+  static async register(
+    client: IL2Client,
+    l1Portal: EthAddress,
+    tokenContractClassId: Fr,
+    shieldGateway: AztecAddress,
+  ) {
+    await L2Portal.registerShieldGateway(client);
+    const instance = await L2Portal.registerPortal(
+      client,
+      l1Portal,
+      tokenContractClassId,
+      shieldGateway,
+    );
+    return new L2Portal(instance.address, client);
+  }
+
+  /**
+   * Creates a new L2Portal from an address
+   * @param address The portal address
+   * @param client The L2 client
+   * @param register Whether to register the portal
+   * @param l1Portal The L1 portal address (required if register is true)
+   * @param tokenContractClassId The token contract class ID (required if register is true)
+   * @param shieldGateway The shield gateway address (required if register is true)
+   * @returns The portal
+   */
+  static async fromAddress(
+    address: AztecAddress,
+    client: IL2Client,
+    register = true,
+    l1Portal?: EthAddress,
+    tokenContractClassId?: Fr,
+    shieldGateway?: AztecAddress,
+  ): Promise<L2Portal> {
+    try {
+      if (register) {
+        if (!l1Portal || !tokenContractClassId || !shieldGateway) {
+          throw createL2Error(
+            ErrorCode.L2_CONTRACT_INTERACTION,
+            'Missing required parameters for portal registration: l1Portal, tokenContractClassId, and shieldGateway are required when register is true',
+            { portalAddress: address.toString() },
+          );
+        }
+        await L2Portal.register(
+          client,
+          l1Portal,
+          tokenContractClassId,
+          shieldGateway,
+        );
+      }
+      return new L2Portal(address, client);
+    } catch (error) {
+      throw createL2Error(
+        ErrorCode.L2_CONTRACT_INTERACTION,
+        `Failed to create portal from address ${address}`,
+        { portalAddress: address.toString() },
+        error,
+      );
+    }
+  }
+
+  /**
+   * Deploys a new portal contract
+   * @param client The L2 client
+   * @param l1PortalAddress The L1 portal address
+   * @param tokenContractClassId The token contract class ID
+   * @param shieldGateway The shield gateway address
+   * @returns The portal
+   */
+  static async deploy(
+    client: IL2Client,
+    l1PortalAddress: EthAddress,
+    tokenContractClassId: Fr,
+    shieldGateway: AztecAddress,
+  ): Promise<L2Portal> {
+    try {
+      const wallet = client.getWallet();
+      const portal = await PortalContract.deploy(
+        wallet,
+        l1PortalAddress,
+        tokenContractClassId,
+        shieldGateway,
+      )
+        .send({
+          universalDeploy: true,
+          contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
+        })
+        .deployed();
+
+      return new L2Portal(portal.address, client);
+    } catch (error) {
+      throw createL2Error(
+        ErrorCode.L2_DEPLOYMENT,
+        `Failed to deploy portal with L1 portal address ${l1PortalAddress}`,
+        { l1PortalAddress: l1PortalAddress.toString() },
+        error,
+      );
+    }
   }
 }

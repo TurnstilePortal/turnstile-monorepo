@@ -4,9 +4,9 @@ import {
   readFieldCompressedString,
   Capsule,
   ContractFunctionInteraction,
+  AztecAddress,
   Fr,
   ProtocolContractAddress,
-  type AztecAddress,
   type IntentAction,
   type SentTx,
 } from '@aztec/aztec.js';
@@ -15,17 +15,17 @@ import {
   type FunctionAbi,
   FunctionType,
 } from '@aztec/stdlib/abi';
+import { PublicKeys } from '@aztec/stdlib/keys';
 import {
   TokenContract,
   TokenContractArtifact,
 } from '@turnstile-portal/aztec-artifacts';
 
-import { ErrorCode, createL2Error, isTurnstileError } from '../errors.js';
-import type { L2Client } from './client.js';
+import { L2_CONTRACT_DEPLOYMENT_SALT, VP_SLOT } from './constants.js';
 
-// Constants
-const VP_SLOT = Fr.fromHexString('0x1dfeed');
-const CONTRACT_ADDRESS_SALT = Fr.fromHexString('0x9876543210');
+import { ErrorCode, createL2Error, isTurnstileError } from '../errors.js';
+import type { L2Client, IL2Client } from './client.js';
+import { validatePositiveAmount } from '../validator.js';
 
 /**
  * Interface for L2 token operations
@@ -131,7 +131,7 @@ export interface IL2Token {
  * Implementation of L2Token for Aztec tokens
  */
 export class L2Token implements IL2Token {
-  private client: L2Client;
+  private client: IL2Client;
   private token: TokenContract;
   private portal: AztecAddress | undefined;
 
@@ -140,7 +140,7 @@ export class L2Token implements IL2Token {
    * @param token The token contract
    * @param client The L2 client
    */
-  constructor(token: TokenContract, client: L2Client) {
+  constructor(token: TokenContract, client: IL2Client) {
     this.token = token;
     this.client = client;
   }
@@ -499,7 +499,7 @@ export class L2Token implements IL2Token {
    */
   static async fromAddress(
     address: AztecAddress,
-    client: L2Client,
+    client: IL2Client,
     register = true,
   ): Promise<L2Token> {
     try {
@@ -528,7 +528,7 @@ export class L2Token implements IL2Token {
    * @returns The token
    */
   static async deploy(
-    client: L2Client,
+    client: IL2Client,
     portalAddr: AztecAddress,
     name: string,
     symbol: string,
@@ -545,7 +545,7 @@ export class L2Token implements IL2Token {
       )
         .send({
           universalDeploy: true,
-          contractAddressSalt: CONTRACT_ADDRESS_SALT,
+          contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
         })
         .deployed();
 
@@ -562,6 +562,39 @@ export class L2Token implements IL2Token {
         error,
       );
     }
+  }
+
+  static async register(
+    client: IL2Client,
+    tokenAddress: AztecAddress,
+    portalAddress: AztecAddress,
+    name: string,
+    symbol: string,
+    decimals: number,
+  ) {
+    const instance = await getContractInstanceFromDeployParams(
+      TokenContractArtifact,
+      {
+        constructorArgs: [portalAddress, name, symbol, decimals],
+        salt: L2_CONTRACT_DEPLOYMENT_SALT,
+        deployer: AztecAddress.ZERO,
+        publicKeys: PublicKeys.default(),
+      },
+    );
+
+    if (instance.address !== tokenAddress) {
+      throw createL2Error(
+        ErrorCode.L2_GENERAL,
+        `Token address mismatch: ${instance.address.toString()} !== ${tokenAddress.toString()}`,
+        {
+          instanceAddress: instance.address.toString(),
+          tokenAddress: tokenAddress.toString(),
+        },
+      );
+    }
+    await client
+      .getWallet()
+      .registerContract({ instance, artifact: TokenContractArtifact });
   }
 }
 

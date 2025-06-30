@@ -1,14 +1,14 @@
 import type { Command } from 'commander';
 import { AztecAddress, TxStatus } from '@aztec/aztec.js';
-import {
-  readDeploymentData,
-  readKeyData,
-  createL2Client,
-} from '@turnstile-portal/turnstile-dev';
+import { readKeyData, createL2Client } from '@turnstile-portal/turnstile-dev';
 
 import { commonOpts } from '@turnstile-portal/deploy/commands';
 
-import { L2Token, type L2Client } from '@turnstile-portal/turnstile.js';
+import {
+  L2Token,
+  type L2Client,
+  TurnstileFactory,
+} from '@turnstile-portal/turnstile.js';
 
 async function doShield(l2Client: L2Client, token: L2Token, amount: bigint) {
   const symbol = await token.getSymbol();
@@ -36,11 +36,8 @@ export function registerShieldTokens(program: Command) {
     .option('--token <symbol>', 'Token Symbol', 'TT1')
     .option('--amount <a>', 'Amount', '10000')
     .action(async (options) => {
-      const deploymentData = await readDeploymentData(options.deploymentData);
-      const tokenInfo = deploymentData.tokens[options.token];
-      if (!tokenInfo) {
-        throw new Error(`Token ${options.token} not found in deployment data`);
-      }
+      const factory = await TurnstileFactory.fromConfig(options.deploymentData);
+      const tokenInfo = factory.getTokenInfo(options.token);
       const tokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
 
       const keyData = await readKeyData(options.keys);

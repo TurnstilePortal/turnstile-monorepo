@@ -11,7 +11,6 @@ import {
   waitForL2Block,
   getChain,
   getClients,
-  readDeploymentData,
   InsecureMintableToken,
 } from '@turnstile-portal/turnstile-dev';
 
@@ -21,6 +20,7 @@ import {
   L1Portal,
   L2Portal,
   type L1Client,
+  TurnstileFactory,
 } from '@turnstile-portal/turnstile.js';
 
 async function l1MintAndDeposit({
@@ -94,11 +94,9 @@ export function registerDepositAndClaim(program: Command) {
     .option('--l2-recipient <address>', 'L2 Recipient Address')
     .option('--amount <a>', 'Amount', '1000000000')
     .action(async (options) => {
-      const deploymentData = await readDeploymentData(options.deploymentData);
-      const tokenInfo = deploymentData.tokens[options.token];
-      if (!tokenInfo) {
-        throw new Error(`Token ${options.token} not found in deployment data`);
-      }
+      // Use the new configuration system
+      const factory = await TurnstileFactory.fromConfig(options.deploymentData);
+      const tokenInfo = factory.getTokenInfo(options.token);
       const l1TokenAddr = tokenInfo.l1Address;
 
       const pxe = createPXEClient(options.pxe);
@@ -118,6 +116,7 @@ export function registerDepositAndClaim(program: Command) {
         ? options.l2Recipient
         : l2Client.getAddress().toString();
 
+      const deploymentData = factory.getDeploymentData();
       const { index, hash, l2BlockNumber } = await l1MintAndDeposit({
         l1PortalAddr: getAddress(deploymentData.l1Portal),
         tokenAddr: getAddress(l1TokenAddr),

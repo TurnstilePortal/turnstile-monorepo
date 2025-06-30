@@ -11,12 +11,16 @@ import {
   waitForL2Block,
   getChain,
   getClients,
-  readDeploymentData,
 } from '@turnstile-portal/turnstile-dev';
 
 import { commonOpts } from '@turnstile-portal/deploy/commands';
 
-import { L2Token, L2Portal, L2Client } from '@turnstile-portal/turnstile.js';
+import {
+  L2Token,
+  L2Portal,
+  L2Client,
+  TurnstileFactory,
+} from '@turnstile-portal/turnstile.js';
 
 export function registerDeployAndRegisterToken(program: Command) {
   return program
@@ -34,7 +38,8 @@ export function registerDeployAndRegisterToken(program: Command) {
       console.log('Starting token deployment and registration...');
 
       // Get deployment data and setup clients
-      const deploymentData = await readDeploymentData(options.deploymentData);
+      const factory = await TurnstileFactory.fromConfig(options.deploymentData);
+      const deploymentData = factory.getDeploymentData();
       const pxe = createPXEClient(options.pxe);
       const { l2Client } = await getClients(
         options.aztecNode,

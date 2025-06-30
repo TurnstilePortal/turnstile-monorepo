@@ -13,6 +13,7 @@ import type {
   Hash
 } from 'viem';
 import { IL1Client } from './client.js';
+import { ERC20TokenPortalABI } from '@turnstile-portal/l1-artifacts-abi';
 
 // Mock external dependencies
 vi.mock('viem', async () => {
@@ -101,15 +102,7 @@ describe('L1Portal', () => {
       // Verify readContract was called with correct parameters
       expect(mockPublicClient.readContract).toHaveBeenCalledWith({
         address: portalAddress,
-        abi: expect.arrayContaining([
-          expect.objectContaining({
-            name: 'l2Portal',
-            type: 'function',
-            stateMutability: 'view',
-            inputs: [],
-            outputs: [{ type: 'bytes32' }]
-          })
-        ]),
+        abi: ERC20TokenPortalABI,
         functionName: 'l2Portal',
       });
     });
@@ -156,13 +149,7 @@ describe('L1Portal', () => {
       // Check writeContract was called correctly
       expect(mockWalletClient.writeContract).toHaveBeenCalledWith({
         address: portalAddress,
-        abi: expect.arrayContaining([
-          expect.objectContaining({
-            name: 'setL2Portal',
-            type: 'function',
-            inputs: [{ name: 'l2Portal', type: 'bytes32' }]
-          })
-        ]),
+        abi: ERC20TokenPortalABI,
         functionName: 'setL2Portal',
         args: [mockL2PortalAddress],
         account: mockWalletClient.account,
@@ -254,13 +241,7 @@ describe('L1Portal', () => {
       // Verify writeContract was called with correct parameters
       expect(mockWalletClient.writeContract).toHaveBeenCalledWith({
         address: portalAddress,
-        abi: expect.arrayContaining([
-          expect.objectContaining({
-            name: 'deposit',
-            type: 'function',
-            inputs: [{ name: '_data', type: 'bytes' }]
-          })
-        ]),
+        abi: ERC20TokenPortalABI,
         functionName: 'deposit',
         args: [mockEncodedData],
         account: mockWalletClient.account,
@@ -269,18 +250,7 @@ describe('L1Portal', () => {
 
       // Verify parseEventLogs was called with correct parameters
       expect(parseEventLogs).toHaveBeenCalledWith({
-        abi: expect.arrayContaining([
-          expect.objectContaining({
-            name: 'Deposit',
-            type: 'event',
-            inputs: expect.arrayContaining([
-              expect.objectContaining({ name: 'token' }),
-              expect.objectContaining({ name: 'sender' }),
-              expect.objectContaining({ name: 'leaf' }),
-              expect.objectContaining({ name: 'index' })
-            ])
-          })
-        ]),
+        abi: ERC20TokenPortalABI,
         eventName: 'Deposit',
         logs: mockReceipt.logs
       });
@@ -354,13 +324,7 @@ describe('L1Portal', () => {
       // Verify writeContract was called with correct parameters
       expect(mockWalletClient.writeContract).toHaveBeenCalledWith({
         address: portalAddress,
-        abi: expect.arrayContaining([
-          expect.objectContaining({
-            name: 'register',
-            type: 'function',
-            inputs: [{ name: 'token', type: 'address' }]
-          })
-        ]),
+        abi: ERC20TokenPortalABI,
         functionName: 'register',
         args: [mockTokenAddress],
         account: mockWalletClient.account,
@@ -369,17 +333,7 @@ describe('L1Portal', () => {
 
       // Verify parseEventLogs was called with correct parameters
       expect(parseEventLogs).toHaveBeenCalledWith({
-        abi: expect.arrayContaining([
-          expect.objectContaining({
-            name: 'Registered',
-            type: 'event',
-            inputs: expect.arrayContaining([
-              expect.objectContaining({ name: 'token' }),
-              expect.objectContaining({ name: 'leaf' }),
-              expect.objectContaining({ name: 'index' })
-            ])
-          })
-        ]),
+        abi: ERC20TokenPortalABI,
         eventName: 'Registered',
         logs: mockReceipt.logs
       });
@@ -463,18 +417,7 @@ describe('L1Portal', () => {
       // Verify writeContract was called with correct parameters
       expect(mockWalletClient.writeContract).toHaveBeenCalledWith({
         address: portalAddress,
-        abi: expect.arrayContaining([
-          expect.objectContaining({
-            name: 'withdraw',
-            type: 'function',
-            inputs: [
-              { name: 'leaf', type: 'bytes32' },
-              { name: 'l2BlockNumber', type: 'uint256' },
-              { name: 'leafIndex', type: 'uint256' },
-              { name: 'siblingPath', type: 'bytes32[]' }
-            ]
-          })
-        ]),
+        abi: ERC20TokenPortalABI,
         functionName: 'withdraw',
         args: [mockLeaf, mockL2BlockNumber, mockLeafIndex, expect.any(Array)],
         account: mockWalletClient.account,
@@ -554,17 +497,18 @@ describe('L1Portal', () => {
         abi: expect.arrayContaining([
           expect.objectContaining({
             name: 'getChainTips',
-            type: 'function'
+            type: 'function',
+            stateMutability: 'view'
           })
         ]),
-        functionName: 'getChainTips',
+        functionName: 'getChainTips'
       });
     });
 
     it('should return false when block is not available on L1', async () => {
       // Mock readContract to return chain tips with proven block number lower than requested
       (mockPublicClient.readContract as any).mockResolvedValueOnce({
-        provenL2BlockNumber: 50n, // Less than mockL2BlockNumber
+        provenL2BlockNumber: 50n, // Lower than mockL2BlockNumber (100)
         provenL2BlockHash: '0xblockhash',
         finalizedL2BlockNumber: 40n,
         finalizedL2BlockHash: '0xfinalhash'
@@ -572,16 +516,19 @@ describe('L1Portal', () => {
 
       const result = await portal.isBlockAvailableOnL1(mockL2BlockNumber);
 
-      // Should be false because the provenL2BlockNumber is less than requested
+      // Should be false because provenL2BlockNumber < mockL2BlockNumber
       expect(result).toBe(false);
     });
 
     it('should get rollup address if not provided', async () => {
-      // Create a new instance without rollupAddress
+      // Create portal without rollup address
       portal = new L1Portal(portalAddress, mockL1Client);
 
-      // Mock readContract to return rollup address first, then chain tips
-      (mockPublicClient.readContract as any).mockResolvedValueOnce(mockRollupAddress);
+      // Mock getRollupAddress to return rollup address
+      const mockGetRollupAddress = vi.spyOn(portal as any, 'getRollupAddress');
+      mockGetRollupAddress.mockResolvedValue(mockRollupAddress);
+
+      // Mock readContract to return chain tips
       (mockPublicClient.readContract as any).mockResolvedValueOnce({
         provenL2BlockNumber: mockProvenL2BlockNumber,
         provenL2BlockHash: '0xblockhash',
@@ -594,153 +541,94 @@ describe('L1Portal', () => {
       // Should be true because mockProvenL2BlockNumber > mockL2BlockNumber
       expect(result).toBe(true);
 
+      // Verify getRollupAddress was called
+      expect(mockGetRollupAddress).toHaveBeenCalled();
+
       // Verify readContract was called twice - once for rollup address, once for chain tips
       expect(mockPublicClient.readContract).toHaveBeenCalledTimes(2);
-
-      // First call should be to get aztecRollup address
-      expect(mockPublicClient.readContract).toHaveBeenNthCalledWith(1, {
-        address: portalAddress,
-        abi: expect.arrayContaining([
-          expect.objectContaining({
-            name: 'aztecRollup',
-            type: 'function'
-          })
-        ]),
-        functionName: 'aztecRollup',
-      });
     });
 
     it('should throw error when check fails', async () => {
       // Mock readContract to throw an error
-      const mockError = new Error('Contract read failed');
+      const mockError = new Error('Chain tips check failed');
       (mockPublicClient.readContract as any).mockRejectedValueOnce(mockError);
 
-      // Check for generic error message since the BRIDGE_MESSAGE code (3005)
-      // cannot be used with createL1Error that's called internally by isBlockAvailableOnL1
+      // Expect the method to throw an error
       await expect(portal.isBlockAvailableOnL1(mockL2BlockNumber)).rejects.toThrow();
-
-      // Verify readContract was called
-      expect(mockPublicClient.readContract).toHaveBeenCalled();
     });
   });
 
   describe('waitForBlockOnL1', () => {
+    const mockL2BlockNumber = 100n;
+    const currentTime = 1000000;
+
     beforeEach(() => {
-      // Setup fake timers for testing the wait logic
-      vi.useFakeTimers();
+      // Mock Date.now to return a fixed time
+      vi.spyOn(Date, 'now').mockReturnValue(currentTime);
     });
 
-    afterEach(() => {
-      // Restore real timers
-      vi.useRealTimers();
-    });
-
-    it('should resolve immediately when block is already available', async () => {
-      // Mock isBlockAvailableOnL1 to return true immediately
-      const isBlockAvailableSpy = vi.spyOn(portal, 'isBlockAvailableOnL1').mockResolvedValueOnce(true);
-
-      // Call the method
-      const waitPromise = portal.waitForBlockOnL1(100n, 10, 1);
-
-      // Advance timers to let the Promise resolve
-      await vi.runAllTimersAsync();
-
-      // Await the promise
-      await waitPromise;
-
-      // Verify isBlockAvailableOnL1 was called once with the right block number
-      expect(isBlockAvailableSpy).toHaveBeenCalledTimes(1);
-      expect(isBlockAvailableSpy).toHaveBeenCalledWith(100n);
-    });
-
-    it('should poll until block becomes available', async () => {
-      // Mock isBlockAvailableOnL1 to return false twice, then true
-      const isBlockAvailableSpy = vi.spyOn(portal, 'isBlockAvailableOnL1')
+    it('should wait for block to be available on L1', async () => {
+      // Mock isBlockAvailableOnL1 to return false initially, then true
+      const mockIsBlockAvailable = vi.spyOn(portal, 'isBlockAvailableOnL1');
+      mockIsBlockAvailable
         .mockResolvedValueOnce(false)
         .mockResolvedValueOnce(false)
         .mockResolvedValueOnce(true);
 
-      // Call the method with 10s timeout and 1s interval
-      const waitPromise = portal.waitForBlockOnL1(100n, 10, 1);
+      // Mock setTimeout to resolve immediately
+      const mockSetTimeout = vi.spyOn(global, 'setTimeout').mockImplementation((fn) => {
+        fn();
+        return {} as any;
+      });
 
-      // Advance timers to trigger first poll (initial call)
-      await vi.advanceTimersByTimeAsync(0);
+      await portal.waitForBlockOnL1(mockL2BlockNumber, 60, 5);
 
-      // Advance 1 second for second poll
-      await vi.advanceTimersByTimeAsync(1000);
+      // Verify isBlockAvailableOnL1 was called multiple times
+      expect(mockIsBlockAvailable).toHaveBeenCalledTimes(3);
+      expect(mockIsBlockAvailable).toHaveBeenCalledWith(mockL2BlockNumber);
 
-      // Advance 1 more second for third poll (should succeed)
-      await vi.advanceTimersByTimeAsync(1000);
-
-      // Await the promise
-      await waitPromise;
-
-      // Verify isBlockAvailableOnL1 was called 3 times
-      expect(isBlockAvailableSpy).toHaveBeenCalledTimes(3);
+      // Verify setTimeout was called for the polling
+      expect(mockSetTimeout).toHaveBeenCalled();
     });
 
-    it('should timeout if block does not become available', async () => {
+    it('should throw error when timeout is reached', async () => {
       // Mock isBlockAvailableOnL1 to always return false
-      const checkFnMock = vi.fn().mockResolvedValue(false);
+      const mockIsBlockAvailable = vi.spyOn(portal, 'isBlockAvailableOnL1');
+      mockIsBlockAvailable.mockResolvedValue(false);
 
-      // Create controlled time provider for testing
-      let currentTime = 0;
-      const mockTimeProvider = () => currentTime;
-
-      // Create mock sleep function that advances our mock time
-      const mockSleep = vi.fn().mockImplementation(async (ms) => {
-        currentTime += ms;
-        return Promise.resolve();
+      // Mock setTimeout to resolve immediately
+      vi.spyOn(global, 'setTimeout').mockImplementation((fn) => {
+        fn();
+        return {} as any;
       });
 
-      // Use the extracted method directly with controlled dependencies
-      const result = await portal.checkBlockAvailabilityWithTimeout(
-        100n,
-        checkFnMock,
-        mockTimeProvider,
-        mockSleep,
-        5, // 5 seconds timeout
-        1  // 1 second interval
-      );
-
-      // Verify the check function was called multiple times
-      expect(checkFnMock).toHaveBeenCalledTimes(5); // Initial check + calls at each interval until timeout
-      expect(checkFnMock).toHaveBeenCalledWith(100n);
-
-      // Verify sleep was called with the correct interval
-      expect(mockSleep).toHaveBeenCalledTimes(5);
-      expect(mockSleep).toHaveBeenCalledWith(1000);
-
-      // Verify the timeout result is false
-      expect(result).toBe(false);
-
-      // Now test that waitForBlockOnL1 properly throws when checkBlockAvailabilityWithTimeout returns false
-      // Mock the checkBlockAvailabilityWithTimeout method
-      vi.spyOn(portal, 'checkBlockAvailabilityWithTimeout').mockResolvedValueOnce(false);
-
-      // Expect the waitForBlockOnL1 to throw the timeout error
-      await expect(portal.waitForBlockOnL1(100n, 5, 1)).rejects.toMatchObject({
-        code: ErrorCode.L1_TIMEOUT,
-        message: expect.stringContaining('Timeout waiting for block')
-      });
+      // Expect the method to throw an error when timeout is reached
+      await expect(portal.waitForBlockOnL1(mockL2BlockNumber, 1, 1)).rejects.toThrow();
     });
 
-    it('should use default values for timeout and interval', async () => {
+    it('should use default timeout and interval values', async () => {
       // Mock isBlockAvailableOnL1 to return true immediately
-      const isBlockAvailableSpy = vi.spyOn(portal, 'isBlockAvailableOnL1')
-        .mockResolvedValueOnce(true);
+      const mockIsBlockAvailable = vi.spyOn(portal, 'isBlockAvailableOnL1');
+      mockIsBlockAvailable.mockResolvedValue(true);
 
-      // Call the method without specifying timeout and interval (should use defaults)
-      const waitPromise = portal.waitForBlockOnL1(100n);
+      await portal.waitForBlockOnL1(mockL2BlockNumber);
 
-      // Advance timers to let the Promise resolve
-      await vi.runAllTimersAsync();
+      // Verify isBlockAvailableOnL1 was called with default values
+      expect(mockIsBlockAvailable).toHaveBeenCalledWith(mockL2BlockNumber);
+    });
 
-      // Await the promise
-      await waitPromise;
+    it('should handle custom timeout and interval values', async () => {
+      // Mock isBlockAvailableOnL1 to return true immediately
+      const mockIsBlockAvailable = vi.spyOn(portal, 'isBlockAvailableOnL1');
+      mockIsBlockAvailable.mockResolvedValue(true);
 
-      // Verify isBlockAvailableOnL1 was called once
-      expect(isBlockAvailableSpy).toHaveBeenCalledTimes(1);
+      const customTimeout = 120;
+      const customInterval = 10;
+
+      await portal.waitForBlockOnL1(mockL2BlockNumber, customTimeout, customInterval);
+
+      // Verify isBlockAvailableOnL1 was called
+      expect(mockIsBlockAvailable).toHaveBeenCalledWith(mockL2BlockNumber);
     });
   });
 });

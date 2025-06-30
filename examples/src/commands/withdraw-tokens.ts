@@ -5,7 +5,6 @@ import { http, getAddress, type Hex } from 'viem';
 import {
   getChain,
   getClients,
-  readDeploymentData,
   setAssumeProven,
 } from '@turnstile-portal/turnstile-dev';
 
@@ -18,6 +17,7 @@ import {
   L2Portal,
   type L2Client,
   type IL1Client,
+  TurnstileFactory,
 } from '@turnstile-portal/turnstile.js';
 
 async function initiateL2Withdrawal({
@@ -164,14 +164,11 @@ export function registerWithdrawTokens(program: Command) {
     .option('--l1-recipient <address>', 'L1 Recipient Address')
     .option('--amount <a>', 'Amount', '1000')
     .action(async (options) => {
-      const deploymentData = await readDeploymentData(options.deploymentData);
-      const tokenInfo = deploymentData.tokens[options.token];
-      if (!tokenInfo) {
-        throw new Error(`Token ${options.token} not found in deployment data`);
-      }
+      const factory = await TurnstileFactory.fromConfig(options.deploymentData);
+      const tokenInfo = factory.getTokenInfo(options.token);
+      const deploymentData = factory.getDeploymentData();
       const l2TokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
       const l1TokenAddr = getAddress(tokenInfo.l1Address) as `0x${string}`;
-      const l1RollupAddr = deploymentData.rollupAddress;
 
       const node = createAztecNodeClient(options.aztecNode);
 
@@ -205,7 +202,12 @@ export function registerWithdrawTokens(program: Command) {
       );
 
       // Cheat to make the L2 block available on L1
-      await setAssumeProven(options.rpc, l1RollupAddr, l2BlockNumber);
+      // Note: rollupAddress will be obtained automatically by L1Portal
+      await setAssumeProven(
+        options.rpc,
+        await l1Portal.getRollupAddress(),
+        l2BlockNumber,
+      );
       console.log(
         `Waiting for L2 block ${l2BlockNumber} to be available on L1...`,
       );

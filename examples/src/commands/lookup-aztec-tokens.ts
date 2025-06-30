@@ -1,5 +1,5 @@
 import type { Command } from 'commander';
-import { readDeploymentData } from '@turnstile-portal/turnstile-dev';
+import { TurnstileFactory } from '@turnstile-portal/turnstile.js';
 
 import { commonOpts } from '@turnstile-portal/deploy/commands';
 
@@ -9,11 +9,10 @@ export function registerLookupAztecTokens(program: Command) {
     .description('Obtains all registered tokens from Portal events')
     .addOption(commonOpts.deploymentData)
     .action(async (options) => {
-      const deploymentData = await readDeploymentData(options.deploymentData);
+      const factory = await TurnstileFactory.fromConfig(options.deploymentData);
 
-      // Since the event API has changed, we'll need to look up the tokens another way
       // Get the mapping of tokens from the deployment data directly
-      const tokens = deploymentData.tokens;
+      const tokens = factory.getDeploymentData().tokens;
 
       console.log(
         `Found ${Object.keys(tokens).length} tokens in deployment data:`,

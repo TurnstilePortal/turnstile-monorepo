@@ -10,19 +10,6 @@ export interface DeploymentDataToken {
 }
 
 export interface DeploymentData {
-  // These are the contracts pre-deployed on the network.
-  rollupAddress: Hex;
-  registryAddress: Hex;
-  inboxAddress: Hex;
-  outboxAddress: Hex;
-  feeJuiceAddress: Hex;
-  stakingAssetAddress: Hex;
-  feeJuicePortalAddress: Hex;
-  coinIssuerAddress: Hex;
-  rewardDistributorAddress: Hex;
-  governanceProposerAddress: Hex;
-  governanceAddress: Hex;
-
   // These are the addresses of the contracts we deploy.
   l1Portal: Hex;
   l1AllowList: Hex;
@@ -31,8 +18,6 @@ export interface DeploymentData {
   serializedAztecPortalInstance: Hex;
   aztecShieldGateway: Hex;
   serializedShieldGatewayInstance: Hex;
-  aztecShieldGatewayStorage: Hex;
-  devAdvanceBlock: Hex;
 
   // This is intended for use with dev deployments where we're deploying
   // the tokens ourselves.

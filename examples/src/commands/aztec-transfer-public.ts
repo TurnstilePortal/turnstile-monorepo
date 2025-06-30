@@ -6,15 +6,15 @@ import {
 } from '@aztec/aztec.js';
 import type { Wallet } from '@aztec/aztec.js';
 import { getInitialTestAccountsWallets } from '@aztec/accounts/testing';
-import {
-  readDeploymentData,
-  readKeyData,
-  createL2Client,
-} from '@turnstile-portal/turnstile-dev';
+import { readKeyData, createL2Client } from '@turnstile-portal/turnstile-dev';
 
 import { commonOpts } from '@turnstile-portal/deploy/commands';
 
-import { L2Token, type L2Client } from '@turnstile-portal/turnstile.js';
+import {
+  L2Token,
+  type L2Client,
+  TurnstileFactory,
+} from '@turnstile-portal/turnstile.js';
 
 async function doTransfer(
   l2Client: L2Client,
@@ -54,11 +54,8 @@ export function registerAztecTransferPublic(program: Command) {
     .option('--amount <a>', 'Amount', '1000')
     .option('--recipient <address>', 'Recipient address')
     .action(async (options) => {
-      const deploymentData = await readDeploymentData(options.deploymentData);
-      const tokenInfo = deploymentData.tokens[options.token];
-      if (!tokenInfo) {
-        throw new Error(`Token ${options.token} not found in deployment data`);
-      }
+      const factory = await TurnstileFactory.fromConfig(options.deploymentData);
+      const tokenInfo = factory.getTokenInfo(options.token);
       const tokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
 
       const pxe = createPXEClient(options.pxe);
