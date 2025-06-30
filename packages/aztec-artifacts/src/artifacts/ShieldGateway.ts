@@ -138,9 +138,6 @@ export class ShieldGatewayContract extends ContractBase {
     /** check_transfer(sender: struct, recipient: struct, amount: integer) */
     check_transfer: ((sender: AztecAddressLike, recipient: AztecAddressLike, amount: (bigint | number)) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** init() */
-    init: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
     /** public_dispatch(selector: field) */
     public_dispatch: ((selector: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 

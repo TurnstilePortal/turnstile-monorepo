@@ -25,10 +25,6 @@ pub contract ShieldGateway {
         binnedAmount: u128,
     }
 
-    #[public]
-    #[initializer]
-    fn init() {}
-
     #[private]
     fn check_transfer(sender: AztecAddress, recipient: AztecAddress, amount: u128) {
         let token: AztecAddress = context.msg_sender();

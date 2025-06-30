@@ -16,7 +16,6 @@ import { anvil } from 'viem/chains';
 
 import {
   getClients,
-  readDeploymentData,
   readKeyData,
   createPXE,
 } from '@turnstile-portal/turnstile-dev';
@@ -76,7 +75,10 @@ async function main() {
     process.exit(1);
   }
 
-  const deploymentData = await readDeploymentData(deploymentDataPath);
+  // Use the new configuration system
+  const factory =
+    await turnstilejs.TurnstileFactory.fromConfig(deploymentDataPath);
+  const deploymentData = factory.getDeploymentData();
   const keyData = await readKeyData(keyDataPath);
 
   const node = createAztecNodeClient(aztecNodeUrl);
@@ -193,6 +195,7 @@ async function main() {
       l1Client,
       l1PublicClient,
       turnstileAztecArtifacts,
+      factory,
     });
 
     r.defineCommand('dd', {

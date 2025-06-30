@@ -4,6 +4,9 @@ export * from './errors.js';
 // Validation utilities
 export * from './validator.js';
 
+// Deployment configuration
+export * from './deployment/index.js';
+
 // L1 (Ethereum) components
 export * from './l1/client.js';
 export * from './l1/token.js';

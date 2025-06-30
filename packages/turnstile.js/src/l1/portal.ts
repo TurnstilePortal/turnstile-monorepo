@@ -464,7 +464,7 @@ export class L1Portal implements IL1Portal {
    * Gets the rollup address
    * @returns The rollup address
    */
-  private async getRollupAddress(): Promise<Address> {
+  public async getRollupAddress(): Promise<Address> {
     if (this.rollupAddress) {
       return this.rollupAddress;
     }

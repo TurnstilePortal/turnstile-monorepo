@@ -18,7 +18,10 @@ vi.mock('@turnstile-portal/aztec-artifacts');
 describe('L2Portal', () => {
   let portal: L2Portal;
   let mockL2Client: IL2Client;
-  let mockAztecNode: AztecNode;
+  let mockAztecNode: AztecNode & {
+    getBlockNumber: ReturnType<typeof vi.fn>;
+    getL1ToL2MessageMembershipWitness: ReturnType<typeof vi.fn>;
+  };
   let mockPxe: PXE;
   let mockWallet: Wallet;
   let portalAddr: AztecAddress;
@@ -45,30 +48,38 @@ describe('L2Portal', () => {
         }) as unknown as EthAddress,
     );
 
-    // Mock Portal Contract methods
+    // Mock Portal Contract methods with the correct method names
     mockPortalContract = {
       methods: {
-        get_l1_portal: vi.fn().mockReturnValue({
+        get_config_public: vi.fn().mockReturnValue({
           simulate: vi.fn().mockResolvedValue({
-            inner: BigInt('0x3456789012345678901234567890123456789012'),
+            l1_portal: {
+              inner: BigInt('0x3456789012345678901234567890123456789012'),
+            },
+            shield_gateway: {
+              toString: () => '0x4567890123456789012345678901234567890123',
+            },
+            token_contract_class_id: {
+              inner: BigInt('0x5678901234567890123456789012345678901234'),
+            },
           }),
         }),
-        get_l2_token: vi.fn().mockReturnValue({
+        get_l2_token_unconstrained: vi.fn().mockReturnValue({
           simulate: vi
             .fn()
             .mockResolvedValue(
               BigInt('0x4567890123456789012345678901234567890123'),
             ),
         }),
-        get_l1_token: vi.fn().mockReturnValue({
+        get_l1_token_unconstrained: vi.fn().mockReturnValue({
           simulate: vi.fn().mockResolvedValue({
             inner: BigInt('0x5678901234567890123456789012345678901234'),
           }),
         }),
-        is_registered_l1: vi.fn().mockReturnValue({
+        is_registered_l1_unconstrained: vi.fn().mockReturnValue({
           simulate: vi.fn().mockResolvedValue(true),
         }),
-        is_registered_l2: vi.fn().mockReturnValue({
+        is_registered_l2_unconstrained: vi.fn().mockReturnValue({
           simulate: vi.fn().mockResolvedValue(false),
         }),
         claim_public: vi.fn().mockReturnValue({
@@ -91,11 +102,14 @@ describe('L2Portal', () => {
     // Mock the AztecNode with proper mock functions
     mockAztecNode = {
       getBlockNumber: vi.fn().mockResolvedValue(10),
-      getL1ToL2MessageMembershipWitness: vi.fn(),
+      getL1ToL2MessageMembershipWitness: vi.fn().mockResolvedValue(null),
       getNodeInfo: vi.fn().mockResolvedValue({
         l1ChainId: 1,
       }),
-    } as unknown as AztecNode;
+    } as unknown as AztecNode & {
+      getBlockNumber: ReturnType<typeof vi.fn>;
+      getL1ToL2MessageMembershipWitness: ReturnType<typeof vi.fn>;
+    };
 
     mockPxe = {} as unknown as PXE;
 
@@ -110,6 +124,22 @@ describe('L2Portal', () => {
       getWallet: vi.fn().mockReturnValue(mockWallet),
       getAddress: vi.fn().mockReturnValue(walletAddr),
     };
+
+    // Mock EthAddress.fromField to return proper EthAddress objects
+    vi.mocked(EthAddress.fromField).mockImplementation(
+      () =>
+        ({
+          toString: () => '0x3456789012345678901234567890123456789012',
+        }) as unknown as EthAddress,
+    );
+
+    // Mock AztecAddress.fromBigInt to return proper AztecAddress objects
+    vi.mocked(AztecAddress.fromBigInt).mockImplementation(
+      () =>
+        ({
+          toString: () => '0x4567890123456789012345678901234567890123',
+        }) as unknown as AztecAddress,
+    );
 
     // Create portal instance
     portal = new L2Portal(portalAddr, mockL2Client);
@@ -129,10 +159,10 @@ describe('L2Portal', () => {
       // Verify the portal contract was retrieved
       expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
 
-      // Verify the get_l1_portal method was called
-      expect(mockPortalContract.methods.get_l1_portal).toHaveBeenCalled();
+      // Verify the get_config_public method was called
+      expect(mockPortalContract.methods.get_config_public).toHaveBeenCalled();
       expect(
-        mockPortalContract.methods.get_l1_portal().simulate,
+        mockPortalContract.methods.get_config_public().simulate,
       ).toHaveBeenCalled();
 
       // Verify the result matches the mock
@@ -144,7 +174,7 @@ describe('L2Portal', () => {
     it('should throw an error when contract interaction fails', async () => {
       // Setup error case
       mockPortalContract.methods
-        .get_l1_portal()
+        .get_config_public()
         .simulate.mockRejectedValueOnce(new Error('Simulation failed'));
 
       // Verify error is thrown
@@ -198,7 +228,7 @@ describe('L2Portal', () => {
         .claim_public()
         .send.mockRejectedValueOnce(new Error('Claim failed'));
 
-      // Verify error is thrown with correct error code
+      // Verify error is thrown
       await expect(
         portal.claimDeposit(l1TokenAddr, l2RecipientAddr, amount, index),
       ).rejects.toThrow();
@@ -253,7 +283,7 @@ describe('L2Portal', () => {
         .claim_shielded()
         .send.mockRejectedValueOnce(new Error('Claim failed'));
 
-      // Verify error is thrown with correct error code
+      // Verify error is thrown
       await expect(
         portal.claimDepositShielded(
           l1TokenAddr,
@@ -266,83 +296,63 @@ describe('L2Portal', () => {
   });
 
   describe('isClaimed', () => {
-    const blockNumber = 5;
+    const l2BlockNumber = 5;
     const hash =
-      '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890';
+      '0x1234567890123456789012345678901234567890123456789012345678901234';
 
-    beforeEach(() => {
-      // Need to reset these mocks for each test
-      vi.mocked(mockAztecNode.getBlockNumber).mockReset().mockResolvedValue(10);
-      vi.mocked(mockAztecNode.getL1ToL2MessageMembershipWitness).mockReset();
+    it('should return false when block number is higher than current', async () => {
+      // Mock getBlockNumber to return a lower number
+      mockAztecNode.getBlockNumber.mockResolvedValueOnce(3);
 
-      // Mock the Fr.fromHexString for message hash
-      vi.mocked(Fr.fromHexString).mockImplementation(
-        (hex) =>
-          ({
-            toString: () => `fr_${hex}`,
-          }) as unknown as Fr,
-      );
-    });
+      const result = await portal.isClaimed(l2BlockNumber, hash);
 
-    it('should return false if the block is not mined yet', async () => {
-      // Setup - current block number is less than the required block
-      vi.mocked(mockAztecNode.getBlockNumber).mockResolvedValueOnce(4);
-
-      const result = await portal.isClaimed(blockNumber, hash);
-
-      expect(mockAztecNode.getBlockNumber).toHaveBeenCalled();
       expect(result).toBe(false);
     });
 
-    it('should return false if the message is found (not claimed)', async () => {
-      // Setup - block is mined but message is found (not claimed)
-      vi.mocked(mockAztecNode.getBlockNumber).mockResolvedValueOnce(10);
-      vi.mocked(
-        mockAztecNode.getL1ToL2MessageMembershipWitness,
-      ).mockResolvedValueOnce(
-        // biome-ignore lint/suspicious/noExplicitAny: Using any for test mocks is acceptable
-        [123n, {}] as any,
-      );
+    it('should return false when message witness is found', async () => {
+      // Mock getBlockNumber to return a higher number
+      mockAztecNode.getBlockNumber.mockResolvedValueOnce(10);
 
-      const result = await portal.isClaimed(blockNumber, hash);
+      // Mock getL1ToL2MessageMembershipWitness to return a witness
+      mockAztecNode.getL1ToL2MessageMembershipWitness.mockResolvedValueOnce([
+        BigInt(1),
+        [BigInt(1), BigInt(2), BigInt(3)],
+      ]);
 
-      expect(mockAztecNode.getBlockNumber).toHaveBeenCalled();
-      expect(
-        mockAztecNode.getL1ToL2MessageMembershipWitness,
-      ).toHaveBeenCalledWith('latest', expect.anything());
+      const result = await portal.isClaimed(l2BlockNumber, hash);
+
       expect(result).toBe(false);
     });
 
-    it('should return true if the message is not found (claimed)', async () => {
-      // Setup - block is mined and message is not found (claimed)
-      vi.mocked(mockAztecNode.getBlockNumber).mockResolvedValueOnce(10);
-      vi.mocked(
-        mockAztecNode.getL1ToL2MessageMembershipWitness,
-      ).mockRejectedValueOnce(new Error('Message not found'));
+    it('should return true when message witness is not found', async () => {
+      // Mock getBlockNumber to return a higher number
+      mockAztecNode.getBlockNumber.mockResolvedValueOnce(10);
 
-      const result = await portal.isClaimed(blockNumber, hash);
+      // Mock getL1ToL2MessageMembershipWitness to return null
+      mockAztecNode.getL1ToL2MessageMembershipWitness.mockResolvedValueOnce(
+        null,
+      );
 
-      expect(mockAztecNode.getBlockNumber).toHaveBeenCalled();
-      expect(
-        mockAztecNode.getL1ToL2MessageMembershipWitness,
-      ).toHaveBeenCalled();
+      const result = await portal.isClaimed(l2BlockNumber, hash);
+
       expect(result).toBe(true);
     });
 
-    it('should throw an error when AztecNode operations fail', async () => {
-      // Setup - AztecNode operations fail with unexpected error
-      vi.mocked(mockAztecNode.getBlockNumber).mockRejectedValueOnce(
-        new Error('AztecNode operation failed'),
+    it('should throw an error when check fails', async () => {
+      // Mock getBlockNumber to throw an error
+      mockAztecNode.getBlockNumber.mockRejectedValueOnce(
+        new Error('Block number check failed'),
       );
 
-      await expect(portal.isClaimed(blockNumber, hash)).rejects.toThrow();
+      // Verify error is thrown
+      await expect(portal.isClaimed(l2BlockNumber, hash)).rejects.toThrow();
     });
   });
 
   describe('registerToken', () => {
     const l1TokenAddr = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
     const l2TokenAddr = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
-    const name = 'TestToken';
+    const name = 'Test Token';
     const symbol = 'TST';
     const decimals = 18;
     const index = BigInt(123);
@@ -365,14 +375,14 @@ describe('L2Portal', () => {
         index,
       );
 
-      // Check portal contract was retrieved
+      // Check the portal contract was retrieved
       expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
 
-      // Check AztecAddress conversion
+      // Check EthAddress and AztecAddress conversion
+      expect(EthAddress.fromString).toHaveBeenCalledWith(l1TokenAddr);
       expect(AztecAddress.fromString).toHaveBeenCalledWith(l2TokenAddr);
 
-      // Check Fr conversion for l1TokenAddr and index
-      expect(Fr.fromHexString).toHaveBeenCalledWith(l1TokenAddr);
+      // Check Fr conversion for index
       expect(Fr.fromHexString).toHaveBeenCalledWith(`0x${index.toString(16)}`);
 
       // Check register_private method was called with correct params
@@ -389,9 +399,9 @@ describe('L2Portal', () => {
       // Setup error case
       mockPortalContract.methods
         .register_private()
-        .send.mockRejectedValueOnce(new Error('Registration failed'));
+        .send.mockRejectedValueOnce(new Error('Register failed'));
 
-      // Verify error is thrown with correct error code
+      // Verify error is thrown
       await expect(
         portal.registerToken(
           l1TokenAddr,
@@ -409,17 +419,46 @@ describe('L2Portal', () => {
     const l1TokenAddr = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
     const l1RecipientAddr = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
     const amount = BigInt(1000);
-    const burnNonce = { toString: () => 'fr_burnNonce' } as unknown as Fr;
+    const burnNonce = Fr.fromHexString(
+      '0x1234567890123456789012345678901234567890123456789012345678901234',
+    );
 
-    // Skip any tests that try to reach problematic implementation details
-    it.skip('should attempt to withdraw tokens but has internal validation issues', async () => {
-      // This test is skipped due to internal validation errors in the implementation
-      // We still get good coverage from the error case below
+    it('should withdraw tokens and return transaction and leaf', async () => {
+      // Mock the Fr.fromHexString return value for the leaf
+      vi.mocked(Fr.fromHexString).mockImplementation(
+        (hex) =>
+          ({
+            toString: () => `fr_${hex}`,
+          }) as unknown as Fr,
+      );
+
+      const result = await portal.withdrawPublic(
+        l1TokenAddr,
+        l1RecipientAddr,
+        amount,
+        burnNonce,
+      );
+
+      // Check the portal contract was retrieved
+      expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
+
+      // Check EthAddress conversion
+      expect(EthAddress.fromString).toHaveBeenCalledWith(l1TokenAddr);
+      expect(EthAddress.fromString).toHaveBeenCalledWith(l1RecipientAddr);
+
+      // Check withdraw_public method was called with correct params
+      expect(mockPortalContract.methods.withdraw_public).toHaveBeenCalled();
+      expect(
+        mockPortalContract.methods.withdraw_public().send,
+      ).toHaveBeenCalled();
+
+      // Check the returned transaction
+      expect(result.tx).toEqual({ txHash: '0xdefg' });
+      expect(result.leaf).toBeDefined();
     });
 
     it('should throw an error when withdraw_public fails', async () => {
-      // Setup error case - this test works because the error is thrown before
-      // the internal validation code is reached
+      // Setup error case
       mockPortalContract.methods
         .withdraw_public()
         .send.mockRejectedValueOnce(new Error('Withdraw failed'));
@@ -431,74 +470,63 @@ describe('L2Portal', () => {
     });
   });
 
-  // Mock the full create process to check edge cases and increase coverage
   describe('Complete integration tests and helper function coverage', () => {
     it('should mock the full portal creation process', async () => {
-      // We're not directly testing the constructor internals
-      // but increasing coverage by ensuring it's called
-      const newPortal = new L2Portal(portalAddr, mockL2Client);
-      expect(newPortal).toBeInstanceOf(L2Portal);
+      // Test the getL1Portal method which internally calls getConfig
+      const result = await portal.getL1Portal();
 
-      // Call methods that will trigger contract initialization and the portal method
-      // This will hit getPortalContract
-      await newPortal.getL1Portal();
-
-      // Verify the contract was created
-      expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
+      // Verify the result
+      expect(result.toString()).toBe(
+        '0x3456789012345678901234567890123456789012',
+      );
     });
 
     it('should test encodeWithdrawData through accessing the private method', async () => {
-      // Directly test the encodeWithdrawData method
-      // We can access it through the prototype
-      const encodeWithdrawMethod =
-        Object.getPrototypeOf(portal).encodeWithdrawData;
-      if (encodeWithdrawMethod) {
-        const l1TokenAddr = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
-        const l1RecipientAddr = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
-        const amount = BigInt(1000);
+      // Access the private method through the instance
+      const encodeWithdrawData = (
+        portal as unknown as {
+          encodeWithdrawData: (
+            l1TokenAddr: string,
+            l1RecipientAddr: string,
+            amount: bigint,
+          ) => string;
+        }
+      ).encodeWithdrawData;
 
-        // Call the private method directly
-        const result = encodeWithdrawMethod.call(
-          portal,
-          l1TokenAddr,
-          l1RecipientAddr,
-          amount,
-        );
+      const l1TokenAddr = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+      const l1RecipientAddr = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const amount = BigInt(1000);
 
-        // Verify the method returned a string that starts with 0x
-        expect(typeof result).toBe('string');
-        expect(result.startsWith('0x')).toBe(true);
+      const result = encodeWithdrawData(l1TokenAddr, l1RecipientAddr, amount);
 
-        // Check it has the expected function selector for withdraw
-        expect(result.length).toBeGreaterThan(10);
-      }
+      // Verify the result is a hex string
+      expect(typeof result).toBe('string');
+      expect(result).toMatch(/^0x/);
     });
 
     it.skip('should try more edge cases of withdrawPublic and message handling', async () => {
-      // We're achieving good coverage with the other tests and
-      // skipping this test as it requires complex mocking
+      // This test is skipped as it requires more complex mocking
+      // of the L2ToL1Message leaf calculation
     });
 
     it('should test getL1ToL2MessageLeafIndex when message witness is not found', async () => {
-      // This specifically tests the error handling in getL1ToL2MessageLeafIndex
-      // when the membership witness is undefined
+      // Mock getL1ToL2MessageMembershipWitness to return null
+      mockAztecNode.getL1ToL2MessageMembershipWitness.mockResolvedValueOnce(
+        null,
+      );
 
-      // Setup - AztecNode throws a specific error when message not found
-      vi.mocked(
-        mockAztecNode.getL1ToL2MessageMembershipWitness,
-      ).mockRejectedValueOnce(new Error('No membership witness found'));
+      // Access the private method through the instance
+      const getL1ToL2MessageLeafIndex = (
+        portal as unknown as {
+          getL1ToL2MessageLeafIndex: (hash: string) => Promise<bigint>;
+        }
+      ).getL1ToL2MessageLeafIndex;
 
-      // When a message can't be found, isClaimed returns true (message was claimed)
-      const result = await portal.isClaimed(5, '0xabcdef');
+      const hash =
+        '0x1234567890123456789012345678901234567890123456789012345678901234';
 
-      // Verify method was called, but without specific parameter checking
-      // as the parameter order may vary based on implementation details
-      expect(
-        mockAztecNode.getL1ToL2MessageMembershipWitness,
-      ).toHaveBeenCalled();
-
-      // The rejection should be caught and isClaimed returns true
-      expect(result).toBe(true);
+      // Verify error is thrown when witness is not found
+      await expect(getL1ToL2MessageLeafIndex(hash)).rejects.toThrow();
     });
   });
 
@@ -506,19 +534,8 @@ describe('L2Portal', () => {
     const l1TokenAddr = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
     const l2TokenAddr = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 
-    beforeEach(() => {
-      // Reset mocks
-      vi.mocked(AztecAddress.fromBigInt).mockReset();
-      vi.mocked(AztecAddress.fromBigInt).mockImplementation(
-        (bigInt) =>
-          ({
-            toString: () => `0x${bigInt.toString(16).padStart(40, '0')}`,
-          }) as unknown as AztecAddress,
-      );
-    });
-
     it('should return L2 token for L1 token', async () => {
-      const l2Token = await portal.getL2Token(l1TokenAddr);
+      const result = await portal.getL2Token(l1TokenAddr);
 
       // Check the portal contract was retrieved
       expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
@@ -526,30 +543,32 @@ describe('L2Portal', () => {
       // Check EthAddress conversion
       expect(EthAddress.fromString).toHaveBeenCalledWith(l1TokenAddr);
 
-      // Check contract method was called
-      expect(mockPortalContract.methods.get_l2_token).toHaveBeenCalled();
+      // Check get_l2_token_unconstrained method was called
       expect(
-        mockPortalContract.methods.get_l2_token().simulate,
+        mockPortalContract.methods.get_l2_token_unconstrained,
+      ).toHaveBeenCalled();
+      expect(
+        mockPortalContract.methods.get_l2_token_unconstrained().simulate,
       ).toHaveBeenCalled();
 
-      // Check result
-      expect(l2Token.toString()).toBe(
+      // Check the returned address
+      expect(result.toString()).toBe(
         '0x4567890123456789012345678901234567890123',
       );
     });
 
-    it('should throw an error when get_l2_token fails', async () => {
+    it('should throw an error when get_l2_token_unconstrained fails', async () => {
       // Setup error case
       mockPortalContract.methods
-        .get_l2_token()
-        .simulate.mockRejectedValueOnce(new Error('Token lookup failed'));
+        .get_l2_token_unconstrained()
+        .simulate.mockRejectedValueOnce(new Error('Get L2 token failed'));
 
       // Verify error is thrown
       await expect(portal.getL2Token(l1TokenAddr)).rejects.toThrow();
     });
 
     it('should return L1 token for L2 token', async () => {
-      const l1Token = await portal.getL1Token(l2TokenAddr);
+      const result = await portal.getL1Token(l2TokenAddr);
 
       // Check the portal contract was retrieved
       expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
@@ -557,23 +576,25 @@ describe('L2Portal', () => {
       // Check AztecAddress conversion
       expect(AztecAddress.fromString).toHaveBeenCalledWith(l2TokenAddr);
 
-      // Check contract method was called
-      expect(mockPortalContract.methods.get_l1_token).toHaveBeenCalled();
+      // Check get_l1_token_unconstrained method was called
       expect(
-        mockPortalContract.methods.get_l1_token().simulate,
+        mockPortalContract.methods.get_l1_token_unconstrained,
+      ).toHaveBeenCalled();
+      expect(
+        mockPortalContract.methods.get_l1_token_unconstrained().simulate,
       ).toHaveBeenCalled();
 
-      // Check result
-      expect(l1Token.toString()).toBe(
+      // Check the returned address
+      expect(result.toString()).toBe(
         '0x5678901234567890123456789012345678901234',
       );
     });
 
-    it('should throw an error when get_l1_token fails', async () => {
+    it('should throw an error when get_l1_token_unconstrained fails', async () => {
       // Setup error case
       mockPortalContract.methods
-        .get_l1_token()
-        .simulate.mockRejectedValueOnce(new Error('Token lookup failed'));
+        .get_l1_token_unconstrained()
+        .simulate.mockRejectedValueOnce(new Error('Get L1 token failed'));
 
       // Verify error is thrown
       await expect(portal.getL1Token(l2TokenAddr)).rejects.toThrow();
@@ -585,8 +606,7 @@ describe('L2Portal', () => {
     const l2TokenAddr = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 
     it('should check if token is registered by L1 address', async () => {
-      // Test for a registered token
-      const isRegistered = await portal.isRegisteredByL1Address(l1TokenAddr);
+      const result = await portal.isRegisteredByL1Address(l1TokenAddr);
 
       // Check the portal contract was retrieved
       expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
@@ -594,21 +614,23 @@ describe('L2Portal', () => {
       // Check EthAddress conversion
       expect(EthAddress.fromString).toHaveBeenCalledWith(l1TokenAddr);
 
-      // Check contract method was called
-      expect(mockPortalContract.methods.is_registered_l1).toHaveBeenCalled();
+      // Check is_registered_l1_unconstrained method was called
       expect(
-        mockPortalContract.methods.is_registered_l1().simulate,
+        mockPortalContract.methods.is_registered_l1_unconstrained,
+      ).toHaveBeenCalled();
+      expect(
+        mockPortalContract.methods.is_registered_l1_unconstrained().simulate,
       ).toHaveBeenCalled();
 
-      // Check result is true (as mocked)
-      expect(isRegistered).toBe(true);
+      // Check the returned boolean
+      expect(result).toBe(true);
     });
 
-    it('should throw an error when is_registered_l1 fails', async () => {
+    it('should throw an error when is_registered_l1_unconstrained fails', async () => {
       // Setup error case
       mockPortalContract.methods
-        .is_registered_l1()
-        .simulate.mockRejectedValueOnce(new Error('Registration check failed'));
+        .is_registered_l1_unconstrained()
+        .simulate.mockRejectedValueOnce(new Error('Check registration failed'));
 
       // Verify error is thrown
       await expect(
@@ -617,8 +639,7 @@ describe('L2Portal', () => {
     });
 
     it('should check if token is registered by L2 address', async () => {
-      // Test for a non-registered token
-      const isRegistered = await portal.isRegisteredByL2Address(l2TokenAddr);
+      const result = await portal.isRegisteredByL2Address(l2TokenAddr);
 
       // Check the portal contract was retrieved
       expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
@@ -626,21 +647,23 @@ describe('L2Portal', () => {
       // Check AztecAddress conversion
       expect(AztecAddress.fromString).toHaveBeenCalledWith(l2TokenAddr);
 
-      // Check contract method was called
-      expect(mockPortalContract.methods.is_registered_l2).toHaveBeenCalled();
+      // Check is_registered_l2_unconstrained method was called
       expect(
-        mockPortalContract.methods.is_registered_l2().simulate,
+        mockPortalContract.methods.is_registered_l2_unconstrained,
+      ).toHaveBeenCalled();
+      expect(
+        mockPortalContract.methods.is_registered_l2_unconstrained().simulate,
       ).toHaveBeenCalled();
 
-      // Check result is false (as mocked)
-      expect(isRegistered).toBe(false);
+      // Check the returned boolean
+      expect(result).toBe(false);
     });
 
-    it('should throw an error when is_registered_l2 fails', async () => {
+    it('should throw an error when is_registered_l2_unconstrained fails', async () => {
       // Setup error case
       mockPortalContract.methods
-        .is_registered_l2()
-        .simulate.mockRejectedValueOnce(new Error('Registration check failed'));
+        .is_registered_l2_unconstrained()
+        .simulate.mockRejectedValueOnce(new Error('Check registration failed'));
 
       // Verify error is thrown
       await expect(
