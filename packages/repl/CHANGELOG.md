@@ -1,5 +1,15 @@
 # @turnstile-portal/repl
 
+## 0.3.1
+
+### Patch Changes
+
+- 3d56727: Add contract registration functionality & config system
+- Updated dependencies [3d56727]
+  - @turnstile-portal/aztec-artifacts@0.3.1
+  - @turnstile-portal/turnstile-dev@0.3.1
+  - @turnstile-portal/turnstile.js@0.3.1
+
 ## 0.3.0
 
 ### Minor Changes
