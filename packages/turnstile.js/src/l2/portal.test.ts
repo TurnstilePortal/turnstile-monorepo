@@ -6,6 +6,7 @@ import {
   type AztecNode,
   type PXE,
   type Wallet,
+  FeeJuicePaymentMethod,
 } from '@aztec/aztec.js';
 import { PortalContract } from '@turnstile-portal/aztec-artifacts';
 import { L2Portal } from './portal.js';
@@ -123,6 +124,10 @@ describe('L2Portal', () => {
       getNode: vi.fn().mockReturnValue(mockAztecNode),
       getWallet: vi.fn().mockReturnValue(mockWallet),
       getAddress: vi.fn().mockReturnValue(walletAddr),
+      getFeeOpts: vi.fn().mockReturnValue({
+        fee: 0,
+        paymentMethod: new FeeJuicePaymentMethod(walletAddr),
+      }),
     };
 
     // Mock EthAddress.fromField to return proper EthAddress objects

@@ -1,5 +1,6 @@
 import type { Hex } from 'viem';
 import type { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
+import { L2Portal } from '@turnstile-portal/turnstile.js';
 import { EthAddress, type AztecAddress, type Fr } from '@aztec/aztec.js';
 import { SerializableContractInstance } from '@aztec/stdlib/contract';
 import type { DeploymentResult } from '../config/types.js';
@@ -10,11 +11,7 @@ import {
   deployERC20TokenPortal,
   setL2PortalOnL1Portal,
 } from './deploy/l1Portal.js';
-import {
-  deployTurnstileTokenPortal,
-  deployShieldGateway,
-  registerTurnstileTokenContractClass,
-} from './deploy/l2Portal.js';
+import { registerTurnstileTokenContractClass } from './deploy/l2Portal.js';
 
 export interface DeploymentOptions {
   allowListAdmin?: Hex;
@@ -65,13 +62,11 @@ export async function deployL2Contracts(
   console.log('Deploying L2 Portal...');
   const tokenContractClassID =
     await registerTurnstileTokenContractClass(l2Client);
-  const shieldGateway = await deployShieldGateway(l2Client);
 
-  const portal = await deployTurnstileTokenPortal(
+  const { shieldGateway, portal } = await L2Portal.deploy(
     l2Client,
     EthAddress.fromString(l1Portal),
     tokenContractClassID,
-    shieldGateway.address,
   );
 
   // Register L2 Portal with L1 Portal

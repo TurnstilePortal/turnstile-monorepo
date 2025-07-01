@@ -23,6 +23,12 @@ export interface IL2Client {
    * @returns The account address
    */
   getAddress(): AztecAddress;
+
+  /**
+   * Gets the fee options
+   * @returns The fee options
+   */
+  getFeeOpts(): UserFeeOptions;
 }
 
 /**
@@ -66,6 +72,10 @@ export class L2Client implements IL2Client {
     return this.wallet.getAddress();
   }
 
+  /**
+   * Gets the fee options
+   * @returns The fee options
+   */
   getFeeOpts(): UserFeeOptions {
     // TODO: make this configurable
     return {

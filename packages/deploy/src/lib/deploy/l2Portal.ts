@@ -1,62 +1,14 @@
-import type { AztecAddress, Fr, EthAddress, Wallet } from '@aztec/aztec.js';
-import {
-  getContractClassFromArtifact,
-  FeeJuicePaymentMethod,
-  TxStatus,
-} from '@aztec/aztec.js';
+import type { Fr } from '@aztec/aztec.js';
+import { getContractClassFromArtifact } from '@aztec/aztec.js';
 import type { L2Client } from '@turnstile-portal/turnstile.js';
 
-import {
-  PortalContract,
-  ShieldGatewayContract,
-  TokenContractArtifact,
-} from '@turnstile-portal/aztec-artifacts';
-
-export async function deployShieldGateway(
-  l2ClientAdmin: L2Client,
-): Promise<ShieldGatewayContract> {
-  console.log('Deploying Shield Gateway...');
-  const shieldGateway = await ShieldGatewayContract.deploy(
-    l2ClientAdmin.getWallet(),
-  )
-    .send({ fee: l2ClientAdmin.getFeeOpts() })
-    .deployed();
-  console.log(`Shield Gateway deployed at ${shieldGateway.address.toString()}`);
-
-  return shieldGateway;
-}
-
-export async function deployTurnstileTokenPortal(
-  l2Client: L2Client,
-  l1Portal: EthAddress,
-  tokenContractClass: Fr,
-  ShieldGatewayAddr: AztecAddress,
-): Promise<PortalContract> {
-  const portal = await PortalContract.deploy(
-    l2Client.getWallet(),
-    l1Portal,
-    tokenContractClass,
-    ShieldGatewayAddr,
-  )
-    .send({ fee: l2Client.getFeeOpts() })
-    .deployed();
-  console.log(`Portal deployed at ${portal.address.toString()}`);
-  return portal;
-}
+import { TokenContractArtifact } from '@turnstile-portal/aztec-artifacts';
 
 export async function registerTurnstileTokenContractClass(
   l2Client: L2Client,
 ): Promise<Fr> {
   console.log('Registering Turnstile Token contract class...');
   await l2Client.getWallet().registerContractClass(TokenContractArtifact);
-  // const tx = await registerContractClass(
-  //   l2Client.getWallet(),
-  //   TokenContractArtifact,
-  // );
-  // const receipt = await tx.send({ fee: l2Client.getFeeOpts() }).wait();
-  // if (receipt.status !== TxStatus.SUCCESS) {
-  //   throw new Error(`Failed to register contract class: ${receipt}`);
-  // }
   const tokenContractClass = await getContractClassFromArtifact(
     TokenContractArtifact,
   );

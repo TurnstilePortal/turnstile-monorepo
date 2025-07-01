@@ -546,6 +546,7 @@ export class L2Token implements IL2Token {
         .send({
           universalDeploy: true,
           contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
+          fee: client.getFeeOpts(),
         })
         .deployed();
 

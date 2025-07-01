@@ -2,19 +2,17 @@ import {
   Fr,
   EthAddress,
   AztecAddress,
-  type IntentAction,
   type SentTx,
-  computeAuthWitMessageHash,
   getContractInstanceFromDeployParams,
   PublicKeys,
-  ContractFunctionInteraction,
-  ProtocolContractAddress,
 } from '@aztec/aztec.js';
 import {
   PortalContract,
   PortalContractArtifact,
+  ShieldGatewayContract,
   ShieldGatewayContractArtifact,
 } from '@turnstile-portal/aztec-artifacts';
+
 import {
   ErrorCode,
   createL2Error,
@@ -23,11 +21,6 @@ import {
 } from '../errors.js';
 import type { IL2Client } from './client.js';
 import { L2_CONTRACT_DEPLOYMENT_SALT } from './constants.js';
-import type {
-  FunctionAbi,
-  FunctionType,
-  ABIParameterVisibility,
-} from '@aztec/stdlib/abi';
 
 export type PortalConfig = {
   l1_portal: EthAddress;
@@ -183,10 +176,10 @@ export class L2Portal implements IL2Portal {
   }
 
   /**
-   * Gets the portal contract
+   * Gets the portal contract instance
    * @returns The portal contract
    */
-  private async getPortalContract(): Promise<PortalContract> {
+  async getInstance(): Promise<PortalContract> {
     if (!this.portal) {
       this.portal = await PortalContract.at(
         this.portalAddr,
@@ -202,7 +195,7 @@ export class L2Portal implements IL2Portal {
     }
 
     try {
-      const portal = await this.getPortalContract();
+      const portal = await this.getInstance();
       const config = await portal.methods.get_config_public().simulate();
       this.config = {
         l1_portal: EthAddress.fromField(new Fr(config.l1_portal.inner)),
@@ -244,7 +237,7 @@ export class L2Portal implements IL2Portal {
     index: bigint,
   ): Promise<SentTx> {
     try {
-      const portal = await this.getPortalContract();
+      const portal = await this.getInstance();
       return await portal.methods
         .claim_public(
           EthAddress.fromString(l1TokenAddr),
@@ -283,7 +276,7 @@ export class L2Portal implements IL2Portal {
     index: bigint,
   ): Promise<SentTx> {
     try {
-      const portal = await this.getPortalContract();
+      const portal = await this.getInstance();
       return await portal.methods
         .claim_shielded(
           EthAddress.fromString(l1TokenAddr),
@@ -359,7 +352,7 @@ export class L2Portal implements IL2Portal {
     index: bigint,
   ): Promise<SentTx> {
     try {
-      const portal = await this.getPortalContract();
+      const portal = await this.getInstance();
       return await portal.methods
         .register_private(
           EthAddress.fromString(l1TokenAddr),
@@ -403,7 +396,7 @@ export class L2Portal implements IL2Portal {
     burnNonce: Fr,
   ): Promise<{ tx: SentTx; leaf: Fr }> {
     try {
-      const portal = await this.getPortalContract();
+      const portal = await this.getInstance();
       const from = this.client.getAddress();
 
       const l2TokenAddr = await portal.methods
@@ -449,7 +442,7 @@ export class L2Portal implements IL2Portal {
    */
   async getL2Token(l1TokenAddr: string): Promise<AztecAddress> {
     try {
-      const portal = await this.getPortalContract();
+      const portal = await this.getInstance();
       const result = await portal.methods
         .get_l2_token_unconstrained(EthAddress.fromString(l1TokenAddr))
         .simulate();
@@ -471,7 +464,7 @@ export class L2Portal implements IL2Portal {
    */
   async getL1Token(l2TokenAddr: string): Promise<EthAddress> {
     try {
-      const portal = await this.getPortalContract();
+      const portal = await this.getInstance();
       const result = await portal.methods
         .get_l1_token_unconstrained(AztecAddress.fromString(l2TokenAddr))
         .simulate();
@@ -495,7 +488,7 @@ export class L2Portal implements IL2Portal {
    */
   async isRegisteredByL1Address(l1TokenAddr: string): Promise<boolean> {
     try {
-      const portal = await this.getPortalContract();
+      const portal = await this.getInstance();
       return await portal.methods
         .is_registered_l1_unconstrained(EthAddress.fromString(l1TokenAddr))
         .simulate();
@@ -516,7 +509,7 @@ export class L2Portal implements IL2Portal {
    */
   async isRegisteredByL2Address(l2TokenAddr: string): Promise<boolean> {
     try {
-      const portal = await this.getPortalContract();
+      const portal = await this.getInstance();
       return await portal.methods
         .is_registered_l2_unconstrained(AztecAddress.fromString(l2TokenAddr))
         .simulate();
@@ -683,6 +676,7 @@ export class L2Portal implements IL2Portal {
     const instance = await getContractInstanceFromDeployParams(
       PortalContractArtifact,
       {
+        constructorArtifact: 'constructor',
         constructorArgs: [l1Portal, tokenContractClassId, shieldGateway],
         salt: L2_CONTRACT_DEPLOYMENT_SALT,
         deployer: AztecAddress.ZERO,
@@ -757,6 +751,26 @@ export class L2Portal implements IL2Portal {
     }
   }
 
+  static async deployShieldGateway(
+    client: IL2Client,
+  ): Promise<ShieldGatewayContract> {
+    console.debug('Deploying Shield Gateway...');
+    const shieldGateway = await ShieldGatewayContract.deploy(client.getWallet())
+      .send({
+        universalDeploy: true,
+        contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
+        fee: client.getFeeOpts(),
+      })
+      .deployed();
+
+    console.debug(
+      'Shield Gateway deployed at',
+      shieldGateway.address.toString(),
+    );
+
+    return shieldGateway;
+  }
+
   /**
    * Deploys a new portal contract
    * @param client The L2 client
@@ -769,23 +783,35 @@ export class L2Portal implements IL2Portal {
     client: IL2Client,
     l1PortalAddress: EthAddress,
     tokenContractClassId: Fr,
-    shieldGateway: AztecAddress,
-  ): Promise<L2Portal> {
+    shieldGateway?: ShieldGatewayContract,
+  ): Promise<{ portal: PortalContract; shieldGateway: ShieldGatewayContract }> {
     try {
       const wallet = client.getWallet();
+
+      if (!shieldGateway) {
+        // biome-ignore lint/style/noParameterAssign: Only assigning if not provided
+        shieldGateway = await L2Portal.deployShieldGateway(client);
+      }
+
+      console.debug('Deploying L2 Portal...');
       const portal = await PortalContract.deploy(
         wallet,
         l1PortalAddress,
         tokenContractClassId,
-        shieldGateway,
+        shieldGateway.address,
       )
         .send({
           universalDeploy: true,
           contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
+          fee: client.getFeeOpts(),
         })
         .deployed();
+      console.debug(`Portal deployed at ${portal.address.toString()}`);
 
-      return new L2Portal(portal.address, client);
+      return {
+        portal,
+        shieldGateway,
+      };
     } catch (error) {
       throw createL2Error(
         ErrorCode.L2_DEPLOYMENT,
