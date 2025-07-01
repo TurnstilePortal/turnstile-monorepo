@@ -1,5 +1,18 @@
 # @turnstile-portal/deploy
 
+## 0.3.3
+
+### Patch Changes
+
+- e455c25: fix(deploy): deploy contracts with correct salt & universal deploy
+- Updated dependencies [e455c25]
+  - @turnstile-portal/turnstile.js@0.3.3
+  - @turnstile-portal/turnstile-dev@0.3.3
+  - @turnstile-portal/aztec-artifacts@0.3.3
+  - @turnstile-portal/l1-artifacts-abi@0.3.3
+  - @turnstile-portal/l1-artifacts-bytecode@0.3.3
+  - @turnstile-portal/l1-artifacts-dev@0.3.3
+
 ## 0.3.2
 
 ### Patch Changes

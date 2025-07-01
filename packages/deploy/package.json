@@ -1,6 +1,6 @@
 {
   "name": "@turnstile-portal/deploy",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Turnstile Deployment Tools",
   "type": "module",
   "bin": {
