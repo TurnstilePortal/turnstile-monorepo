@@ -14,7 +14,11 @@ interface IAllowList {
     /// @param addr target address
     /// @param status the current status (`AllowList.Status`)
     /// @param prev the previous status
-    event StatusUpdated(address indexed addr, uint8 indexed status, uint8 indexed prev);
+    event StatusUpdated(
+        address indexed addr,
+        uint8 indexed status,
+        uint8 indexed prev
+    );
 
     /// Error when attempting to change an allow list status.
     /// @param addr target address
@@ -47,4 +51,8 @@ interface IAllowList {
     /// Reject a proposed address
     /// @param _addr address to reject
     function reject(address _addr) external;
+
+    /// Returns true if the address is an approver
+    /// @param _addr address to check
+    function isApprover(address _addr) external returns (bool);
 }

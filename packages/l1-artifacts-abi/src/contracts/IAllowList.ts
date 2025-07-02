@@ -72,6 +72,25 @@ export const IAllowListABI = [
   },
   {
     "type": "function",
+    "name": "isApprover",
+    "inputs": [
+      {
+        "name": "_addr",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "propose",
     "inputs": [
       {

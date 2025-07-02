@@ -4,14 +4,14 @@ import type {
   TransactionReceipt,
 } from 'viem';
 
-import { IAllowListABI } from '@turnstile-portal/l1-artifacts-abi';
+import { AllowListABI } from '@turnstile-portal/l1-artifacts-abi';
 import { IL1Client } from './client.js';
 
 /**
  * AllowList contract interface
  */
 export type AllowListContract = GetContractReturnType<
-  typeof IAllowListABI,
+  typeof AllowListABI,
   { public: PublicClient; wallet: WalletClient },
   Address
 >;
@@ -28,7 +28,7 @@ export function getL1AllowListContract(
 ): AllowListContract {
   return getContract({
     address: allowListAddr,
-    abi: IAllowListABI,
+    abi: AllowListABI,
     client: {
       public: client.getPublicClient(),
       wallet: client.getWalletClient()
@@ -123,5 +123,10 @@ export class L1AllowList {
     }
 
     return receipt;
+  }
+
+  async isApprover(address: Address): Promise<boolean> {
+    const allowList = this.contract;
+    return await allowList.read.isApprover([address]);
   }
 }
