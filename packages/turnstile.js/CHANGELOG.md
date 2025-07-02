@@ -1,5 +1,14 @@
 # @turnstile-portal/turnstile.js
 
+## 0.3.4
+
+### Patch Changes
+
+- fd8d634: feat(l1-artifacts): add AllowList contract helper to check if an address is an approver
+- Updated dependencies [fd8d634]
+  - @turnstile-portal/l1-artifacts-abi@0.3.4
+  - @turnstile-portal/aztec-artifacts@0.3.4
+
 ## 0.3.3
 
 ### Patch Changes

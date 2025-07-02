@@ -1,5 +1,11 @@
 # @turnstile-portal/l1-artifacts-abi
 
+## 0.3.4
+
+### Patch Changes
+
+- fd8d634: feat(l1-artifacts): add AllowList contract helper to check if an address is an approver
+
 ## 0.3.3
 
 ## 0.3.2
