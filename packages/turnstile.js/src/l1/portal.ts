@@ -67,6 +67,7 @@ export interface IL1Portal {
     txHash: Hash;
     messageHash: `0x${string}`;
     messageIndex: bigint;
+    l2BlockNumber: bigint;
   }>;
 
   /**
@@ -223,6 +224,7 @@ export class L1Portal implements IL1Portal {
     txHash: Hash;
     messageHash: `0x${string}`;
     messageIndex: bigint;
+    l2BlockNumber: bigint;
   }> {
     try {
       const walletClient = this.client.getWalletClient();
@@ -242,11 +244,14 @@ export class L1Portal implements IL1Portal {
 
       // Parse the deposit log
       const depositLog = this.parseDepositLog(receipt);
+      // Parse the message sent log so we can get the L2 block number
+      const messageSentLog = this.parseMessageSentLog(receipt);
 
       return {
         txHash: hash,
         messageHash: depositLog.hash,
         messageIndex: depositLog.index,
+        l2BlockNumber: messageSentLog.l2BlockNumber,
       };
     } catch (error) {
       throw createL1Error(
