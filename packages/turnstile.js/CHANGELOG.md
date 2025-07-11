@@ -1,5 +1,13 @@
 # @turnstile-portal/turnstile.js
 
+## 0.3.5
+
+### Patch Changes
+
+- 380dc52: feat: add l2BlockNumber to L1Portal.deposit() return value
+  - @turnstile-portal/aztec-artifacts@0.3.5
+  - @turnstile-portal/l1-artifacts-abi@0.3.5
+
 ## 0.3.4
 
 ### Patch Changes
