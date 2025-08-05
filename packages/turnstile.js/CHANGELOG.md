@@ -1,5 +1,13 @@
 # @turnstile-portal/turnstile.js
 
+## 0.3.6
+
+### Patch Changes
+
+- e6d1829: fix(turnstile.js): use AztecAddress.equal instead of ==
+  - @turnstile-portal/aztec-artifacts@0.3.6
+  - @turnstile-portal/l1-artifacts-abi@0.3.6
+
 ## 0.3.5
 
 ### Patch Changes
