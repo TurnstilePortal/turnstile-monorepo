@@ -583,7 +583,7 @@ export class L2Token implements IL2Token {
       },
     );
 
-    if (instance.address !== tokenAddress) {
+    if (!instance.address.equals(tokenAddress)) {
       throw createL2Error(
         ErrorCode.L2_GENERAL,
         `Token address mismatch: ${instance.address.toString()} !== ${tokenAddress.toString()}`,
