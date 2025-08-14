@@ -1,5 +1,16 @@
 # @turnstile-portal/turnstile-dev
 
+## 0.3.7
+
+### Patch Changes
+
+- Updated dependencies [ebadf60]
+  - @turnstile-portal/turnstile.js@0.3.7
+  - @turnstile-portal/aztec-artifacts@0.3.7
+  - @turnstile-portal/l1-artifacts-abi@0.3.7
+  - @turnstile-portal/l1-artifacts-bytecode@0.3.7
+  - @turnstile-portal/l1-artifacts-dev@0.3.7
+
 ## 0.3.6
 
 ### Patch Changes
