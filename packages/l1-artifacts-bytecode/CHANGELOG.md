@@ -1,5 +1,7 @@
 # @turnstile-portal/l1-artifacts-bytecode
 
+## 0.3.7
+
 ## 0.3.6
 
 ## 0.3.5

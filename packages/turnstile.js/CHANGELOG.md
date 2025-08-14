@@ -1,5 +1,13 @@
 # @turnstile-portal/turnstile.js
 
+## 0.3.7
+
+### Patch Changes
+
+- ebadf60: add deployment/transaction options support for l2 transactions
+  - @turnstile-portal/aztec-artifacts@0.3.7
+  - @turnstile-portal/l1-artifacts-abi@0.3.7
+
 ## 0.3.6
 
 ### Patch Changes
