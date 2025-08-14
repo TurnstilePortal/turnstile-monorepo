@@ -5,7 +5,7 @@
  * that leverages the new error codes and TurnstileError class.
  */
 
-import { ErrorCode, TurnstileError, type ErrorContext } from './errors.js';
+import { ErrorCode, type ErrorContext, TurnstileError } from './errors.js';
 
 /**
  * Type for validation predicates

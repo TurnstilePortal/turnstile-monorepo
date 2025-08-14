@@ -1,8 +1,8 @@
-import type { Hex } from 'viem';
+import { type AztecAddress, EthAddress, type Fr } from '@aztec/aztec.js';
+import { SerializableContractInstance } from '@aztec/stdlib/contract';
 import type { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
 import { L2Portal } from '@turnstile-portal/turnstile.js';
-import { EthAddress, type AztecAddress, type Fr } from '@aztec/aztec.js';
-import { SerializableContractInstance } from '@aztec/stdlib/contract';
+import type { Hex } from 'viem';
 import type { DeploymentResult } from '../config/types.js';
 
 // Import existing deployment functions

@@ -35,6 +35,7 @@ export interface IL1Client {
   /**
    * Gets the account address
    * @returns The account address
+   * @throws {TurnstileError} With ErrorCode.VALIDATION_ACCOUNT if wallet has no account
    */
   getAddress(): Address;
 }
@@ -86,6 +87,7 @@ export class L1Client implements IL1Client {
   /**
    * Gets the account address
    * @returns The account address
+   * @throws {TurnstileError} With ErrorCode.VALIDATION_ACCOUNT if wallet has no account
    */
   getAddress(): Address {
     validateWallet(this.wallet, 'Cannot get address: No account connected to wallet client');

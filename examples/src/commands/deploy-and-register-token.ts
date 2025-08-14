@@ -1,35 +1,31 @@
-import type { Command } from 'commander';
 import { randomBytes } from 'node:crypto';
 import {
   AztecAddress,
   EthAddress,
-  TxStatus,
   Fr,
   retryUntil,
+  TxStatus,
 } from '@aztec/aztec.js';
-import { http, getAddress, getContract, type Address, type Hex } from 'viem';
-import {
-  waitForL2Block,
-  getChain,
-  getClients,
-} from '@turnstile-portal/turnstile-dev';
-
-import { commonOpts } from '@turnstile-portal/deploy/commands';
-
-import {
-  L2Token,
-  L2Portal,
-  L1Portal,
-  L1AllowList,
-  TurnstileFactory,
-  type L2Client,
-  type L1Client,
-} from '@turnstile-portal/turnstile.js';
-
 import {
   InsecureMintableTokenABI,
   InsecureMintableTokenBytecode,
 } from '@turnstile-portal/l1-artifacts-dev';
+import {
+  L1AllowList,
+  type L1Client,
+  L1Portal,
+  type L2Client,
+  L2Portal,
+  L2Token,
+  TurnstileFactory,
+} from '@turnstile-portal/turnstile.js';
+import {
+  getChain,
+  getClients,
+  waitForL2Block,
+} from '@turnstile-portal/turnstile-dev';
+import type { Command } from 'commander';
+import { type Address, getAddress, getContract, type Hex, http } from 'viem';
 
 // Helper functions for token deployment and registration
 async function deployL1DevToken(
@@ -230,24 +226,38 @@ export function registerDeployAndRegisterToken(program: Command) {
     .description(
       'Deploy a token on L1 and register it with the Turnstile Portal on L1 & L2',
     )
-    .addOption(commonOpts.keys)
-    .addOption(commonOpts.aztecNode)
-    .addOption(commonOpts.l1Chain)
-    .addOption(commonOpts.rpc)
-    .addOption(commonOpts.deploymentData)
-    .action(async (options) => {
+    .action(async (_options, command) => {
       console.log('Starting token deployment and registration...');
 
-      // Get deployment data and setup clients
-      const factory = await TurnstileFactory.fromConfig(options.deploymentData);
+      // Get global and local options together
+      const allOptions = command.optsWithGlobals();
+      if (!allOptions.configDir) {
+        throw new Error(
+          'Config directory is required. Use -c or --config-dir option.',
+        );
+      }
+
+      // Load configuration from files
+      const configDir = allOptions.configDir;
+      const configPaths = await import('@turnstile-portal/deploy').then((m) =>
+        m.getConfigPaths(configDir),
+      );
+      const config = await import('@turnstile-portal/deploy').then((m) =>
+        m.loadDeployConfig(configPaths.configFile),
+      );
+
+      // Use the deployment data from config directory
+      const factory = await TurnstileFactory.fromConfig(
+        configPaths.deploymentFile,
+      );
       const deploymentData = factory.getDeploymentData();
       const { l1Client, l2Client } = await getClients(
-        { node: options.aztecNode },
+        { node: config.connection.aztec.node },
         {
-          chain: getChain(options.l1Chain),
-          transport: http(options.rpc),
+          chain: getChain(config.connection.ethereum.chainName),
+          transport: http(config.connection.ethereum.rpc),
         },
-        options.keys,
+        configPaths.keysFile,
       );
 
       // Configure token details

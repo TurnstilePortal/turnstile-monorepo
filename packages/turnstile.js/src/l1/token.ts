@@ -21,18 +21,21 @@ export interface IL1Token {
   /**
    * Gets the token symbol
    * @returns The token symbol
+   * @throws {TurnstileError} With ErrorCode.L1_TOKEN_OPERATION if the contract call fails
    */
   getSymbol(): Promise<string>;
 
   /**
    * Gets the token name
    * @returns The token name
+   * @throws {TurnstileError} With ErrorCode.L1_TOKEN_OPERATION if the contract call fails
    */
   getName(): Promise<string>;
 
   /**
    * Gets the token decimals
    * @returns The token decimals
+   * @throws {TurnstileError} With ErrorCode.L1_TOKEN_OPERATION if the contract call fails
    */
   getDecimals(): Promise<number>;
 
@@ -40,6 +43,7 @@ export interface IL1Token {
    * Gets the token balance of an address
    * @param address The address to check
    * @returns The token balance
+   * @throws {TurnstileError} With ErrorCode.L1_TOKEN_OPERATION if the contract call fails
    */
   balanceOf(address: Address): Promise<bigint>;
 
@@ -48,6 +52,7 @@ export interface IL1Token {
    * @param owner The owner address
    * @param spender The spender address
    * @returns The token allowance
+   * @throws {TurnstileError} With ErrorCode.L1_TOKEN_OPERATION if the contract call fails
    */
   allowance(owner: Address, spender: Address): Promise<bigint>;
 
@@ -56,6 +61,9 @@ export interface IL1Token {
    * @param spender The spender address
    * @param amount The amount to approve
    * @returns The transaction receipt
+   * @throws {TurnstileError} With ErrorCode.VALIDATION_ACCOUNT if wallet has no account
+   * @throws {TurnstileError} With ErrorCode.VALIDATION_AMOUNT if amount is not positive
+   * @throws {TurnstileError} With ErrorCode.L1_TOKEN_OPERATION if the transaction fails
    */
   approve(
     spender: Address,
@@ -67,6 +75,9 @@ export interface IL1Token {
    * @param to The recipient address
    * @param amount The amount to transfer
    * @returns The transaction receipt
+   * @throws {TurnstileError} With ErrorCode.VALIDATION_ACCOUNT if wallet has no account
+   * @throws {TurnstileError} With ErrorCode.VALIDATION_AMOUNT if amount is not positive
+   * @throws {TurnstileError} With ErrorCode.L1_TOKEN_OPERATION if the transaction fails
    */
   transfer(
     to: Address,
@@ -102,6 +113,7 @@ export class L1Token implements IL1Token {
   /**
    * Gets the token symbol
    * @returns The token symbol
+   * @throws {TurnstileError} With ErrorCode.L1_TOKEN_OPERATION if the contract call fails
    */
   async getSymbol(): Promise<string> {
     try {
@@ -123,6 +135,7 @@ export class L1Token implements IL1Token {
   /**
    * Gets the token name
    * @returns The token name
+   * @throws {TurnstileError} With ErrorCode.L1_TOKEN_OPERATION if the contract call fails
    */
   async getName(): Promise<string> {
     try {
@@ -144,6 +157,7 @@ export class L1Token implements IL1Token {
   /**
    * Gets the token decimals
    * @returns The token decimals
+   * @throws {TurnstileError} With ErrorCode.L1_TOKEN_OPERATION if the contract call fails
    */
   async getDecimals(): Promise<number> {
     try {
@@ -166,6 +180,7 @@ export class L1Token implements IL1Token {
    * Gets the token balance of an address
    * @param address The address to check
    * @returns The token balance
+   * @throws {TurnstileError} With ErrorCode.L1_TOKEN_OPERATION if the contract call fails
    */
   async balanceOf(address: Address): Promise<bigint> {
     try {
@@ -190,6 +205,7 @@ export class L1Token implements IL1Token {
    * @param owner The owner address
    * @param spender The spender address
    * @returns The token allowance
+   * @throws {TurnstileError} With ErrorCode.L1_TOKEN_OPERATION if the contract call fails
    */
   async allowance(owner: Address, spender: Address): Promise<bigint> {
     try {
@@ -215,6 +231,9 @@ export class L1Token implements IL1Token {
    * @param amount The amount to approve
    * @param options Transaction options
    * @returns The transaction receipt
+   * @throws {TurnstileError} With ErrorCode.VALIDATION_ACCOUNT if wallet has no account
+   * @throws {TurnstileError} With ErrorCode.VALIDATION_AMOUNT if amount is not positive
+   * @throws {TurnstileError} With ErrorCode.L1_TOKEN_OPERATION if the transaction fails
    */
   async approve(
     spender: Address,
@@ -255,6 +274,9 @@ export class L1Token implements IL1Token {
    * @param amount The amount to transfer
    * @param options Transaction options
    * @returns The transaction receipt
+   * @throws {TurnstileError} With ErrorCode.VALIDATION_ACCOUNT if wallet has no account
+   * @throws {TurnstileError} With ErrorCode.VALIDATION_AMOUNT if amount is not positive
+   * @throws {TurnstileError} With ErrorCode.L1_TOKEN_OPERATION if the transaction fails
    */
   async transfer(
     to: Address,

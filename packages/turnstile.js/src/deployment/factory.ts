@@ -1,34 +1,32 @@
 import {
   AztecAddress,
+  type AztecNode,
   EthAddress,
   Fr,
-  type AztecNode,
   type Wallet,
 } from '@aztec/aztec.js';
 import {
+  type Address,
   createPublicClient,
   createWalletClient,
   http,
-  type Address,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { sepolia } from 'viem/chains';
-
-import { L1Client, type IL1Client } from '../l1/client.js';
+import { createError, ErrorCode } from '../errors.js';
+import { L1AllowList } from '../l1/allowList.js';
+import { type IL1Client, L1Client } from '../l1/client.js';
 import { L1Portal } from '../l1/portal.js';
 import { L1Token } from '../l1/token.js';
-import { L1AllowList } from '../l1/allowList.js';
-import { L2Client, type IL2Client } from '../l2/client.js';
+import { type IL2Client, L2Client } from '../l2/client.js';
 import { L2Portal } from '../l2/portal.js';
 import { L2Token } from '../l2/token.js';
-
-import { ErrorCode, createError } from '../errors.js';
+import { loadConfig } from './config.js';
 import type {
-  TurnstileConfig,
   ConfigSource,
   DeploymentDataToken,
+  TurnstileConfig,
 } from './types.js';
-import { loadConfig } from './config.js';
 
 /**
  * Factory class for creating Turnstile objects with configuration
@@ -60,9 +58,9 @@ export class TurnstileFactory {
 
   /**
    * Creates an L1 client with the configured RPC endpoint
-   * @param privateKey The private key for the wallet
-   * @param customRpcUrl Optional custom RPC URL to override config
-   * @returns The L1 client
+   * @param privateKey The private key for the wallet (hex string with 0x prefix)
+   * @param customRpcUrl Optional custom RPC URL to override configuration
+   * @returns The L1 client instance for blockchain interactions
    */
   createL1Client(privateKey: string, customRpcUrl?: string): IL1Client {
     const rpcUrl = customRpcUrl || this.config.network.rpc.l1;
@@ -84,9 +82,9 @@ export class TurnstileFactory {
 
   /**
    * Creates an L2 client with the configured RPC endpoint
-   * @param node The AztecNode instance
-   * @param wallet The Aztec wallet instance
-   * @returns The L2 client
+   * @param node The AztecNode instance for L2 blockchain communication
+   * @param wallet The Aztec wallet instance for transaction signing
+   * @returns The L2 client instance for Aztec network interactions
    */
   createL2Client(node: AztecNode, wallet: Wallet): IL2Client {
     return new L2Client(node, wallet);
@@ -119,10 +117,11 @@ export class TurnstileFactory {
 
   /**
    * Creates an L1 token using the configured address or custom token info
-   * @param l1Client The L1 client
-   * @param tokenSymbol The token symbol to look up
-   * @param customTokenInfo Optional custom token information
-   * @returns The L1 token
+   * @param l1Client The L1 client instance for blockchain interactions
+   * @param tokenSymbol The token symbol to look up in configuration
+   * @param customTokenInfo Optional custom token information to override configuration
+   * @returns The L1 token instance
+   * @throws {TurnstileError} With ErrorCode.CONFIG_MISSING_PARAMETER if token not found in configuration
    */
   createL1Token(
     l1Client: IL1Client,
@@ -182,10 +181,11 @@ export class TurnstileFactory {
 
   /**
    * Creates an L2 token using the configured address or custom token info
-   * @param l2Client The L2 client
-   * @param tokenSymbol The token symbol to look up
-   * @param customTokenInfo Optional custom token information
-   * @returns The L2 token
+   * @param l2Client The L2 client instance for Aztec network interactions
+   * @param tokenSymbol The token symbol to look up in configuration
+   * @param customTokenInfo Optional custom token information to override configuration
+   * @returns The L2 token instance
+   * @throws {TurnstileError} With ErrorCode.CONFIG_MISSING_PARAMETER if token not found in configuration
    */
   async createL2Token(
     l2Client: IL2Client,
@@ -216,8 +216,9 @@ export class TurnstileFactory {
 
   /**
    * Gets the token information for a given symbol
-   * @param tokenSymbol The token symbol
-   * @returns The token information
+   * @param tokenSymbol The token symbol to look up in configuration
+   * @returns The token information containing L1 and L2 addresses
+   * @throws {TurnstileError} With ErrorCode.CONFIG_MISSING_PARAMETER if token not found in configuration
    */
   getTokenInfo(tokenSymbol: string): DeploymentDataToken {
     // Check custom tokens first

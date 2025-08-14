@@ -1,7 +1,6 @@
 .PHONY: init
 init:
 	forge install
-	pnpm install
 
 .PHONY: build
 build:
@@ -16,7 +15,7 @@ test:
 .PHONY: lint
 lint:
 	@echo "Linting L1 contracts..."
-	pnpm run lint
+	forge lint
 
 .PHONY: clean
 clean:

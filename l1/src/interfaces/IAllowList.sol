@@ -14,11 +14,7 @@ interface IAllowList {
     /// @param addr target address
     /// @param status the current status (`AllowList.Status`)
     /// @param prev the previous status
-    event StatusUpdated(
-        address indexed addr,
-        uint8 indexed status,
-        uint8 indexed prev
-    );
+    event StatusUpdated(address indexed addr, uint8 indexed status, uint8 indexed prev);
 
     /// Error when attempting to change an allow list status.
     /// @param addr target address

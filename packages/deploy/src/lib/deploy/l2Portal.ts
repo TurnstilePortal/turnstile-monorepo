@@ -1,8 +1,7 @@
 import type { Fr } from '@aztec/aztec.js';
 import { getContractClassFromArtifact } from '@aztec/aztec.js';
-import type { L2Client } from '@turnstile-portal/turnstile.js';
-
 import { TokenContractArtifact } from '@turnstile-portal/aztec-artifacts';
+import type { L2Client } from '@turnstile-portal/turnstile.js';
 
 export async function registerTurnstileTokenContractClass(
   l2Client: L2Client,

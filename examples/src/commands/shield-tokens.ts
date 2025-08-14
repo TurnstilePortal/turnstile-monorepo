@@ -1,14 +1,11 @@
-import type { Command } from 'commander';
 import { AztecAddress, TxStatus } from '@aztec/aztec.js';
-import { readKeyData, createL2Client } from '@turnstile-portal/turnstile-dev';
-
-import { commonOpts } from '@turnstile-portal/deploy/commands';
-
 import {
-  L2Token,
   type L2Client,
+  L2Token,
   TurnstileFactory,
 } from '@turnstile-portal/turnstile.js';
+import { createL2Client, readKeyData } from '@turnstile-portal/turnstile-dev';
+import type { Command } from 'commander';
 
 async function doShield(l2Client: L2Client, token: L2Token, amount: bigint) {
   const symbol = await token.getSymbol();
@@ -29,20 +26,56 @@ export function registerShieldTokens(program: Command) {
   return program
     .command('shield-tokens')
     .description('Shield tokens')
-    .addOption(commonOpts.keys)
-    .addOption(commonOpts.aztecNode)
-    .addOption(commonOpts.rpc)
-    .addOption(commonOpts.deploymentData)
-    .option('--token <symbol>', 'Token Symbol', 'TT1')
-    .option('--amount <a>', 'Amount', '10000')
-    .action(async (options) => {
-      const factory = await TurnstileFactory.fromConfig(options.deploymentData);
-      const tokenInfo = factory.getTokenInfo(options.token);
+    .option('--token <symbol>', 'Token symbol', 'TT1')
+    .option('--amount <amount>', 'Amount to shield', '10000')
+    .action(async (options, command) => {
+      // Get global and local options together
+      const allOptions = command.optsWithGlobals();
+      if (!allOptions.configDir) {
+        throw new Error(
+          'Config directory is required. Use -c or --config-dir option.',
+        );
+      }
+
+      // Load configuration from files
+      const configDir = allOptions.configDir;
+      const configPaths = await import('@turnstile-portal/deploy').then((m) =>
+        m.getConfigPaths(configDir),
+      );
+      const config = await import('@turnstile-portal/deploy').then((m) =>
+        m.loadDeployConfig(configPaths.configFile),
+      );
+
+      // Use the deployment data from config directory
+      const factory = await TurnstileFactory.fromConfig(
+        configPaths.deploymentFile,
+      );
+
+      // Get token from command option
+      const tokenSymbol = options.token;
+      const tokenInfo = factory.getTokenInfo(tokenSymbol);
       const tokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
 
-      const keyData = await readKeyData(options.keys);
-      const l2Client = await createL2Client(options.aztecNode, keyData);
+      const keyData = await readKeyData(configPaths.keysFile);
+      const l2Client = await createL2Client(
+        { node: config.connection.aztec.node },
+        keyData,
+      );
+
+      // Get amount from command option
       const amount = BigInt(options.amount);
+
+      // Ensure L2 Token is registered in the PXE
+      console.log(`Registering Token in PXE: ${tokenAddr.toString()}`);
+      await L2Token.register(
+        l2Client,
+        tokenAddr,
+        AztecAddress.fromString(factory.getDeploymentData().aztecPortal),
+        tokenInfo.name,
+        tokenInfo.symbol,
+        tokenInfo.decimals,
+      );
+
       const token = await L2Token.fromAddress(tokenAddr, l2Client);
       const startingBalance = await token.balanceOfPublic(
         l2Client.getAddress(),

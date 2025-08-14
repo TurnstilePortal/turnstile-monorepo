@@ -1,14 +1,10 @@
-import type { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
 import { AztecAddress } from '@aztec/aztec.js';
 import { SerializableContractInstance } from '@aztec/stdlib/contract';
+import type { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
 import type { TokenDeploymentResult } from '../config/types.js';
 
 // Import the existing token deployment functions
-import {
-  deployL1DevToken,
-  deployL2DevToken,
-  proposeL1DevToken,
-} from './deploy/devTokens.js';
+import { deployL1DevToken, deployL2DevToken } from './deploy/devTokens.js';
 
 // Standard token configurations
 export const DEV_TOKENS = {

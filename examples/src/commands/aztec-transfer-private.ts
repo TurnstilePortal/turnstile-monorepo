@@ -1,37 +1,29 @@
-import type { Command } from 'commander';
+import { getInitialTestAccounts } from '@aztec/accounts/testing';
 import {
-  createAztecNodeClient,
   AztecAddress,
+  createAztecNodeClient,
   Fr,
   TxStatus,
 } from '@aztec/aztec.js';
-import type { AztecNode, Wallet } from '@aztec/aztec.js';
-import { getInitialTestAccountsWallets } from '@aztec/accounts/testing';
 import {
-  readKeyData,
-  createL2Client,
-  createPXE,
-} from '@turnstile-portal/turnstile-dev';
-
-import { commonOpts } from '@turnstile-portal/deploy/commands';
-
-import {
+  type L2Client,
   L2Token,
-  L2Client,
+  registerShieldGatewayInPXE,
   TurnstileFactory,
 } from '@turnstile-portal/turnstile.js';
-
-// Create a proper L2Client from a Wallet
-function createL2ClientFromWallet(wallet: Wallet, node: AztecNode): L2Client {
-  return new L2Client(node, wallet);
-}
+import {
+  createL2Client,
+  createPXE,
+  readKeyData,
+} from '@turnstile-portal/turnstile-dev';
+import type { Command } from 'commander';
 
 async function doTransfer(
   l2Client: L2Client,
   tokenAddr: AztecAddress,
   recipient: AztecAddress,
   amount: bigint,
-) {
+): Promise<number> {
   const token = await L2Token.fromAddress(tokenAddr, l2Client);
 
   const symbol = await token.getSymbol();
@@ -61,54 +53,128 @@ async function doTransfer(
   if (receipt.status !== TxStatus.SUCCESS) {
     throw new Error('Transfer failed');
   }
+  if (receipt.blockNumber === undefined) {
+    throw new Error('No block number in receipt');
+  }
+
+  return receipt.blockNumber;
 }
 
 export function registerAztecTransferPrivate(program: Command) {
   return program
-    .command('aztec-transfer-private-verified-id')
-    .description('Transfer Aztec tokens privately using a verified ID')
-    .addOption(commonOpts.keys)
-    .addOption(commonOpts.aztecNode)
-    .addOption(commonOpts.rpc)
-    .addOption(commonOpts.deploymentData)
-    .option('--token <symbol>', 'Token Symbol', 'TT1')
-    .option('--amount <a>', 'Amount', '100')
-    .option('--recipient <address>', 'Recipient address')
-    .action(async (options) => {
-      const factory = await TurnstileFactory.fromConfig(options.deploymentData);
-      const tokenInfo = factory.getTokenInfo(options.token);
+    .command('aztec-transfer-private')
+    .description('Transfer Aztec tokens privately')
+    .option('--token <symbol>', 'Token symbol', 'TT1')
+    .option('--amount <amount>', 'Amount to transfer', '100')
+    .requiredOption('--recipient <address>', 'Recipient address (required)')
+    .action(async (options, command) => {
+      // Get global and local options together
+      const allOptions = command.optsWithGlobals();
+      if (!allOptions.configDir) {
+        throw new Error(
+          'Config directory is required. Use -c or --config-dir option.',
+        );
+      }
+
+      // Load configuration from files
+      const configDir = allOptions.configDir;
+      const configPaths = await import('@turnstile-portal/deploy').then((m) =>
+        m.getConfigPaths(configDir),
+      );
+      const config = await import('@turnstile-portal/deploy').then((m) =>
+        m.loadDeployConfig(configPaths.configFile),
+      );
+
+      // Use the deployment data from config directory
+      const factory = await TurnstileFactory.fromConfig(
+        configPaths.deploymentFile,
+      );
+
+      // Get token and recipient from command options
+      const tokenSymbol = options.token;
+      const tokenInfo = factory.getTokenInfo(tokenSymbol);
       const tokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
 
-      const node = createAztecNodeClient(options.aztecNode);
-      const pxe = await createPXE(node);
-      const aztecTestWallets = await getInitialTestAccountsWallets(pxe);
+      const node = createAztecNodeClient(config.connection.aztec.node);
+      const _pxe = await createPXE(node);
+      const aztecTestAccounts = await getInitialTestAccounts();
 
       function recipientError(msg: string): Error {
         console.log(msg);
         console.log('Please use one of the following test addresses:');
-        for (const wallet of aztecTestWallets) {
-          console.log(wallet.getAddress().toString());
+        for (const acct of aztecTestAccounts) {
+          console.log(`  ${acct.address.toString()}`);
         }
         return new Error(msg);
       }
 
-      if (!options.recipient) {
-        throw recipientError('Recipient address not provided');
-      }
-
       const recipient = AztecAddress.fromString(options.recipient);
-      const recipientWallet = aztecTestWallets.find((wallet) =>
-        wallet.getAddress().equals(recipient),
+      const recipientAccount = aztecTestAccounts.find((acc) =>
+        acc.address.equals(recipient),
       );
-      if (!recipientWallet) {
-        throw recipientError('Recipient wallet not found');
+      if (!recipientAccount) {
+        throw recipientError('Recipient account not found');
       }
 
-      const keyData = await readKeyData(options.keys);
-      const senderClient = await createL2Client(options.aztecNode, keyData);
+      const keyData = await readKeyData(configPaths.keysFile);
+      const senderClient = await createL2Client(
+        { node: config.connection.aztec.node },
+        keyData,
+      );
       const amount = BigInt(options.amount);
 
-      const recipientClient = createL2ClientFromWallet(recipientWallet, node);
+      // Ensure L2 Token is registered in the PXE
+      console.log(`Registering Token in SENDER PXE: ${tokenAddr.toString()}`);
+      await L2Token.register(
+        senderClient,
+        tokenAddr,
+        AztecAddress.fromString(factory.getDeploymentData().aztecPortal),
+        tokenInfo.name,
+        tokenInfo.symbol,
+        tokenInfo.decimals,
+      );
+      const shieldGatewayAddr = AztecAddress.fromString(
+        factory.getDeploymentData().aztecShieldGateway,
+      );
+      console.log(
+        `Registering ShieldGateway in SENDER PXE: ${shieldGatewayAddr.toString()}`,
+      );
+      await registerShieldGatewayInPXE(senderClient, shieldGatewayAddr);
+
+      const recipientKeyData = {
+        l2SigningKey: recipientAccount.signingKey.toString(),
+        l2SecretKey: recipientAccount.secret.toString(),
+        l2Salt: recipientAccount.salt.toString(),
+      };
+
+      const recipientClient = await createL2Client(
+        { node: config.connection.aztec.node },
+        recipientKeyData,
+      );
+      if (!recipientClient.getAddress().equals(recipient)) {
+        throw new Error(
+          `Recipient client address does not match recipient address. Got ${recipientClient.getAddress().toString()}, expected ${recipient.toString()}`,
+        );
+      }
+      // Register the sender in the recipient's PXE
+      console.log(
+        `Registering Sender in RECIPIENT PXE: ${senderClient.getAddress().toString()}`,
+      );
+      await recipientClient
+        .getWallet()
+        .registerSender(senderClient.getAddress());
+      console.log(
+        `Registering Token in RECIPIENT PXE: ${tokenAddr.toString()}`,
+      );
+      await L2Token.register(
+        recipientClient,
+        tokenAddr,
+        AztecAddress.fromString(factory.getDeploymentData().aztecPortal),
+        tokenInfo.name,
+        tokenInfo.symbol,
+        tokenInfo.decimals,
+      );
+
       const initialRecipientBalance = await (
         await L2Token.fromAddress(tokenAddr, recipientClient)
       ).balanceOfPrivate(recipient);

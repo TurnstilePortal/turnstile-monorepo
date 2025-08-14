@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { registerWithdrawTokens } from './commands/withdraw-tokens.js';
-import { registerDepositAndClaim } from './commands/deposit-and-claim.js';
-import { registerShieldTokens } from './commands/shield-tokens.js';
-import { registerDeployAndRegisterToken } from './commands/deploy-and-register-token.js';
 import { registerAztecTransferPrivate } from './commands/aztec-transfer-private.js';
 import { registerAztecTransferPublic } from './commands/aztec-transfer-public.js';
-import { registerUnshieldTokens } from './commands/unshield-tokens.js';
+import { registerDeployAndRegisterToken } from './commands/deploy-and-register-token.js';
+import { registerDepositAndClaim } from './commands/deposit-and-claim.js';
 import { registerLookupAztecTokens } from './commands/lookup-aztec-tokens.js';
+import { registerShieldTokens } from './commands/shield-tokens.js';
+import { registerUnshieldTokens } from './commands/unshield-tokens.js';
+import { registerWithdrawTokens } from './commands/withdraw-tokens.js';
 
 async function main() {
   const program = new Command();
@@ -16,7 +16,12 @@ async function main() {
   program
     .name('turnstile-examples')
     .description('CLI tool for running turnstile example scripts')
-    .version('0.0.1');
+    .version('0.0.2')
+    .configureHelp({ showGlobalOptions: true })
+    .requiredOption(
+      '-c, --config-dir <directory>',
+      'Config directory containing config.json, keys.json, and deployment.json',
+    );
 
   registerDepositAndClaim(program);
   registerWithdrawTokens(program);

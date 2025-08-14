@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.2.2/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -7,14 +7,14 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "ignore": [
-      "l1/*",
-      "packages/aztec-artifacts/src/artifacts/*.ts",
-      "packages/l1-artifacts-*/src/contracts/*.ts",
-      "**/dist/*",
-      "**/node_modules/*"
-    ],
-    "include": ["**/*.ts"]
+    "includes": [
+      "**/*.ts",
+      "!**/l1/**/*",
+      "!**/packages/aztec-artifacts/src/artifacts/**/*.ts",
+      "!**/packages/l1-artifacts-*/src/contracts/**/*.ts",
+      "!**/dist/**/*",
+      "!**/node_modules/**/*"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -27,13 +27,34 @@
     "attributePosition": "auto",
     "bracketSpacing": true
   },
-  "organizeImports": {
-    "enabled": true
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
   },
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "style": {
+        "noParameterAssign": "error",
+        "useAsConstAssertion": "error",
+        "useDefaultParameterLast": "error",
+        "useEnumInitializers": "error",
+        "useSelfClosingElements": "error",
+        "useSingleVarDeclarator": "error",
+        "noUnusedTemplateLiteral": "error",
+        "useNumberNamespace": "error",
+        "noInferrableTypes": "error",
+        "noUselessElse": "error"
+      },
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedFunctionParameters": "error",
+        "noUnusedVariables": "error"
+      }
     }
   },
   "javascript": {

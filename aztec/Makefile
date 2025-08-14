@@ -29,4 +29,4 @@ test: build
 
 # Clean target to remove artifacts
 clean:
-	rm -f target/*.json target/*.json.bak
+	rm -rf target/*.json target/*.json.bak target/cache

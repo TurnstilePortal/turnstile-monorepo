@@ -72,10 +72,10 @@ pub fn abi_encode_register(
         encoded[i + 0xc4] = symbol_len_bytes[i];
 
         // Copy name & symbol
-        if i < name_len {
+        if (i as u8) < name_len {
             encoded[i + 0xa4] = name_bytes[i];
         }
-        if i < symbol_len {
+        if (i as u8) < symbol_len {
             encoded[i + 0xe4] = symbol_bytes[i];
         }
     }

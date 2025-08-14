@@ -1,14 +1,14 @@
-import type { Hex } from 'viem';
-import {
-  ERC20AllowListBytecode,
-  ERC20TokenPortalBytecode,
-} from '@turnstile-portal/l1-artifacts-bytecode';
 import {
   ERC20AllowListABI,
   ERC20TokenPortalABI,
 } from '@turnstile-portal/l1-artifacts-abi';
-import { L1Portal } from '@turnstile-portal/turnstile.js';
+import {
+  ERC20AllowListBytecode,
+  ERC20TokenPortalBytecode,
+} from '@turnstile-portal/l1-artifacts-bytecode';
 import type { L1Client } from '@turnstile-portal/turnstile.js';
+import { L1Portal } from '@turnstile-portal/turnstile.js';
+import type { Hex } from 'viem';
 
 export async function deployERC20AllowList(
   client: L1Client,

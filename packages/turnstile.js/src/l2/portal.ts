@@ -1,23 +1,34 @@
 import {
-  Fr,
-  EthAddress,
   AztecAddress,
+  type DeployOptions,
+  EthAddress,
+  Fr,
   getContractInstanceFromDeployParams,
   PublicKeys,
-  type DeployOptions,
-  type SentTx,
   type SendMethodOptions,
+  type SentTx,
 } from '@aztec/aztec.js';
+import { sha256ToField } from '@aztec/foundation/crypto';
+import { serializeToBuffer } from '@aztec/foundation/serialize';
+import { OutboxAbi } from '@aztec/l1-artifacts/OutboxAbi';
+import {
+  computeL2ToL1MembershipWitness,
+  type L2ToL1MembershipWitness,
+} from '@aztec/stdlib/messaging';
 import {
   PortalContract,
   PortalContractArtifact,
   ShieldGatewayContract,
-  ShieldGatewayContractArtifact,
 } from '@turnstile-portal/aztec-artifacts';
-
-import { ErrorCode, createError, isTurnstileError } from '../errors.js';
+import { encodeFunctionData, getContract } from 'viem';
+import { createError, ErrorCode, isTurnstileError } from '../errors.js';
+import type { IL1Client } from '../l1/client.js';
 import type { IL2Client } from './client.js';
-import { L2_CONTRACT_DEPLOYMENT_SALT } from './constants.js';
+import {
+  L2_CONTRACT_DEPLOYMENT_SALT,
+  PUBLIC_NOT_SECRET_SECRET,
+} from './constants.js';
+import { registerShieldGatewayInPXE } from './shield-gateway.js';
 
 export type PortalConfig = {
   l1_portal: EthAddress;
@@ -38,6 +49,7 @@ export interface IL2Portal {
   /**
    * Gets the L1 portal address
    * @returns The L1 portal address
+   * @throws {TurnstileError} With ErrorCode.L2_CONTRACT_INTERACTION if configuration retrieval fails
    */
   getL1Portal(): Promise<EthAddress>;
 
@@ -48,6 +60,7 @@ export interface IL2Portal {
    * @param amount The amount to deposit
    * @param index The index of the L1ToL2Message
    * @returns The transaction
+   * @throws {TurnstileError} With ErrorCode.BRIDGE_DEPOSIT if claiming fails
    */
   claimDeposit(
     l1TokenAddr: string,
@@ -63,6 +76,7 @@ export interface IL2Portal {
    * @param amount The amount to deposit
    * @param index The index of the L1ToL2Message
    * @returns The transaction
+   * @throws {TurnstileError} With ErrorCode.BRIDGE_DEPOSIT if claiming fails
    */
   claimDepositShielded(
     l1TokenAddr: string,
@@ -76,6 +90,7 @@ export interface IL2Portal {
    * @param l2BlockNumber The L2 block number
    * @param hash The hash of the L1ToL2Message
    * @returns True if the deposit is claimed
+   * @throws {TurnstileError} With ErrorCode.BRIDGE_MESSAGE if check fails
    */
   isClaimed(l2BlockNumber: number, hash: string): Promise<boolean>;
 
@@ -88,6 +103,7 @@ export interface IL2Portal {
    * @param decimals The token decimals
    * @param index The index of the L1ToL2Message
    * @returns The transaction
+   * @throws {TurnstileError} With ErrorCode.BRIDGE_REGISTER if registration fails
    */
   registerToken(
     l1TokenAddr: string,
@@ -104,14 +120,17 @@ export interface IL2Portal {
    * @param l1RecipientAddr The L1 recipient address
    * @param amount The amount to withdraw
    * @param burnNonce The burn nonce
-   * @returns The transaction and the L2 to L1 message hash
+   * @param sendMethodOptions Optional transaction options
+   * @returns Object containing the transaction and the encoded withdrawal data
+   * @dev Once the transaction is mined, you can get the L2 block number from the receipt and use it to get the membership witness with `getL2ToL1MembershipWitness()`
    */
   withdrawPublic(
     l1TokenAddr: string,
     l1RecipientAddr: string,
     amount: bigint,
     burnNonce: Fr,
-  ): Promise<{ tx: SentTx; leaf: Fr }>;
+    sendMethodOptions?: SendMethodOptions,
+  ): Promise<{ tx: SentTx; withdrawData: `0x${string}` }>;
 
   /**
    * Gets the L2 token address for an L1 token
@@ -147,10 +166,11 @@ export interface IL2Portal {
  */
 export class L2Portal implements IL2Portal {
   // The not-secret secret used to send messages to L2
-  static readonly PUBLIC_NOT_SECRET_SECRET = Fr.fromHexString('0x7075626c6963');
+  static readonly PUBLIC_NOT_SECRET_SECRET = PUBLIC_NOT_SECRET_SECRET;
 
   private portalAddr: AztecAddress;
   private client: IL2Client;
+  private l1Client?: IL1Client;
   private portal?: PortalContract;
   private config?: PortalConfig;
 
@@ -159,9 +179,14 @@ export class L2Portal implements IL2Portal {
    * @param portalAddr The portal address
    * @param client The L2 client
    */
-  constructor(portalAddr: AztecAddress, client: IL2Client) {
+  constructor(
+    portalAddr: AztecAddress,
+    client: IL2Client,
+    l1Client?: IL1Client,
+  ) {
     this.portalAddr = portalAddr;
     this.client = client;
+    this.l1Client = l1Client;
   }
 
   /**
@@ -313,7 +338,7 @@ export class L2Portal implements IL2Portal {
       try {
         await this.getL1ToL2MessageLeafIndex(hash);
         return false;
-      } catch (err) {
+      } catch (_err) {
         // If the message is not found and the block is mined, then the message was claimed
         return true;
       }
@@ -384,21 +409,20 @@ export class L2Portal implements IL2Portal {
    * @param l1RecipientAddr The L1 recipient address
    * @param amount The amount to withdraw
    * @param burnNonce The burn nonce
-   * @returns The transaction and the L2 to L1 message hash
+   * @param sendMethodOptions Optional transaction options
+   * @returns Object containing the transaction and the encoded withdrawal data
+   * @throws {TurnstileError} With ErrorCode.BRIDGE_WITHDRAW if the withdrawal fails
    */
   async withdrawPublic(
     l1TokenAddr: string,
     l1RecipientAddr: string,
     amount: bigint,
     burnNonce: Fr,
-  ): Promise<{ tx: SentTx; leaf: Fr }> {
+    sendMethodOptions?: SendMethodOptions,
+  ): Promise<{ tx: SentTx; withdrawData: `0x${string}` }> {
     try {
       const portal = await this.getInstance();
       const from = this.client.getAddress();
-
-      const l2TokenAddr = await portal.methods
-        .get_l2_token_unconstrained(EthAddress.fromString(l1TokenAddr))
-        .simulate();
 
       const tx = await portal.methods
         .withdraw_public(
@@ -409,15 +433,15 @@ export class L2Portal implements IL2Portal {
           Fr.ZERO, // withdrawNonce
           burnNonce,
         )
-        .send();
+        .send(sendMethodOptions);
 
-      const leaf = await this.getL2ToL1MessageLeaf(
+      const withdrawData = this.encodeWithdrawData(
         l1TokenAddr,
         l1RecipientAddr,
         amount,
       );
 
-      return { tx, leaf };
+      return { tx, withdrawData };
     } catch (error) {
       throw createError(
         ErrorCode.BRIDGE_WITHDRAW,
@@ -525,9 +549,7 @@ export class L2Portal implements IL2Portal {
    * @param l1ToL2Message The L1ToL2Message hash
    * @returns The leaf index of the L1ToL2Message
    */
-  private async getL1ToL2MessageLeafIndex(
-    l1ToL2Message: string,
-  ): Promise<number> {
+  async getL1ToL2MessageLeafIndex(l1ToL2Message: string): Promise<number> {
     try {
       const node = this.client.getNode();
       const wit = await node.getL1ToL2MessageMembershipWitness(
@@ -556,54 +578,77 @@ export class L2Portal implements IL2Portal {
     }
   }
 
-  /**
-   * Gets the leaf of an L2ToL1Message
-   * @param l1TokenAddr The L1 token address
-   * @param l1RecipientAddr The L1 recipient address
-   * @param amount The amount being withdrawn
-   * @returns The leaf of the L2ToL1Message
-   */
-  private async getL2ToL1MessageLeaf(
+  async getAztecL1OutboxVersion(outboxAddress: EthAddress): Promise<number> {
+    if (!this.l1Client) {
+      throw new Error('L1 client not provided to L2Portal');
+    }
+    const outbox = getContract({
+      address: outboxAddress.toString(),
+      abi: OutboxAbi,
+      client: this.l1Client.getPublicClient(),
+    });
+
+    const version = await outbox.read.VERSION();
+    console.debug(
+      `Outbox at ${outboxAddress.toString()} has version ${version}`,
+    );
+    return Number(version);
+  }
+
+  async computeL2ToL1Message(
     l1TokenAddr: string,
     l1RecipientAddr: string,
     amount: bigint,
-  ): Promise<Fr> {
+    outboxVersion: number,
+  ): Promise<`0x${string}`> {
     try {
       const l1PortalAddr = await this.getL1Portal();
       const node = this.client.getNode();
-
-      // Using this to get the L1 Chain ID
       const nodeInfo = await node.getNodeInfo();
 
-      const encoded = this.encodeWithdrawData(
-        l1TokenAddr,
-        l1RecipientAddr,
-        amount,
+      const encoded = Buffer.from(
+        this.encodeWithdrawData(l1TokenAddr, l1RecipientAddr, amount).replace(
+          /^0x/,
+          '',
+        ),
+        'hex',
       );
-      const content = Fr.fromBuffer(
-        Buffer.from(encoded.replace(/^0x/, ''), 'hex'),
-      );
+      const content = sha256ToField([encoded]);
 
-      // The leaf is the hash of (L2Actor, L1Actor, content)
-      // https://docs.aztec.network/reference/developer_references/smart_contract_reference/portals/data_structures#l2tol1message
-      const leafData = [
-        // L2Actor
-        this.portalAddr.toBuffer(), // Sender (Aztec Portal)
-        new Fr(1).toBuffer(), // Aztec version
-        // L1Actor
-        l1PortalAddr.toBuffer32(), // Recipient (L1 Portal)
-        new Fr(nodeInfo.l1ChainId).toBuffer(),
-        // Content
-        content.toBuffer(),
-      ];
+      // L2ToL1Message format per
+      // https://docs.aztec.network/developers/reference/smart_contract_reference/portals/data_structures
+      //
+      //  struct L1Actor {
+      //    address actor;
+      //    uint256 chainId;
+      //  }
+      //
+      //  struct L2Actor {
+      //    address actor;
+      //    uint256 version;
+      //  }
+      //
+      //  struct L2ToL1Msg {
+      //    DataStructures.L2Actor sender;
+      //    DataStructures.L1Actor recipient;
+      //    bytes32 content;
+      //  }
+      const message = serializeToBuffer([
+        // L2Actor (sender)
+        this.getAddress(), // sender
+        new Fr(outboxVersion), // rollupVersion
+        // L1Actor (recipient)
+        l1PortalAddr, // recipient
+        new Fr(nodeInfo.l1ChainId),
+        // Hash of message content
+        content,
+      ]);
 
-      // Concatenate all buffers
-      const combinedBuffer = Buffer.concat(leafData);
-      return Fr.fromBuffer(combinedBuffer);
+      return `0x${message.toString('hex')}`;
     } catch (error) {
       throw createError(
         ErrorCode.BRIDGE_MESSAGE,
-        `Failed to get L2ToL1Message leaf for token ${l1TokenAddr} to recipient ${l1RecipientAddr}`,
+        `Failed to compute L2ToL1Message for token ${l1TokenAddr} to recipient ${l1RecipientAddr} `,
         {
           l1TokenAddress: l1TokenAddr,
           l1RecipientAddress: l1RecipientAddr,
@@ -612,6 +657,37 @@ export class L2Portal implements IL2Portal {
         error,
       );
     }
+  }
+
+  async getL2ToL1MembershipWitness(
+    l2BlockNumber: number,
+    message: `0x${string}`,
+  ): Promise<L2ToL1MembershipWitness> {
+    try {
+      const messageHash = sha256ToField([
+        Buffer.from(message.replace(/^0x/, ''), 'hex'),
+      ]);
+      const witness = await computeL2ToL1MembershipWitness(
+        this.client.getNode(), // MessageRetrieval
+        l2BlockNumber,
+        messageHash,
+      );
+      if (!witness) {
+        throw new Error('No membership witness found');
+      }
+      return witness;
+    } catch (error) {
+      throw createError(
+        ErrorCode.BRIDGE_MESSAGE,
+        `Failed to get L2ToL1Message membership witness for message in L2 block ${l2BlockNumber} `,
+        { l2BlockNumber, message },
+        error,
+      );
+    }
+  }
+
+  public getL2ToL1MessageLeafIndex(witness: L2ToL1MembershipWitness): bigint {
+    return 2n ** BigInt(witness.siblingPath.pathSize) + witness.l2MessageIndex;
   }
 
   /**
@@ -624,7 +700,7 @@ export class L2Portal implements IL2Portal {
     l1TokenAddr: string,
     l1RecipientAddr: string,
     amount: bigint,
-  ): string {
+  ): `0x${string}` {
     // ABI for the withdraw function
     const withdrawAbi = {
       inputs: [
@@ -637,30 +713,23 @@ export class L2Portal implements IL2Portal {
       type: 'function',
     };
 
-    // Encode the function data
-    const functionSignature = 'withdraw(address,address,uint256)';
-    const encodedParams = [
-      l1TokenAddr.padStart(64, '0'),
-      l1RecipientAddr.padStart(64, '0'),
-      amount.toString(16).padStart(64, '0'),
-    ].join('');
+    const encoded = encodeFunctionData({
+      abi: [withdrawAbi],
+      functionName: 'withdraw',
+      args: [l1TokenAddr, l1RecipientAddr, amount],
+    });
 
-    return `0x${Buffer.from(functionSignature).toString('hex')}${encodedParams}`;
+    return encoded;
   }
 
-  static async registerShieldGateway(client: IL2Client) {
-    const instance = await getContractInstanceFromDeployParams(
-      ShieldGatewayContractArtifact,
-      {
-        salt: L2_CONTRACT_DEPLOYMENT_SALT,
-        deployer: AztecAddress.ZERO,
-        publicKeys: PublicKeys.default(),
-      },
+  static async registerShieldGateway(
+    client: IL2Client,
+    shieldGatewayAddr: AztecAddress,
+  ) {
+    const instance = await registerShieldGatewayInPXE(
+      client,
+      shieldGatewayAddr,
     );
-    await client
-      .getWallet()
-      .registerContract({ instance, artifact: ShieldGatewayContractArtifact });
-
     return instance;
   }
 
@@ -693,7 +762,7 @@ export class L2Portal implements IL2Portal {
     tokenContractClassId: Fr,
     shieldGateway: AztecAddress,
   ) {
-    await L2Portal.registerShieldGateway(client);
+    await L2Portal.registerShieldGateway(client, shieldGateway);
     const instance = await L2Portal.registerPortal(
       client,
       l1Portal,
@@ -741,7 +810,7 @@ export class L2Portal implements IL2Portal {
     } catch (error) {
       throw createError(
         ErrorCode.L2_CONTRACT_INTERACTION,
-        `Failed to create portal from address ${address}`,
+        `Failed to create portal from address ${address} `,
         { portalAddress: address.toString() },
         error,
       );
@@ -817,7 +886,7 @@ export class L2Portal implements IL2Portal {
       )
         .send(options)
         .deployed();
-      console.debug(`Portal deployed at ${portal.address.toString()}`);
+      console.debug(`Portal deployed at ${portal.address.toString()} `);
 
       return {
         portal,
@@ -826,7 +895,7 @@ export class L2Portal implements IL2Portal {
     } catch (error) {
       throw createError(
         ErrorCode.L2_DEPLOYMENT,
-        `Failed to deploy portal with L1 portal address ${l1PortalAddress}`,
+        `Failed to deploy portal with L1 portal address ${l1PortalAddress} `,
         { l1PortalAddress: l1PortalAddress.toString() },
         error,
       );

@@ -1,14 +1,15 @@
 import {
-  computeAuthWitMessageHash,
-  getContractInstanceFromDeployParams,
-  readFieldCompressedString,
-  Capsule,
-  ContractFunctionInteraction,
   AztecAddress,
-  Fr,
-  ProtocolContractAddress,
+  Capsule,
+  Contract,
+  ContractFunctionInteraction,
+  computeAuthWitMessageHash,
   type DeployOptions,
+  Fr,
+  getContractInstanceFromDeployParams,
   type IntentAction,
+  ProtocolContractAddress,
+  readFieldCompressedString,
   type SendMethodOptions,
   type SentTx,
 } from '@aztec/aztec.js';
@@ -22,12 +23,14 @@ import {
   TokenContract,
   TokenContractArtifact,
 } from '@turnstile-portal/aztec-artifacts';
-
+import {
+  createError,
+  ErrorCode,
+  ErrorFactories,
+  isTurnstileError,
+} from '../errors.js';
+import type { IL2Client } from './client.js';
 import { L2_CONTRACT_DEPLOYMENT_SALT, VP_SLOT } from './constants.js';
-
-import { ErrorCode, createError, isTurnstileError } from '../errors.js';
-import type { L2Client, IL2Client } from './client.js';
-import { validatePositiveAmount } from '../validator.js';
 
 /**
  * Interface for L2 token operations
@@ -156,13 +159,22 @@ export class L2Token implements IL2Token {
   }
 
   /**
-   * Gets the TokenContract
-   * @returns The TokenContract
+   * Gets the underlying TokenContract instance
+   *
+   * @returns The TokenContract instance for direct contract interactions
    */
   getContract(): TokenContract {
     return this.token;
   }
 
+  /**
+   * Gets the portal address associated with this token
+   *
+   * The portal address is retrieved from the token contract and cached
+   * for subsequent calls to avoid repeated contract queries.
+   *
+   * @returns Promise resolving to the portal address
+   */
   async getPortal(): Promise<AztecAddress> {
     if (!this.portal) {
       this.portal = (await this.token.methods
@@ -178,7 +190,7 @@ export class L2Token implements IL2Token {
    */
   async getSymbol(): Promise<string> {
     try {
-      const symbol = await this.token.methods.public_get_symbol().simulate();
+      const symbol = await this.token.methods.symbol().simulate();
       return readFieldCompressedString(symbol);
     } catch (error) {
       throw createError(
@@ -196,7 +208,7 @@ export class L2Token implements IL2Token {
    */
   async getName(): Promise<string> {
     try {
-      const name = await this.token.methods.public_get_name().simulate();
+      const name = await this.token.methods.name().simulate();
       return readFieldCompressedString(name);
     } catch (error) {
       throw createError(
@@ -214,7 +226,7 @@ export class L2Token implements IL2Token {
    */
   async getDecimals(): Promise<number> {
     try {
-      return Number(await this.token.methods.public_get_decimals().simulate());
+      return Number(await this.token.methods.decimals().simulate());
     } catch (error) {
       throw createError(
         ErrorCode.L2_TOKEN_OPERATION,
@@ -284,7 +296,7 @@ export class L2Token implements IL2Token {
     try {
       const from = this.client.getAddress();
       return this.token.methods
-        .transfer_in_public(
+        .transfer_public_to_public(
           from,
           to,
           amount,
@@ -316,7 +328,7 @@ export class L2Token implements IL2Token {
   async transferPrivate(
     to: AztecAddress,
     amount: bigint,
-    verifiedID: Fr[] & { length: 5 },
+    verifiedID?: Fr[] & { length: 5 },
     options?: SendMethodOptions,
   ): Promise<SentTx> {
     try {
@@ -326,16 +338,25 @@ export class L2Token implements IL2Token {
       const shieldGatewayAddr = await this.getShieldGatewayAddress();
 
       // Create function interaction
-      const interaction = this.token.methods.transfer_in_private(
+      const interaction = this.token.methods.transfer_private_to_private(
         from,
         to,
         amount,
         Fr.ZERO, // nonce
       );
 
-      interaction.with({
-        capsules: [new Capsule(shieldGatewayAddr, VP_SLOT, verifiedID)],
-      });
+      if (verifiedID) {
+        console.debug(
+          `Adding verified ID capsule for gateway ${shieldGatewayAddr.toString()}`,
+        );
+        interaction.with({
+          capsules: [new Capsule(shieldGatewayAddr, VP_SLOT, verifiedID)],
+        });
+      } else {
+        console.warn(
+          'No verified ID provided for private transfer. This might cause the transaction to fail.',
+        );
+      }
       return interaction.send(options);
     } catch (error) {
       if (isTurnstileError(error)) {
@@ -368,13 +389,10 @@ export class L2Token implements IL2Token {
       const address = this.client.getAddress();
       return this.token.methods.shield(address, amount, Fr.ZERO).send(options);
     } catch (error) {
-      throw createError(
-        ErrorCode.L2_SHIELD_OPERATION,
-        `Failed to shield ${amount} tokens for token ${this.token.address}`,
-        {
-          tokenAddress: this.token.address.toString(),
-          amount: amount.toString(),
-        },
+      throw ErrorFactories.shieldError(
+        'shield',
+        amount.toString(),
+        this.token.address.toString(),
         error,
       );
     }
@@ -459,7 +477,10 @@ export class L2Token implements IL2Token {
         chainId: this.client.getWallet().getChainId(),
         version: this.client.getWallet().getVersion(),
       };
-      const messageHash = computeAuthWitMessageHash(intent, intentMetadata);
+      const messageHash = await computeAuthWitMessageHash(
+        intent,
+        intentMetadata,
+      );
 
       const authWitAction = new ContractFunctionInteraction(
         this.client.getWallet(),
@@ -488,8 +509,14 @@ export class L2Token implements IL2Token {
   }
 
   /**
-   * Gets the shield gateway address
-   * @returns The shield gateway address
+   * Gets the shield gateway address from the token contract
+   *
+   * The shield gateway is responsible for authorizing private transfers
+   * to different addresses. This method retrieves the gateway address
+   * configured in the token contract.
+   *
+   * @returns Promise resolving to the shield gateway address
+   * @throws {TurnstileError} If unable to retrieve the shield gateway address
    */
   private async getShieldGatewayAddress(): Promise<AztecAddress> {
     try {
@@ -559,15 +586,22 @@ export class L2Token implements IL2Token {
         ...deployOptions,
       };
 
-      const token = await TokenContract.deploy(
+      const tokenContract = await Contract.deploy(
         wallet,
-        portalAddr,
-        name,
-        symbol,
-        decimals,
+        TokenContractArtifact,
+        [
+          name,
+          symbol,
+          decimals,
+          portalAddr /* minter */,
+          AztecAddress.ZERO /* upgrade_authority */,
+        ],
+        'constructor_with_minter',
       )
         .send(options)
         .deployed();
+
+      const token = await TokenContract.at(tokenContract.address, wallet);
 
       return new L2Token(token, client);
     } catch (error) {
@@ -595,7 +629,14 @@ export class L2Token implements IL2Token {
     const instance = await getContractInstanceFromDeployParams(
       TokenContractArtifact,
       {
-        constructorArgs: [portalAddress, name, symbol, decimals],
+        constructorArtifact: 'constructor_with_minter',
+        constructorArgs: [
+          name,
+          symbol,
+          decimals,
+          portalAddress,
+          AztecAddress.ZERO /* upgrade_authority */,
+        ],
         salt: L2_CONTRACT_DEPLOYMENT_SALT,
         deployer: AztecAddress.ZERO,
         publicKeys: PublicKeys.default(),
@@ -612,6 +653,7 @@ export class L2Token implements IL2Token {
         },
       );
     }
+    console.debug(`Registering Token in PXE: ${tokenAddress.toString()}`);
     await client
       .getWallet()
       .registerContract({ instance, artifact: TokenContractArtifact });

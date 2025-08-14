@@ -1,32 +1,31 @@
+import type { AztecAddress, L2AmountClaim } from '@aztec/aztec.js';
 import {
   createLogger,
-  getContractInstanceFromDeployParams,
-  retryUntil,
   Fr,
   FunctionSelector,
   FunctionType,
+  getContractInstanceFromDeployParams,
   L1FeeJuicePortalManager,
   ProtocolContractAddress,
+  retryUntil,
   SentTx,
   SponsoredFeePaymentMethod,
 } from '@aztec/aztec.js';
-import { InboxAbi } from '@aztec/l1-artifacts';
-import type { AztecAddress, L2AmountClaim } from '@aztec/aztec.js';
-import type { L1Client } from '../l1/client.js';
-import type { L2Client } from './client.js';
-import { ErrorCode, TurnstileError } from '../errors.js';
-import type { ExtendedViemWalletClient } from '@aztec/ethereum';
+import { SPONSORED_FPC_SALT } from '@aztec/constants';
 import { ExecutionPayload } from '@aztec/entrypoints/payload';
+import type { ExtendedViemWalletClient } from '@aztec/ethereum';
+import { InboxAbi } from '@aztec/l1-artifacts';
 import {
   SponsoredFPCContract,
   SponsoredFPCContractArtifact,
 } from '@aztec/noir-contracts.js/SponsoredFPC';
-import { SPONSORED_FPC_SALT } from '@aztec/constants';
-
-import { GasSettings } from '@aztec/stdlib/gas';
 import { getCanonicalFeeJuice } from '@aztec/protocol-contracts/fee-juice';
+import { GasSettings } from '@aztec/stdlib/gas';
 import type { BlockNumber, BlockTag } from 'viem';
 import { publicActions } from 'viem';
+import { ErrorCode, TurnstileError } from '../errors.js';
+import type { L1Client } from '../l1/client.js';
+import type { L2Client } from './client.js';
 
 export async function getFeeJuiceFromFaucet(
   l1Client: L1Client,
@@ -131,7 +130,7 @@ async function getFeeJuiceClaimL2BlockNumber(
   return logs[0].blockNumber;
 }
 
-async function getFeeJuiceClaimSelector(l2Client: L2Client) {
+async function getFeeJuiceClaimSelector(_l2Client: L2Client) {
   const feeJuiceContract = await getCanonicalFeeJuice();
   const claimFunc = feeJuiceContract.artifact.functions.find(
     (f) => f.name === 'claim',
@@ -218,7 +217,9 @@ export async function claimFeeJuiceOnL2(
     txSimulationResult.privateExecutionResult,
   );
   console.log('Sending tx...');
-  const sentTx = new SentTx(wallet, wallet.sendTx(txProvingResult.toTx()));
+  const sentTx = new SentTx(wallet, async () =>
+    wallet.sendTx(txProvingResult.toTx()),
+  );
   console.log('Waiting for tx to be mined...');
   const receipt = await sentTx.wait();
   console.log(`Claimed fee juice in tx ${receipt.txHash.toString()}`);

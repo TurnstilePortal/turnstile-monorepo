@@ -37,7 +37,10 @@ export function getL1AllowListContract(
 }
 
 /**
- * L1 AllowList class
+ * L1 AllowList class for managing token allowlist operations
+ *
+ * This class provides methods to propose and accept addresses to the allowlist,
+ * enabling controlled access to token operations through the portal system.
  */
 export class L1AllowList {
   client: IL1Client;
@@ -47,10 +50,10 @@ export class L1AllowList {
   contract: AllowListContract;
 
   /**
-   * Constructor
-   * @param allowListAddr AllowList contract address
-   * @param client L1Client instance
-   * @param approver Approver L1Client instance
+   * Creates a new L1AllowList instance
+   * @param allowListAddr The AllowList contract address on L1
+   * @param client The L1 client instance for general operations
+   * @param approver Optional L1 client instance with approver privileges
    */
   constructor(
     allowListAddr: Address,
@@ -125,6 +128,11 @@ export class L1AllowList {
     return receipt;
   }
 
+  /**
+   * Checks if an address has approver privileges on the allowlist contract
+   * @param address The address to check for approver status
+   * @returns Promise resolving to true if the address is an approver, false otherwise
+   */
   async isApprover(address: Address): Promise<boolean> {
     const allowList = this.contract;
     return await allowList.read.isApprover([address]);

@@ -2,20 +2,21 @@
 // ^ This directive disables TypeScript checking for this file, which is appropriate for test files
 // with complex mocks where TypeScript can't fully understand the runtime behavior of vitest mocks.
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-  Fr,
   AztecAddress,
+  Contract,
+  type ContractFunctionInteraction,
+  Fr,
   type PXE,
+  readFieldCompressedString,
   type SentTx,
   type Wallet,
-  type ContractFunctionInteraction,
-  readFieldCompressedString,
 } from '@aztec/aztec.js';
 import { TokenContract } from '@turnstile-portal/aztec-artifacts';
-import { L2Token } from './token.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErrorCode, TurnstileError } from '../errors.js';
 import type { L2Client } from './client.js';
+import { L2Token } from './token.js';
 
 // Mock the imports
 vi.mock('@aztec/aztec.js');
@@ -37,7 +38,7 @@ describe('L2Token', () => {
     vi.resetAllMocks();
 
     // Set up the readFieldCompressedString mock
-    vi.mocked(readFieldCompressedString).mockImplementation(
+    (readFieldCompressedString as vi.Mock).mockImplementation(
       (value: unknown) => {
         // Mock different return values based on the input
         // Check the first element of the array that would be returned by simulate()
@@ -52,9 +53,11 @@ describe('L2Token', () => {
       value: { toString: () => 'fr_zero' },
       writable: true,
     });
-    vi.mocked(Fr.random).mockImplementation(
-      () => ({ toString: () => 'fr_random' }) as unknown as Fr,
-    );
+    Fr.random = vi
+      .fn()
+      .mockImplementation(
+        () => ({ toString: () => 'fr_random' }) as unknown as Fr,
+      );
 
     // Set up addresses
     tokenAddr = {
@@ -68,19 +71,25 @@ describe('L2Token', () => {
     } as unknown as AztecAddress;
 
     // Mock Fr and AztecAddress methods
-    vi.mocked(Fr.fromHexString).mockImplementation(
+    Fr.fromHexString = vi.fn().mockImplementation(
       (hex) =>
         ({
           toString: () => `fr_${hex}`,
         }) as unknown as Fr,
     );
 
-    vi.mocked(AztecAddress.fromString).mockImplementation(
+    AztecAddress.fromString = vi.fn().mockImplementation(
       (addr) =>
         ({
           toString: () => addr,
         }) as unknown as AztecAddress,
     );
+
+    // Mock AztecAddress.ZERO
+    Object.defineProperty(AztecAddress, 'ZERO', {
+      value: undefined,
+      writable: true,
+    });
 
     // Mock the wallet
     mockWallet = {
@@ -99,23 +108,24 @@ describe('L2Token', () => {
       getPXE: vi.fn().mockReturnValue(mockPXE),
       getWallet: vi.fn().mockReturnValue(mockWallet),
       getAddress: vi.fn().mockReturnValue(accountAddr),
+      getFeeOpts: vi.fn().mockReturnValue({ fee: 0 }),
     };
 
     // Create a mock TokenContract
     mockTokenContract = {
       address: tokenAddr,
       methods: {
-        public_get_symbol: vi.fn().mockReturnValue({
+        symbol: vi.fn().mockReturnValue({
           simulate: vi
             .fn()
             .mockResolvedValue([BigInt(1), BigInt(2), BigInt(3)]),
         }),
-        public_get_name: vi.fn().mockReturnValue({
+        name: vi.fn().mockReturnValue({
           simulate: vi
             .fn()
             .mockResolvedValue([BigInt(4), BigInt(5), BigInt(6)]),
         }),
-        public_get_decimals: vi.fn().mockReturnValue({
+        decimals: vi.fn().mockReturnValue({
           simulate: vi.fn().mockResolvedValue(18),
         }),
         balance_of_public: vi.fn().mockReturnValue({
@@ -124,12 +134,12 @@ describe('L2Token', () => {
         balance_of_private: vi.fn().mockReturnValue({
           simulate: vi.fn().mockResolvedValue(BigInt(2000)),
         }),
-        transfer_in_public: vi.fn().mockReturnValue({
+        transfer_public_to_public: vi.fn().mockReturnValue({
           send: vi
             .fn()
             .mockResolvedValue({ txHash: '0xabcd' } as unknown as SentTx),
         }),
-        transfer_in_private: vi.fn().mockReturnValue({
+        transfer_private_to_private: vi.fn().mockReturnValue({
           with: vi.fn().mockReturnThis(),
           send: vi
             .fn()
@@ -156,12 +166,14 @@ describe('L2Token', () => {
     } as unknown as TokenContract;
 
     // Mock the TokenContract static methods
-    vi.mocked(TokenContract.at).mockResolvedValue(mockTokenContract);
-    vi.mocked(TokenContract.deploy).mockReturnValue({
+    TokenContract.at = vi.fn().mockResolvedValue(mockTokenContract);
+
+    // Mock Contract.deploy for the deploy method
+    Contract.deploy = vi.fn().mockReturnValue({
       send: vi.fn().mockReturnValue({
-        deployed: vi.fn().mockResolvedValue(mockTokenContract),
+        deployed: vi.fn().mockResolvedValue({ address: tokenAddr }),
       }),
-    } as unknown as ReturnType<typeof TokenContract.deploy>);
+    });
 
     // Create token instance
     token = new L2Token(mockTokenContract, mockL2Client);
@@ -179,10 +191,8 @@ describe('L2Token', () => {
       const symbol = await token.getSymbol();
 
       // Check that the contract method was called
-      expect(mockTokenContract.methods.public_get_symbol).toHaveBeenCalled();
-      expect(
-        mockTokenContract.methods.public_get_symbol().simulate,
-      ).toHaveBeenCalled();
+      expect(mockTokenContract.methods.symbol).toHaveBeenCalled();
+      expect(mockTokenContract.methods.symbol().simulate).toHaveBeenCalled();
 
       // Check that the result is as expected
       expect(symbol).toBe('TST');
@@ -191,7 +201,7 @@ describe('L2Token', () => {
     it('should throw an error when contract interaction fails', async () => {
       // Mock the error
       mockTokenContract.methods
-        .public_get_symbol()
+        .symbol()
         .simulate.mockRejectedValueOnce(new Error('Simulation failed'));
 
       // Check that the error is thrown with the correct code
@@ -207,10 +217,8 @@ describe('L2Token', () => {
       const name = await token.getName();
 
       // Check that the contract method was called
-      expect(mockTokenContract.methods.public_get_name).toHaveBeenCalled();
-      expect(
-        mockTokenContract.methods.public_get_name().simulate,
-      ).toHaveBeenCalled();
+      expect(mockTokenContract.methods.name).toHaveBeenCalled();
+      expect(mockTokenContract.methods.name().simulate).toHaveBeenCalled();
 
       // Check that the result is as expected
       expect(name).toBe('Test Token');
@@ -219,7 +227,7 @@ describe('L2Token', () => {
     it('should throw an error when contract interaction fails', async () => {
       // Mock the error
       mockTokenContract.methods
-        .public_get_name()
+        .name()
         .simulate.mockRejectedValueOnce(new Error('Simulation failed'));
 
       // Check that the error is thrown with the correct code
@@ -235,10 +243,8 @@ describe('L2Token', () => {
       const decimals = await token.getDecimals();
 
       // Check that the contract method was called
-      expect(mockTokenContract.methods.public_get_decimals).toHaveBeenCalled();
-      expect(
-        mockTokenContract.methods.public_get_decimals().simulate,
-      ).toHaveBeenCalled();
+      expect(mockTokenContract.methods.decimals).toHaveBeenCalled();
+      expect(mockTokenContract.methods.decimals().simulate).toHaveBeenCalled();
 
       // Check that the result is as expected
       expect(decimals).toBe(18);
@@ -247,7 +253,7 @@ describe('L2Token', () => {
     it('should throw an error when contract interaction fails', async () => {
       // Mock the error
       mockTokenContract.methods
-        .public_get_decimals()
+        .decimals()
         .simulate.mockRejectedValueOnce(new Error('Simulation failed'));
 
       // Check that the error is thrown with the correct code
@@ -331,14 +337,11 @@ describe('L2Token', () => {
       expect(mockL2Client.getAddress).toHaveBeenCalled();
 
       // Check that the contract method was called with the correct parameters
-      expect(mockTokenContract.methods.transfer_in_public).toHaveBeenCalledWith(
-        accountAddr,
-        recipient,
-        amount,
-        Fr.ZERO,
-      );
       expect(
-        mockTokenContract.methods.transfer_in_public().send,
+        mockTokenContract.methods.transfer_public_to_public,
+      ).toHaveBeenCalledWith(accountAddr, recipient, amount, Fr.ZERO);
+      expect(
+        mockTokenContract.methods.transfer_public_to_public().send,
       ).toHaveBeenCalled();
 
       // Check that the result is the expected transaction
@@ -353,7 +356,7 @@ describe('L2Token', () => {
         { amount: amount.toString() },
       );
       mockTokenContract.methods
-        .transfer_in_public()
+        .transfer_public_to_public()
         .send.mockRejectedValueOnce(mockError);
 
       // Check that the error is thrown with the correct code
@@ -380,7 +383,7 @@ describe('L2Token', () => {
     const nullAddr = null as unknown as AztecAddress;
     const zeroAmount = BigInt(0);
     const negativeAmount = BigInt(-1);
-    const invalidVerifiedID = [
+    const _invalidVerifiedID = [
       { toString: () => 'invalid' },
     ] as unknown as Fr[] & { length: 5 };
 
@@ -402,10 +405,10 @@ describe('L2Token', () => {
 
       // Check that the contract method was called with the correct parameters
       expect(
-        mockTokenContract.methods.transfer_in_private,
+        mockTokenContract.methods.transfer_private_to_private,
       ).toHaveBeenCalledWith(accountAddr, recipient, amount, Fr.ZERO);
       expect(
-        mockTokenContract.methods.transfer_in_private().send,
+        mockTokenContract.methods.transfer_private_to_private().send,
       ).toHaveBeenCalled();
 
       // Check that the result is the expected transaction
@@ -420,7 +423,7 @@ describe('L2Token', () => {
         { amount: amount.toString() },
       );
       mockTokenContract.methods
-        .transfer_in_private()
+        .transfer_private_to_private()
         .send.mockRejectedValueOnce(mockError);
 
       // Check that the error is thrown with the correct code
@@ -455,7 +458,7 @@ describe('L2Token', () => {
 
       // Mock the with method to throw an error
       mockTokenContract.methods
-        .transfer_in_private()
+        .transfer_private_to_private()
         .with.mockImplementationOnce(() => {
           throw new Error('Failed to set capsule');
         });
@@ -478,7 +481,7 @@ describe('L2Token', () => {
 
       // Verify the contract method was called with the provided parameters
       expect(
-        mockTokenContract.methods.transfer_in_private,
+        mockTokenContract.methods.transfer_private_to_private,
       ).toHaveBeenCalledWith(accountAddr, nullAddr, amount, Fr.ZERO);
     });
 
@@ -494,18 +497,18 @@ describe('L2Token', () => {
 
       // Verify the contract method was called with the provided parameters
       expect(
-        mockTokenContract.methods.transfer_in_private,
+        mockTokenContract.methods.transfer_private_to_private,
       ).toHaveBeenCalledWith(accountAddr, recipient, negativeAmount, Fr.ZERO);
 
       // Reset the mock
-      mockTokenContract.methods.transfer_in_private.mockClear();
+      mockTokenContract.methods.transfer_private_to_private.mockClear();
 
       // Call with zero amount
       await token.transferPrivate(recipient, zeroAmount, verifiedID);
 
       // Verify the contract method was called with the provided parameters
       expect(
-        mockTokenContract.methods.transfer_in_private,
+        mockTokenContract.methods.transfer_private_to_private,
       ).toHaveBeenCalledWith(accountAddr, recipient, zeroAmount, Fr.ZERO);
     });
   });
@@ -711,7 +714,7 @@ describe('L2Token', () => {
     describe('fromAddress', () => {
       it('should create a token from address', async () => {
         // Mock the TokenContract.at to return our mock contract
-        vi.mocked(TokenContract.at).mockResolvedValue(mockTokenContract);
+        TokenContract.at = vi.fn().mockResolvedValue(mockTokenContract);
 
         // Mock the wallet's registerContract method
         mockWallet.registerContract = vi.fn().mockResolvedValue(undefined);
@@ -734,7 +737,7 @@ describe('L2Token', () => {
       it('should throw an error when contract creation fails', async () => {
         // Mock the error
         const mockError = new Error('Token contract creation failed');
-        vi.mocked(TokenContract.at).mockRejectedValueOnce(mockError);
+        TokenContract.at = vi.fn().mockRejectedValueOnce(mockError);
 
         // Check that the error is thrown with the correct code
         await expect(
@@ -750,20 +753,12 @@ describe('L2Token', () => {
 
       // Test to verify the deployment option setting
       it('should deploy with universal deploy enabled', async () => {
-        // Method chaining is used in the implementation
-        const mockSend = {
-          deployed: vi.fn().mockResolvedValue(mockTokenContract),
-        };
-
-        const mockDeployReturn = {
-          send: vi.fn().mockReturnValue(mockSend),
-        };
-
-        vi.mocked(TokenContract.deploy).mockReturnValue(
-          mockDeployReturn as unknown as ReturnType<
-            typeof TokenContract.deploy
-          >,
-        );
+        Contract.deploy = vi.fn().mockReturnValue({
+          send: vi.fn().mockReturnValue({
+            deployed: vi.fn().mockResolvedValue({ address: tokenAddr }),
+          }),
+        });
+        TokenContract.at = vi.fn().mockResolvedValue(mockTokenContract);
 
         const result = await L2Token.deploy(
           mockL2Client,
@@ -774,20 +769,11 @@ describe('L2Token', () => {
         );
 
         // Check that the contract was deployed with the correct parameters
-        expect(TokenContract.deploy).toHaveBeenCalledWith(
+        expect(Contract.deploy).toHaveBeenCalledWith(
           mockWallet,
-          portalAddr,
-          name,
-          symbol,
-          decimals,
-        );
-
-        // Check deployment options - only checking universalDeploy is true since
-        // contractAddressSalt is handled internally and can be hard to mock precisely
-        expect(mockDeployReturn.send).toHaveBeenCalledWith(
-          expect.objectContaining({
-            universalDeploy: true,
-          }),
+          undefined, // TokenContractArtifact (mocked as undefined)
+          [name, symbol, decimals, portalAddr, undefined], // AztecAddress.ZERO becomes undefined in mock
+          'constructor_with_minter',
         );
 
         // Check the result is a token instance
@@ -796,20 +782,12 @@ describe('L2Token', () => {
       });
 
       it('should deploy a new token contract', async () => {
-        // Method chaining is used in the implementation
-        const mockSend = {
-          deployed: vi.fn().mockResolvedValue(mockTokenContract),
-        };
-
-        const mockDeployReturn = {
-          send: vi.fn().mockReturnValue(mockSend),
-        };
-
-        vi.mocked(TokenContract.deploy).mockReturnValue(
-          mockDeployReturn as unknown as ReturnType<
-            typeof TokenContract.deploy
-          >,
-        );
+        Contract.deploy = vi.fn().mockReturnValue({
+          send: vi.fn().mockReturnValue({
+            deployed: vi.fn().mockResolvedValue({ address: tokenAddr }),
+          }),
+        });
+        TokenContract.at = vi.fn().mockResolvedValue(mockTokenContract);
 
         const result = await L2Token.deploy(
           mockL2Client,
@@ -820,16 +798,12 @@ describe('L2Token', () => {
         );
 
         // Check that the contract was deployed with the correct parameters
-        expect(TokenContract.deploy).toHaveBeenCalledWith(
+        expect(Contract.deploy).toHaveBeenCalledWith(
           mockWallet,
-          portalAddr,
-          name,
-          symbol,
-          decimals,
+          undefined, // TokenContractArtifact (mocked as undefined)
+          [name, symbol, decimals, portalAddr, undefined], // AztecAddress.ZERO becomes undefined in mock
+          'constructor_with_minter',
         );
-
-        // Check that send was called
-        expect(mockDeployReturn.send).toHaveBeenCalled();
 
         // Check the result is a token instance
         expect(result).toBeInstanceOf(L2Token);
@@ -844,17 +818,11 @@ describe('L2Token', () => {
           { tokenName: name, tokenSymbol: symbol, decimals },
         );
 
-        const mockDeployReturn = {
+        Contract.deploy = vi.fn().mockReturnValue({
           send: vi.fn().mockImplementation(() => {
             throw mockError;
           }),
-        };
-
-        vi.mocked(TokenContract.deploy).mockReturnValue(
-          mockDeployReturn as unknown as ReturnType<
-            typeof TokenContract.deploy
-          >,
-        );
+        });
 
         // Check that the error is thrown with the correct code
         await expect(

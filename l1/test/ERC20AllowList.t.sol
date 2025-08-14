@@ -2,15 +2,13 @@
 
 pragma solidity >=0.8.27;
 
-import "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {IAllowList} from "../src/interfaces/IAllowList.sol";
 import {IERC20Minimal} from "../src/interfaces/IERC20Minimal.sol";
 
 import {ERC20AllowList} from "../src/ERC20AllowList.sol";
-import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 import {InsecurePortalTestToken} from "./InsecurePortalTestToken.sol";
 
@@ -36,8 +34,7 @@ contract ERC20AllowListTest is Test {
     function test_checkProposal_RevertWhen_ZeroAddress() public {
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20AllowList.ERC20AllowList__InvalidToken.selector,
-                ERC20AllowList.ErrorCode.ZERO_ADDRESS
+                ERC20AllowList.ERC20AllowList__InvalidToken.selector, ERC20AllowList.ErrorCode.ZERO_ADDRESS
             )
         );
 
@@ -46,17 +43,10 @@ contract ERC20AllowListTest is Test {
 
     function test_checkProposal_RevertWhen_Name() public {
         InsecurePortalTestToken token = new InsecurePortalTestToken();
-        vm.mockCallRevert(
-            address(token),
-            abi.encodeWithSelector(IERC20Minimal.name.selector),
-            "mocked"
-        );
+        vm.mockCallRevert(address(token), abi.encodeWithSelector(IERC20Minimal.name.selector), "mocked");
 
         vm.expectRevert(
-            abi.encodeWithSelector(
-                ERC20AllowList.ERC20AllowList__InvalidToken.selector,
-                ERC20AllowList.ErrorCode.NAME
-            )
+            abi.encodeWithSelector(ERC20AllowList.ERC20AllowList__InvalidToken.selector, ERC20AllowList.ErrorCode.NAME)
         );
 
         allowList.checkProposal(address(token));
@@ -64,16 +54,11 @@ contract ERC20AllowListTest is Test {
 
     function test_checkProposal_RevertWhen_Symbol() public {
         InsecurePortalTestToken token = new InsecurePortalTestToken();
-        vm.mockCallRevert(
-            address(token),
-            abi.encodeWithSelector(IERC20Minimal.symbol.selector),
-            "mocked"
-        );
+        vm.mockCallRevert(address(token), abi.encodeWithSelector(IERC20Minimal.symbol.selector), "mocked");
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20AllowList.ERC20AllowList__InvalidToken.selector,
-                ERC20AllowList.ErrorCode.SYMBOL
+                ERC20AllowList.ERC20AllowList__InvalidToken.selector, ERC20AllowList.ErrorCode.SYMBOL
             )
         );
 
@@ -82,16 +67,11 @@ contract ERC20AllowListTest is Test {
 
     function test_checkProposal_RevertWhen_Decimals() public {
         InsecurePortalTestToken token = new InsecurePortalTestToken();
-        vm.mockCallRevert(
-            address(token),
-            abi.encodeWithSelector(IERC20Minimal.decimals.selector),
-            "mocked"
-        );
+        vm.mockCallRevert(address(token), abi.encodeWithSelector(IERC20Minimal.decimals.selector), "mocked");
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20AllowList.ERC20AllowList__InvalidToken.selector,
-                ERC20AllowList.ErrorCode.DECIMALS
+                ERC20AllowList.ERC20AllowList__InvalidToken.selector, ERC20AllowList.ErrorCode.DECIMALS
             )
         );
 
@@ -100,16 +80,11 @@ contract ERC20AllowListTest is Test {
 
     function test_checkProposal_RevertWhen_TotalSupply() public {
         InsecurePortalTestToken token = new InsecurePortalTestToken();
-        vm.mockCallRevert(
-            address(token),
-            abi.encodeWithSelector(IERC20.totalSupply.selector),
-            "mocked"
-        );
+        vm.mockCallRevert(address(token), abi.encodeWithSelector(IERC20.totalSupply.selector), "mocked");
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20AllowList.ERC20AllowList__InvalidToken.selector,
-                ERC20AllowList.ErrorCode.TOTAL_SUPPLY
+                ERC20AllowList.ERC20AllowList__InvalidToken.selector, ERC20AllowList.ErrorCode.TOTAL_SUPPLY
             )
         );
 
@@ -118,16 +93,11 @@ contract ERC20AllowListTest is Test {
 
     function test_checkProposal_RevertWhen_BalanceOf() public {
         InsecurePortalTestToken token = new InsecurePortalTestToken();
-        vm.mockCallRevert(
-            address(token),
-            abi.encodeWithSelector(IERC20.balanceOf.selector, address(0)),
-            "mocked"
-        );
+        vm.mockCallRevert(address(token), abi.encodeWithSelector(IERC20.balanceOf.selector, address(0)), "mocked");
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20AllowList.ERC20AllowList__InvalidToken.selector,
-                ERC20AllowList.ErrorCode.BALANCE_OF
+                ERC20AllowList.ERC20AllowList__InvalidToken.selector, ERC20AllowList.ErrorCode.BALANCE_OF
             )
         );
 
@@ -137,19 +107,12 @@ contract ERC20AllowListTest is Test {
     function test_checkProposal_RevertWhen_Approve() public {
         InsecurePortalTestToken token = new InsecurePortalTestToken();
         vm.mockCallRevert(
-            address(token),
-            abi.encodeWithSelector(
-                IERC20.approve.selector,
-                address(allowList),
-                0
-            ),
-            "mocked"
+            address(token), abi.encodeWithSelector(IERC20.approve.selector, address(allowList), 0), "mocked"
         );
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20AllowList.ERC20AllowList__InvalidToken.selector,
-                ERC20AllowList.ErrorCode.APPROVE
+                ERC20AllowList.ERC20AllowList__InvalidToken.selector, ERC20AllowList.ErrorCode.APPROVE
             )
         );
 
@@ -160,19 +123,13 @@ contract ERC20AllowListTest is Test {
         InsecurePortalTestToken token = new InsecurePortalTestToken();
         vm.mockCallRevert(
             address(token),
-            abi.encodeWithSelector(
-                IERC20.transferFrom.selector,
-                address(allowList),
-                address(allowList),
-                0
-            ),
+            abi.encodeWithSelector(IERC20.transferFrom.selector, address(allowList), address(allowList), 0),
             "mocked"
         );
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20AllowList.ERC20AllowList__InvalidToken.selector,
-                ERC20AllowList.ErrorCode.TRANSFER_FROM
+                ERC20AllowList.ERC20AllowList__InvalidToken.selector, ERC20AllowList.ErrorCode.TRANSFER_FROM
             )
         );
 
@@ -182,19 +139,12 @@ contract ERC20AllowListTest is Test {
     function test_checkProposal_RevertWhen_Transfer() public {
         InsecurePortalTestToken token = new InsecurePortalTestToken();
         vm.mockCallRevert(
-            address(token),
-            abi.encodeWithSelector(
-                IERC20.transfer.selector,
-                address(allowList),
-                0
-            ),
-            "mocked"
+            address(token), abi.encodeWithSelector(IERC20.transfer.selector, address(allowList), 0), "mocked"
         );
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20AllowList.ERC20AllowList__InvalidToken.selector,
-                ERC20AllowList.ErrorCode.TRANSFER
+                ERC20AllowList.ERC20AllowList__InvalidToken.selector, ERC20AllowList.ErrorCode.TRANSFER
             )
         );
 

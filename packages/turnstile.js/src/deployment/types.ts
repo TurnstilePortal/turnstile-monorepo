@@ -1,5 +1,4 @@
 import type { Hex } from 'viem';
-import type { AztecAddress, EthAddress } from '@aztec/aztec.js';
 
 /**
  * Token information for deployment configuration
@@ -63,11 +62,6 @@ export interface TurnstileConfig {
 }
 
 /**
- * Supported network names
+ * Configuration source type - can be a URL or file path
  */
-export type NetworkName = 'sandbox' | 'testnet' | 'mainnet' | 'local';
-
-/**
- * Configuration source type
- */
-export type ConfigSource = NetworkName | string; // NetworkName or URL
+export type ConfigSource = string; // URL or file path

@@ -51,17 +51,13 @@ abstract contract AllowList is IAllowList, AccessControl {
 
     /// @inheritdoc IAllowList
     /// @param _addr Address to accept
-    function accept(
-        address _addr
-    ) external onlyRole(APPROVER_ROLE) onlyProposed(_addr) {
+    function accept(address _addr) external onlyRole(APPROVER_ROLE) onlyProposed(_addr) {
         _setStatus(_addr, Status.ACCEPTED);
     }
 
     /// @inheritdoc IAllowList
     /// @notice Only callable by `APPROVER_ROLE`
-    function reject(
-        address _addr
-    ) external onlyRole(APPROVER_ROLE) onlyProposed(_addr) {
+    function reject(address _addr) external onlyRole(APPROVER_ROLE) onlyProposed(_addr) {
         _setStatus(_addr, Status.REJECTED);
     }
 
@@ -95,11 +91,7 @@ abstract contract AllowList is IAllowList, AccessControl {
     /// @param _status Desired status
     function _onlyStatus(address _addr, Status _status) internal view {
         if (status[_addr] != _status) {
-            revert AllowList__BadStatus(
-                _addr,
-                uint8(status[_addr]),
-                uint8(_status)
-            );
+            revert AllowList__BadStatus(_addr, uint8(status[_addr]), uint8(_status));
         }
     }
 }

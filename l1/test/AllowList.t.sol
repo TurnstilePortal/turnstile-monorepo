@@ -2,7 +2,7 @@
 
 pragma solidity >=0.8.27;
 
-import "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 
 import {IAllowList} from "../src/interfaces/IAllowList.sol";
 import {AllowList} from "../src/AllowList.sol";
@@ -10,10 +10,7 @@ import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol"
 
 // concrete contract for testing AllowList
 contract testAllowList is AllowList {
-    constructor(
-        address _admin,
-        address _approver
-    ) AllowList(_admin, _approver) {}
+    constructor(address _admin, address _approver) AllowList(_admin, _approver) {}
 
     function checkProposal(address _addr) public pure override {
         require(_addr != address(0), "AllowList: zero address");
@@ -36,7 +33,7 @@ contract AllowListTest is Test {
     function test_ProposeSuccess() public {
         address propose = makeAddr("propose");
         allowList.propose(propose);
-        assertEq(uint8(allowList.status(propose)), 1 /* Status.PROPOSED */);
+        assertEq(uint8(allowList.status(propose)), 1 /* Status.PROPOSED */ );
         assertFalse(allowList.allowed(propose));
     }
 
@@ -60,7 +57,7 @@ contract AllowListTest is Test {
         allowList.propose(propose);
         vm.prank(approver);
         allowList.accept(propose);
-        assertEq(uint8(allowList.status(propose)), 2 /* Status.ACCEPTED */);
+        assertEq(uint8(allowList.status(propose)), 2 /* Status.ACCEPTED */ );
         assertTrue(allowList.allowed(propose));
         assertEq(allowList.allowedLen(), 1);
         assertEq(allowList.allowed()[0], propose);
@@ -73,7 +70,7 @@ contract AllowListTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IAccessControl.AccessControlUnauthorizedAccount.selector,
-                notApprover /* address of unauthorized account */,
+                notApprover, /* address of unauthorized account */
                 keccak256("APPROVER_ROLE") /* required role */
             )
         );
@@ -86,7 +83,7 @@ contract AllowListTest is Test {
         allowList.propose(propose);
         vm.prank(approver);
         allowList.reject(propose);
-        assertEq(uint8(allowList.status(propose)), 3 /* Status.REJECTED */);
+        assertEq(uint8(allowList.status(propose)), 3 /* Status.REJECTED */ );
     }
 
     function test_RevertWhen_RejectInvalidApprover() public {
@@ -96,7 +93,7 @@ contract AllowListTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IAccessControl.AccessControlUnauthorizedAccount.selector,
-                notApprover /* address of unauthorized account */,
+                notApprover, /* address of unauthorized account */
                 keccak256("APPROVER_ROLE") /* required role */
             )
         );
