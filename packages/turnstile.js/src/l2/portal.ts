@@ -2,9 +2,11 @@ import {
   Fr,
   EthAddress,
   AztecAddress,
-  type SentTx,
   getContractInstanceFromDeployParams,
   PublicKeys,
+  type DeployOptions,
+  type SentTx,
+  type SendMethodOptions,
 } from '@aztec/aztec.js';
 import {
   PortalContract,
@@ -751,16 +753,25 @@ export class L2Portal implements IL2Portal {
     }
   }
 
+  /**
+   * Deploys a new shield gateway contract
+   * @param client The L2 client
+   * @param deployOptions The deployment options
+   * @returns The shield gateway contract
+   */
   static async deployShieldGateway(
     client: IL2Client,
+    deployOptions: Partial<DeployOptions>,
   ): Promise<ShieldGatewayContract> {
     console.debug('Deploying Shield Gateway...');
+    const options: DeployOptions = {
+      universalDeploy: true,
+      contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
+      fee: client.getFeeOpts(),
+      ...deployOptions,
+    };
     const shieldGateway = await ShieldGatewayContract.deploy(client.getWallet())
-      .send({
-        universalDeploy: true,
-        contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
-        fee: client.getFeeOpts(),
-      })
+      .send(options)
       .deployed();
 
     console.debug(
@@ -777,6 +788,7 @@ export class L2Portal implements IL2Portal {
    * @param l1PortalAddress The L1 portal address
    * @param tokenContractClassId The token contract class ID
    * @param shieldGateway The shield gateway address
+   * @param deployOptions The deployment options
    * @returns The portal
    */
   static async deploy(
@@ -784,13 +796,21 @@ export class L2Portal implements IL2Portal {
     l1PortalAddress: EthAddress,
     tokenContractClassId: Fr,
     shieldGateway?: ShieldGatewayContract,
+    deployOptions?: Partial<DeployOptions>,
   ): Promise<{ portal: PortalContract; shieldGateway: ShieldGatewayContract }> {
     try {
       const wallet = client.getWallet();
 
+      const options: DeployOptions = {
+        universalDeploy: true,
+        contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
+        fee: client.getFeeOpts(),
+        ...deployOptions,
+      };
+
       if (!shieldGateway) {
         // biome-ignore lint/style/noParameterAssign: Only assigning if not provided
-        shieldGateway = await L2Portal.deployShieldGateway(client);
+        shieldGateway = await L2Portal.deployShieldGateway(client, options);
       }
 
       console.debug('Deploying L2 Portal...');
@@ -800,11 +820,7 @@ export class L2Portal implements IL2Portal {
         tokenContractClassId,
         shieldGateway.address,
       )
-        .send({
-          universalDeploy: true,
-          contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
-          fee: client.getFeeOpts(),
-        })
+        .send(options)
         .deployed();
       console.debug(`Portal deployed at ${portal.address.toString()}`);
 

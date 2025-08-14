@@ -7,7 +7,9 @@ import {
   AztecAddress,
   Fr,
   ProtocolContractAddress,
+  type DeployOptions,
   type IntentAction,
+  type SendMethodOptions,
   type SentTx,
 } from '@aztec/aztec.js';
 import {
@@ -271,9 +273,14 @@ export class L2Token implements IL2Token {
    * Transfers tokens publicly to an account
    * @param to The recipient address
    * @param amount The amount to transfer
+   * @param options Transaction options
    * @returns The transaction
    */
-  async transferPublic(to: AztecAddress, amount: bigint): Promise<SentTx> {
+  async transferPublic(
+    to: AztecAddress,
+    amount: bigint,
+    options?: SendMethodOptions,
+  ): Promise<SentTx> {
     try {
       const from = this.client.getAddress();
       return this.token.methods
@@ -283,7 +290,7 @@ export class L2Token implements IL2Token {
           amount,
           Fr.ZERO, // nonce
         )
-        .send();
+        .send(options);
     } catch (error) {
       throw createL2Error(
         ErrorCode.L2_TOKEN_OPERATION,
@@ -303,12 +310,14 @@ export class L2Token implements IL2Token {
    * @param to The recipient address
    * @param amount The amount to transfer
    * @param verifiedID The verified ID of the recipient
+   * @param options Transaction options
    * @returns The transaction
    */
   async transferPrivate(
     to: AztecAddress,
     amount: bigint,
     verifiedID: Fr[] & { length: 5 },
+    options?: SendMethodOptions,
   ): Promise<SentTx> {
     try {
       const from = this.client.getAddress();
@@ -327,7 +336,7 @@ export class L2Token implements IL2Token {
       interaction.with({
         capsules: [new Capsule(shieldGatewayAddr, VP_SLOT, verifiedID)],
       });
-      return interaction.send();
+      return interaction.send(options);
     } catch (error) {
       if (isTurnstileError(error)) {
         // If this is already a TurnstileError, just rethrow it
@@ -351,12 +360,13 @@ export class L2Token implements IL2Token {
   /**
    * Shields tokens (converts public to private)
    * @param amount The amount to shield
+   * @param options Transaction options
    * @returns The transaction
    */
-  async shield(amount: bigint): Promise<SentTx> {
+  async shield(amount: bigint, options?: SendMethodOptions): Promise<SentTx> {
     try {
       const address = this.client.getAddress();
-      return this.token.methods.shield(address, amount, Fr.ZERO).send();
+      return this.token.methods.shield(address, amount, Fr.ZERO).send(options);
     } catch (error) {
       throw createL2Error(
         ErrorCode.L2_SHIELD_OPERATION,
@@ -373,12 +383,15 @@ export class L2Token implements IL2Token {
   /**
    * Unshields tokens (converts private to public)
    * @param amount The amount to unshield
+   * @param options Transaction options
    * @returns The transaction
    */
-  async unshield(amount: bigint): Promise<SentTx> {
+  async unshield(amount: bigint, options?: SendMethodOptions): Promise<SentTx> {
     try {
       const address = this.client.getAddress();
-      return this.token.methods.unshield(address, amount, Fr.ZERO).send();
+      return this.token.methods
+        .unshield(address, amount, Fr.ZERO)
+        .send(options);
     } catch (error) {
       throw createL2Error(
         ErrorCode.L2_UNSHIELD_OPERATION,
@@ -525,6 +538,7 @@ export class L2Token implements IL2Token {
    * @param name The token name
    * @param symbol The token symbol
    * @param decimals The token decimals
+   * @param deployOptions The deployment options
    * @returns The token
    */
   static async deploy(
@@ -533,9 +547,18 @@ export class L2Token implements IL2Token {
     name: string,
     symbol: string,
     decimals: number,
+    deployOptions: Partial<DeployOptions> = {},
   ): Promise<L2Token> {
     try {
       const wallet = client.getWallet();
+
+      const options: DeployOptions = {
+        universalDeploy: true,
+        contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
+        fee: client.getFeeOpts(),
+        ...deployOptions,
+      };
+
       const token = await TokenContract.deploy(
         wallet,
         portalAddr,
@@ -543,11 +566,7 @@ export class L2Token implements IL2Token {
         symbol,
         decimals,
       )
-        .send({
-          universalDeploy: true,
-          contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
-          fee: client.getFeeOpts(),
-        })
+        .send(options)
         .deployed();
 
       return new L2Token(token, client);
