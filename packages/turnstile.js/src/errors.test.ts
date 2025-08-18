@@ -3,11 +3,7 @@ import {
   ErrorCode,
   TurnstileError,
   type ErrorContext,
-  createL1Error,
-  createL2Error,
-  createBridgeError,
-  createConfigError,
-  createValidationError,
+  createError,
 } from './errors.js';
 
 describe('TurnstileError', () => {
@@ -103,83 +99,93 @@ describe('TurnstileError', () => {
   });
 });
 
-describe('Error helper functions', () => {
-  it('should create L1 errors with appropriate code validation', () => {
-    const validError = createL1Error(
+describe('createError function', () => {
+  it('should create errors with any error code without validation', () => {
+    // Test L1 error codes
+    const l1Error = createError(
       ErrorCode.L1_TOKEN_OPERATION,
       'Token operation failed',
       { operation: 'transfer' },
     );
 
-    expect(validError.code).toBe(ErrorCode.L1_TOKEN_OPERATION);
-    expect(validError.category).toBe('L1');
+    expect(l1Error.code).toBe(ErrorCode.L1_TOKEN_OPERATION);
+    expect(l1Error.category).toBe('L1');
+    expect(l1Error.message).toBe('Token operation failed');
+    expect(l1Error.context).toEqual({ operation: 'transfer' });
 
-    expect(() =>
-      createL1Error(ErrorCode.L2_GENERAL, 'Invalid code for L1'),
-    ).toThrow('Invalid L1 error code');
-  });
-
-  it('should create L2 errors with appropriate code validation', () => {
-    const validError = createL2Error(
+    // Test L2 error codes
+    const l2Error = createError(
       ErrorCode.L2_SHIELD_OPERATION,
       'Shield operation failed',
       { amount: '100' },
     );
 
-    expect(validError.code).toBe(ErrorCode.L2_SHIELD_OPERATION);
-    expect(validError.category).toBe('L2');
+    expect(l2Error.code).toBe(ErrorCode.L2_SHIELD_OPERATION);
+    expect(l2Error.category).toBe('L2');
 
-    expect(() =>
-      createL2Error(ErrorCode.L1_GENERAL, 'Invalid code for L2'),
-    ).toThrow('Invalid L2 error code');
-  });
-
-  it('should create Bridge errors with appropriate code validation', () => {
-    const validError = createBridgeError(
+    // Test Bridge error codes
+    const bridgeError = createError(
       ErrorCode.BRIDGE_DEPOSIT,
       'Bridge deposit failed',
       { txHash: '0xabc' },
     );
 
-    expect(validError.code).toBe(ErrorCode.BRIDGE_DEPOSIT);
-    expect(validError.category).toBe('Bridge');
+    expect(bridgeError.code).toBe(ErrorCode.BRIDGE_DEPOSIT);
+    expect(bridgeError.category).toBe('Bridge');
 
-    expect(() =>
-      createBridgeError(ErrorCode.L1_GENERAL, 'Invalid code for Bridge'),
-    ).toThrow('Invalid Bridge error code');
-  });
-
-  it('should create Config errors with appropriate code validation', () => {
-    const validError = createConfigError(
+    // Test Config error codes
+    const configError = createError(
       ErrorCode.CONFIG_MISSING_PARAMETER,
       'Missing required parameter',
       { param: 'apiKey' },
     );
 
-    expect(validError.code).toBe(ErrorCode.CONFIG_MISSING_PARAMETER);
-    expect(validError.category).toBe('Config');
+    expect(configError.code).toBe(ErrorCode.CONFIG_MISSING_PARAMETER);
+    expect(configError.category).toBe('Config');
 
-    expect(() =>
-      createConfigError(ErrorCode.L1_GENERAL, 'Invalid code for Config'),
-    ).toThrow('Invalid Config error code');
-  });
-
-  it('should create Validation errors with appropriate code validation', () => {
-    const validError = createValidationError(
+    // Test Validation error codes
+    const validationError = createError(
       ErrorCode.VALIDATION_RANGE,
       'Value out of range',
       { value: 101, min: 0, max: 100 },
     );
 
-    expect(validError.code).toBe(ErrorCode.VALIDATION_RANGE);
-    expect(validError.category).toBe('Validation');
+    expect(validationError.code).toBe(ErrorCode.VALIDATION_RANGE);
+    expect(validationError.category).toBe('Validation');
+  });
 
-    expect(() =>
-      createValidationError(
-        ErrorCode.L1_GENERAL,
-        'Invalid code for Validation',
-      ),
-    ).toThrow('Invalid Validation error code');
+  it('should allow cross-category error code usage (no range restrictions)', () => {
+    // This was previously impossible with the old helper functions
+    // Now we can use any error code with any operation context
+
+    // L1 operation that encounters a bridge-related error
+    const l1BridgeError = createError(
+      ErrorCode.BRIDGE_WITHDRAW,
+      'L1 operation encountered bridge withdrawal error',
+      { operation: 'l1-withdraw' },
+    );
+
+    expect(l1BridgeError.code).toBe(ErrorCode.BRIDGE_WITHDRAW);
+    expect(l1BridgeError.category).toBe('Bridge');
+
+    // L2 operation that encounters a validation error
+    const l2ValidationError = createError(
+      ErrorCode.VALIDATION_ADDRESS,
+      'L2 operation encountered validation error',
+      { operation: 'l2-transfer' },
+    );
+
+    expect(l2ValidationError.code).toBe(ErrorCode.VALIDATION_ADDRESS);
+    expect(l2ValidationError.category).toBe('Validation');
+  });
+
+  it('should create errors without context or cause', () => {
+    const error = createError(ErrorCode.L1_GENERAL, 'Simple error');
+
+    expect(error.code).toBe(ErrorCode.L1_GENERAL);
+    expect(error.message).toBe('Simple error');
+    expect(error.context).toEqual({});
+    expect(error.cause).toBeUndefined();
   });
 
   it('should support complex nested context objects', () => {
@@ -198,7 +204,7 @@ describe('Error helper functions', () => {
       attempts: 3,
     };
 
-    const error = new TurnstileError(
+    const error = createError(
       ErrorCode.L1_TOKEN_OPERATION,
       'Complex error with nested context',
       context,

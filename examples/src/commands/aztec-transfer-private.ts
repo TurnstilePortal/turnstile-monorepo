@@ -1,14 +1,17 @@
 import type { Command } from 'commander';
 import {
   createAztecNodeClient,
-  createPXEClient,
   AztecAddress,
   Fr,
   TxStatus,
 } from '@aztec/aztec.js';
-import type { AztecNode, PXE, Wallet } from '@aztec/aztec.js';
+import type { AztecNode, Wallet } from '@aztec/aztec.js';
 import { getInitialTestAccountsWallets } from '@aztec/accounts/testing';
-import { readKeyData, createL2Client } from '@turnstile-portal/turnstile-dev';
+import {
+  readKeyData,
+  createL2Client,
+  createPXE,
+} from '@turnstile-portal/turnstile-dev';
 
 import { commonOpts } from '@turnstile-portal/deploy/commands';
 
@@ -65,7 +68,6 @@ export function registerAztecTransferPrivate(program: Command) {
     .command('aztec-transfer-private-verified-id')
     .description('Transfer Aztec tokens privately using a verified ID')
     .addOption(commonOpts.keys)
-    .addOption(commonOpts.pxe)
     .addOption(commonOpts.aztecNode)
     .addOption(commonOpts.rpc)
     .addOption(commonOpts.deploymentData)
@@ -78,7 +80,7 @@ export function registerAztecTransferPrivate(program: Command) {
       const tokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
 
       const node = createAztecNodeClient(options.aztecNode);
-      const pxe = createPXEClient(options.pxe);
+      const pxe = await createPXE(node);
       const aztecTestWallets = await getInitialTestAccountsWallets(pxe);
 
       function recipientError(msg: string): Error {

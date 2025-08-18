@@ -157,6 +157,7 @@ export function registerWithdrawTokens(program: Command) {
     .command('withdraw-tokens')
     .description('Withdraw tokens from L2 to L1')
     .addOption(commonOpts.keys)
+    .addOption(commonOpts.aztecNode)
     .addOption(commonOpts.l1Chain)
     .addOption(commonOpts.rpc)
     .addOption(commonOpts.deploymentData)
@@ -173,7 +174,7 @@ export function registerWithdrawTokens(program: Command) {
       const node = createAztecNodeClient(options.aztecNode);
 
       const { l1Client, l2Client } = await getClients(
-        options.aztecNode,
+        { node: options.aztecNode },
         {
           chain: getChain(options.l1Chain),
           transport: http(options.rpc),

@@ -1,10 +1,5 @@
 import type { Command } from 'commander';
-import {
-  createAztecNodeClient,
-  createPXEClient,
-  TxStatus,
-  AztecAddress,
-} from '@aztec/aztec.js';
+import { TxStatus, AztecAddress, EthAddress, Fr } from '@aztec/aztec.js';
 import { http, getAddress } from 'viem';
 import type { Address } from 'viem';
 import {
@@ -13,6 +8,8 @@ import {
   getClients,
   InsecureMintableToken,
 } from '@turnstile-portal/turnstile-dev';
+
+import { L2Token } from '@turnstile-portal/turnstile.js';
 
 import { commonOpts } from '@turnstile-portal/deploy/commands';
 
@@ -66,9 +63,7 @@ async function l1MintAndDeposit({
     `Message hash: ${result.messageHash}, Message index: ${result.messageIndex}`,
   );
 
-  // For our example, we just need to extract the L2 block number from the logs
-  // This is a simplified approach since the API has changed
-  const l2BlockNumber = Number(receipt.blockNumber) + 1; // Estimated L2 block number
+  const { l2BlockNumber } = result;
 
   console.log(
     `Estimated L2 Block Number: ${l2BlockNumber}, Message Index: ${result.messageIndex}`,
@@ -76,7 +71,7 @@ async function l1MintAndDeposit({
 
   return {
     hash: result.messageHash,
-    l2BlockNumber: l2BlockNumber,
+    l2BlockNumber: Number(l2BlockNumber),
     index: Number(result.messageIndex),
   };
 }
@@ -86,7 +81,7 @@ export function registerDepositAndClaim(program: Command) {
     .command('deposit-and-claim')
     .description('Deposit tokens from L1 to L2 and claim them')
     .addOption(commonOpts.keys)
-    .addOption(commonOpts.pxe)
+    .addOption(commonOpts.aztecNode)
     .addOption(commonOpts.l1Chain)
     .addOption(commonOpts.rpc)
     .addOption(commonOpts.deploymentData)
@@ -98,11 +93,10 @@ export function registerDepositAndClaim(program: Command) {
       const factory = await TurnstileFactory.fromConfig(options.deploymentData);
       const tokenInfo = factory.getTokenInfo(options.token);
       const l1TokenAddr = tokenInfo.l1Address;
-
-      const pxe = createPXEClient(options.pxe);
+      const l2TokenAddr = tokenInfo.l2Address;
 
       const { l1Client, l2Client } = await getClients(
-        options.aztecNode,
+        { node: options.aztecNode },
         {
           chain: getChain(options.l1Chain),
           transport: http(options.rpc),
@@ -117,7 +111,7 @@ export function registerDepositAndClaim(program: Command) {
         : l2Client.getAddress().toString();
 
       const deploymentData = factory.getDeploymentData();
-      const { index, hash, l2BlockNumber } = await l1MintAndDeposit({
+      const { index, l2BlockNumber } = await l1MintAndDeposit({
         l1PortalAddr: getAddress(deploymentData.l1Portal),
         tokenAddr: getAddress(l1TokenAddr),
         l2RecipientAddr: l2Recipient,
@@ -137,11 +131,28 @@ export function registerDepositAndClaim(program: Command) {
 
       const aztecPortal = new L2Portal(aztecPortalAddr, l2Client);
 
-      // Convert Ethereum address to string for the claimDeposit call
-      const formattedTokenAddr = getAddress(l1TokenAddr);
+      // Ensure L2 Portal is registered in the PXE
+      console.log(`Registering L2 Portal in PXE: ${aztecPortalAddr}`);
+      await L2Portal.register(
+        l2Client,
+        EthAddress.fromString(deploymentData.l1Portal),
+        Fr.fromHexString(deploymentData.aztecTokenContractClassID),
+        AztecAddress.fromString(deploymentData.aztecShieldGateway),
+      );
+
+      // Ensure L2 Token is registered in the PXE
+      console.log(`Registering L2 Token in PXE: ${l2TokenAddr}`);
+      await L2Token.register(
+        l2Client,
+        AztecAddress.fromString(l2TokenAddr),
+        aztecPortalAddr,
+        tokenInfo.name,
+        tokenInfo.symbol,
+        tokenInfo.decimals,
+      );
 
       const tx = await aztecPortal.claimDeposit(
-        formattedTokenAddr,
+        l1TokenAddr,
         l2Recipient,
         BigInt(options.amount),
         BigInt(index),

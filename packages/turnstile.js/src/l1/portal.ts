@@ -10,7 +10,7 @@ import {
   type Hash,
 } from 'viem';
 import { SiblingPath } from '@aztec/aztec.js';
-import { ErrorCode, createL1Error, createBridgeError } from '../errors.js';
+import { ErrorCode, createError } from '../errors.js';
 import { validateWallet } from '../validator.js';
 import { IL1Client } from './client.js';
 import { ERC20TokenPortalABI, ITokenPortalABI } from '@turnstile-portal/l1-artifacts-abi';
@@ -174,7 +174,7 @@ export class L1Portal implements IL1Portal {
       const tokenPortal = await this.tokenPortal();
       return tokenPortal.read.l2Portal()
     } catch (error) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_CONTRACT_INTERACTION,
         `Failed to get L2 portal address from ${this.address}`,
         { portalAddress: this.address },
@@ -199,7 +199,7 @@ export class L1Portal implements IL1Portal {
 
       return await this.client.getPublicClient().waitForTransactionReceipt({ hash: txHash });
     } catch (error) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_CONTRACT_INTERACTION,
         `Failed to set L2 portal to ${l2Portal}`,
         { portalAddress: this.address, l2Portal },
@@ -254,7 +254,7 @@ export class L1Portal implements IL1Portal {
         l2BlockNumber: messageSentLog.l2BlockNumber,
       };
     } catch (error) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_TOKEN_OPERATION,
         `Failed to deposit ${amount} of token ${tokenAddr} to ${l2RecipientAddr}`,
         {
@@ -306,7 +306,7 @@ export class L1Portal implements IL1Portal {
         l2BlockNumber: messageSentLog.l2BlockNumber,
       };
     } catch (error) {
-      throw createBridgeError(
+      throw createError(
         ErrorCode.BRIDGE_REGISTER,
         `Failed to register token ${tokenAddr}`,
         { portalAddress: this.address, tokenAddress: tokenAddr },
@@ -350,7 +350,7 @@ export class L1Portal implements IL1Portal {
 
       return hash;
     } catch (error) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.BRIDGE_WITHDRAW,
         `Failed to withdraw with leaf ${leaf}`,
         {
@@ -382,7 +382,7 @@ export class L1Portal implements IL1Portal {
 
       return l2BlockNumber <= chainTips.provenBlockNumber;
     } catch (error) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.BRIDGE_MESSAGE,
         `Failed to check if block ${l2BlockNumber} is available on L1`,
         {
@@ -452,7 +452,7 @@ export class L1Portal implements IL1Portal {
     );
 
     if (!blockAvailable) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_TIMEOUT,
         `Timeout waiting for block ${l2BlockNumber} to be available on L1`,
         {
@@ -480,7 +480,7 @@ export class L1Portal implements IL1Portal {
 
       return this.rollupAddress;
     } catch (error) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_CONTRACT_INTERACTION,
         `Failed to get rollup address from ${this.address}`,
         { portalAddress: this.address },
@@ -541,7 +541,7 @@ export class L1Portal implements IL1Portal {
     });
 
     if (logs.length === 0) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_LOG_PARSING,
         `No Deposit logs found in receipt for transaction: ${receipt.transactionHash}`,
         { transactionHash: receipt.transactionHash }
@@ -550,7 +550,7 @@ export class L1Portal implements IL1Portal {
 
     const log = logs[0];
     if (!log || !log.args) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_LOG_PARSING,
         `Failed to parse Deposit log in receipt for transaction: ${receipt.transactionHash}`,
         { transactionHash: receipt.transactionHash }
@@ -583,7 +583,7 @@ export class L1Portal implements IL1Portal {
     });
 
     if (logs.length === 0) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_LOG_PARSING,
         `No Registered logs found in receipt for transaction: ${receipt.transactionHash}`,
         { transactionHash: receipt.transactionHash }
@@ -592,7 +592,7 @@ export class L1Portal implements IL1Portal {
 
     const log = logs[0];
     if (!log || !log.args) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_LOG_PARSING,
         `Failed to parse Registered log in receipt for transaction: ${receipt.transactionHash}`,
         { transactionHash: receipt.transactionHash }
@@ -624,7 +624,7 @@ export class L1Portal implements IL1Portal {
     });
 
     if (logs.length === 0) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_LOG_PARSING,
         `No MessageSent logs found in receipt for transaction: ${receipt.transactionHash}`,
         { transactionHash: receipt.transactionHash }
@@ -633,7 +633,7 @@ export class L1Portal implements IL1Portal {
 
     const log = logs[0];
     if (!log || !log.args) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_LOG_PARSING,
         `Failed to parse MessageSent log in receipt for transaction: ${receipt.transactionHash}`,
         { transactionHash: receipt.transactionHash }

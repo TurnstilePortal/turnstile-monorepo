@@ -7,7 +7,7 @@ import type {
   Transport,
   WalletClient,
 } from 'viem';
-import { ErrorCode, createL1Error } from '../errors.js';
+import { ErrorCode, createError } from '../errors.js';
 import { validateWallet } from '../validator.js';
 
 /**

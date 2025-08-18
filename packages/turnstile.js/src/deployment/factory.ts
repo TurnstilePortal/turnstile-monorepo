@@ -22,7 +22,7 @@ import { L2Client, type IL2Client } from '../l2/client.js';
 import { L2Portal } from '../l2/portal.js';
 import { L2Token } from '../l2/token.js';
 
-import { ErrorCode, createConfigError } from '../errors.js';
+import { ErrorCode, createError } from '../errors.js';
 import type {
   TurnstileConfig,
   ConfigSource,
@@ -136,7 +136,7 @@ export class TurnstileFactory {
     } else {
       const token = this.config.network.deployment.tokens[tokenSymbol];
       if (!token) {
-        throw createConfigError(
+        throw createError(
           ErrorCode.CONFIG_MISSING_PARAMETER,
           `Token ${tokenSymbol} not found in configuration`,
           {
@@ -199,7 +199,7 @@ export class TurnstileFactory {
     } else {
       const token = this.config.network.deployment.tokens[tokenSymbol];
       if (!token) {
-        throw createConfigError(
+        throw createError(
           ErrorCode.CONFIG_MISSING_PARAMETER,
           `Token ${tokenSymbol} not found in configuration`,
           {
@@ -228,7 +228,7 @@ export class TurnstileFactory {
     // Check configured tokens
     const token = this.config.network.deployment.tokens[tokenSymbol];
     if (!token) {
-      throw createConfigError(
+      throw createError(
         ErrorCode.CONFIG_MISSING_PARAMETER,
         `Token ${tokenSymbol} not found in configuration`,
         {

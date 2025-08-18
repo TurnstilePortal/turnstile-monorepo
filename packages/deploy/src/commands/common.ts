@@ -5,18 +5,15 @@ export const commonOpts = {
     '-k, --keys <keyfile.json>',
     'Key file',
   ).makeOptionMandatory(),
-  pxe: new Option('-p, --pxe <url>', 'PXE server URL').default(
-    'http://localhost:8080',
-  ),
   aztecNode: new Option('-n, --aztec-node <url> ', 'Aztec Node URL').default(
-    'http://localhost:8080',
+    'https://sandbox.aztec.walletmesh.com/api/v1/public',
   ),
   rpc: new Option('--rpc <url>', 'RPC server URL').default(
-    'http://localhost:8545',
+    'https://sandbox.ethereum.walletmesh.com/api/v1/public',
   ),
   l1Chain: new Option('--l1-chain <chain>', 'L1 Chain').default('anvil'),
   deploymentData: new Option(
-    '-d, --deployment-data <file>',
-    'Deployment Data File',
-  ).default('sandbox_deployment.json'),
+    '-d, --deployment-data <config>',
+    'Deployment Data predefined config or config file',
+  ).default('sandbox'),
 };

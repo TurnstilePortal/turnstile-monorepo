@@ -25,7 +25,7 @@ import {
 
 import { L2_CONTRACT_DEPLOYMENT_SALT, VP_SLOT } from './constants.js';
 
-import { ErrorCode, createL2Error, isTurnstileError } from '../errors.js';
+import { ErrorCode, createError, isTurnstileError } from '../errors.js';
 import type { L2Client, IL2Client } from './client.js';
 import { validatePositiveAmount } from '../validator.js';
 
@@ -181,7 +181,7 @@ export class L2Token implements IL2Token {
       const symbol = await this.token.methods.public_get_symbol().simulate();
       return readFieldCompressedString(symbol);
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_TOKEN_OPERATION,
         `Failed to get symbol for token ${this.token.address}`,
         { tokenAddress: this.token.address.toString() },
@@ -199,7 +199,7 @@ export class L2Token implements IL2Token {
       const name = await this.token.methods.public_get_name().simulate();
       return readFieldCompressedString(name);
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_TOKEN_OPERATION,
         `Failed to get name for token ${this.token.address}`,
         { tokenAddress: this.token.address.toString() },
@@ -216,7 +216,7 @@ export class L2Token implements IL2Token {
     try {
       return Number(await this.token.methods.public_get_decimals().simulate());
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_TOKEN_OPERATION,
         `Failed to get decimals for token ${this.token.address}`,
         { tokenAddress: this.token.address.toString() },
@@ -234,7 +234,7 @@ export class L2Token implements IL2Token {
     try {
       return await this.token.methods.balance_of_public(address).simulate();
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_INSUFFICIENT_BALANCE,
         `Failed to get public balance for token ${this.token.address} for address ${address}`,
         {
@@ -256,7 +256,7 @@ export class L2Token implements IL2Token {
     try {
       return await this.token.methods.balance_of_private(address).simulate();
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_INSUFFICIENT_BALANCE,
         `Failed to get private balance for token ${this.token.address} for address ${address}`,
         {
@@ -292,7 +292,7 @@ export class L2Token implements IL2Token {
         )
         .send(options);
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_TOKEN_OPERATION,
         `Failed to transfer ${amount} tokens publicly to ${to} for token ${this.token.address}`,
         {
@@ -344,7 +344,7 @@ export class L2Token implements IL2Token {
       }
 
       const recipientStr = to ? to.toString() : 'null';
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_TOKEN_OPERATION,
         `Failed to transfer ${amount} tokens privately to ${recipientStr} for token ${this.token.address}`,
         {
@@ -368,7 +368,7 @@ export class L2Token implements IL2Token {
       const address = this.client.getAddress();
       return this.token.methods.shield(address, amount, Fr.ZERO).send(options);
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_SHIELD_OPERATION,
         `Failed to shield ${amount} tokens for token ${this.token.address}`,
         {
@@ -393,7 +393,7 @@ export class L2Token implements IL2Token {
         .unshield(address, amount, Fr.ZERO)
         .send(options);
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_UNSHIELD_OPERATION,
         `Failed to unshield ${amount} tokens for token ${this.token.address}`,
         {
@@ -420,7 +420,7 @@ export class L2Token implements IL2Token {
       const action = await this.token.methods.burn_public(from, amount, nonce);
       return { action, nonce };
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_BURN_OPERATION,
         `Failed to burn ${amount} tokens from ${from} for token ${this.token.address}`,
         {
@@ -474,7 +474,7 @@ export class L2Token implements IL2Token {
         nonce,
       };
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_BURN_OPERATION,
         `Failed to burn ${amount} tokens from ${from} for token ${this.token.address}`,
         {
@@ -495,7 +495,7 @@ export class L2Token implements IL2Token {
     try {
       return await this.token.methods.get_shield_gateway_public().simulate();
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_CONTRACT_INTERACTION,
         `Failed to get shield gateway address for token ${this.token.address}`,
         { tokenAddress: this.token.address.toString() },
@@ -522,7 +522,7 @@ export class L2Token implements IL2Token {
       }
       return new L2Token(token, client);
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_CONTRACT_INTERACTION,
         `Failed to create token from address ${address}`,
         { tokenAddress: address.toString() },
@@ -571,7 +571,7 @@ export class L2Token implements IL2Token {
 
       return new L2Token(token, client);
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_DEPLOYMENT,
         `Failed to deploy token with name ${name} and symbol ${symbol}`,
         {
@@ -603,7 +603,7 @@ export class L2Token implements IL2Token {
     );
 
     if (!instance.address.equals(tokenAddress)) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_GENERAL,
         `Token address mismatch: ${instance.address.toString()} !== ${tokenAddress.toString()}`,
         {

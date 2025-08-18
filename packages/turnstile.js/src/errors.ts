@@ -126,87 +126,14 @@ export class TurnstileError extends Error {
 }
 
 /**
- * Helper function to create a specific L1 error
+ * Helper function to create a Turnstile error
  */
-export function createL1Error(
+export function createError(
   code: ErrorCode,
   message: string,
   context: ErrorContext = {},
   cause?: unknown,
 ): TurnstileError {
-  if (code < 1000 || code >= 2000) {
-    throw new Error(
-      `Invalid L1 error code: ${code}. L1 error codes must be between 1000-1999.`,
-    );
-  }
-  return new TurnstileError(code, message, context, cause);
-}
-
-/**
- * Helper function to create a specific L2 error
- */
-export function createL2Error(
-  code: ErrorCode,
-  message: string,
-  context: ErrorContext = {},
-  cause?: unknown,
-): TurnstileError {
-  if (code < 2000 || code >= 3000) {
-    throw new Error(
-      `Invalid L2 error code: ${code}. L2 error codes must be between 2000-2999.`,
-    );
-  }
-  return new TurnstileError(code, message, context, cause);
-}
-
-/**
- * Helper function to create a specific Bridge error
- */
-export function createBridgeError(
-  code: ErrorCode,
-  message: string,
-  context: ErrorContext = {},
-  cause?: unknown,
-): TurnstileError {
-  if (code < 3000 || code >= 4000) {
-    throw new Error(
-      `Invalid Bridge error code: ${code}. Bridge error codes must be between 3000-3999.`,
-    );
-  }
-  return new TurnstileError(code, message, context, cause);
-}
-
-/**
- * Helper function to create a specific Config error
- */
-export function createConfigError(
-  code: ErrorCode,
-  message: string,
-  context: ErrorContext = {},
-  cause?: unknown,
-): TurnstileError {
-  if (code < 4000 || code >= 5000) {
-    throw new Error(
-      `Invalid Config error code: ${code}. Config error codes must be between 4000-4999.`,
-    );
-  }
-  return new TurnstileError(code, message, context, cause);
-}
-
-/**
- * Helper function to create a specific Validation error
- */
-export function createValidationError(
-  code: ErrorCode,
-  message: string,
-  context: ErrorContext = {},
-  cause?: unknown,
-): TurnstileError {
-  if (code < 5000 || code >= 6000) {
-    throw new Error(
-      `Invalid Validation error code: ${code}. Validation error codes must be between 5000-5999.`,
-    );
-  }
   return new TurnstileError(code, message, context, cause);
 }
 

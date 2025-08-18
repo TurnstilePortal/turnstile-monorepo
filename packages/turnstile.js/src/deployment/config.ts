@@ -1,4 +1,4 @@
-import { ErrorCode, createConfigError } from '../errors.js';
+import { ErrorCode, createError } from '../errors.js';
 import type {
   NetworkConfig,
   TurnstileConfig,
@@ -121,7 +121,7 @@ async function loadSandboxConfig(): Promise<NetworkConfig> {
       deployment: deploymentData,
     };
   } catch (error) {
-    throw createConfigError(
+    throw createError(
       ErrorCode.CONFIG_INVALID_PARAMETER,
       'Failed to load sandbox configuration from API',
       {
@@ -181,7 +181,7 @@ async function loadStaticConfig(
     // Fall back to default configuration
     const defaultConfig = DEFAULT_NETWORKS[networkName];
     if (!defaultConfig) {
-      throw createConfigError(
+      throw createError(
         ErrorCode.CONFIG_MISSING_PARAMETER,
         `No configuration found for network: ${networkName}`,
         { networkName },
@@ -207,7 +207,7 @@ async function loadUrlConfig(url: string): Promise<DeploymentData> {
     const data = await response.json();
     return data as DeploymentData;
   } catch (error) {
-    throw createConfigError(
+    throw createError(
       ErrorCode.CONFIG_INVALID_PARAMETER,
       `Failed to load configuration from URL: ${url}`,
       { url },
@@ -284,7 +284,7 @@ function isNetworkName(source: ConfigSource): source is NetworkName {
 export function getDefaultConfig(networkName: NetworkName): NetworkConfig {
   // Handle sandbox specially since it's loaded dynamically
   if (networkName === 'sandbox') {
-    throw createConfigError(
+    throw createError(
       ErrorCode.CONFIG_MISSING_PARAMETER,
       'Sandbox configuration is loaded dynamically from API and cannot be retrieved as a default configuration',
       { networkName },
@@ -293,7 +293,7 @@ export function getDefaultConfig(networkName: NetworkName): NetworkConfig {
 
   const config = DEFAULT_NETWORKS[networkName];
   if (!config) {
-    throw createConfigError(
+    throw createError(
       ErrorCode.CONFIG_MISSING_PARAMETER,
       `No default configuration found for network: ${networkName}`,
       { networkName },

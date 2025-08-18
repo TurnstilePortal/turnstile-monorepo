@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { registerGenerateKey } from './commands/generate-key.js';
-import { registerDeployAztecKey } from './commands/deploy-aztec-key.js';
 import { registerDeployCommand } from './commands/deploy-command.js';
 
 // Initialize setup modules
@@ -16,8 +14,6 @@ async function main() {
     .description('CLI tool for deploying turnstile contracts')
     .version('0.0.1');
 
-  registerGenerateKey(program);
-  registerDeployAztecKey(program);
   registerDeployCommand(program);
 
   await program.parseAsync();

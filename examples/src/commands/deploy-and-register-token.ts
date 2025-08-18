@@ -1,12 +1,13 @@
 import type { Command } from 'commander';
 import { randomBytes } from 'node:crypto';
 import {
-  createAztecNodeClient,
-  createPXEClient,
   AztecAddress,
+  EthAddress,
   TxStatus,
+  Fr,
+  retryUntil,
 } from '@aztec/aztec.js';
-import { http, getAddress } from 'viem';
+import { http, getAddress, getContract, type Address, type Hex } from 'viem';
 import {
   waitForL2Block,
   getChain,
@@ -18,9 +19,210 @@ import { commonOpts } from '@turnstile-portal/deploy/commands';
 import {
   L2Token,
   L2Portal,
-  L2Client,
+  L1Portal,
+  L1AllowList,
   TurnstileFactory,
+  type L2Client,
+  type L1Client,
 } from '@turnstile-portal/turnstile.js';
+
+import {
+  InsecureMintableTokenABI,
+  InsecureMintableTokenBytecode,
+} from '@turnstile-portal/l1-artifacts-dev';
+
+// Helper functions for token deployment and registration
+async function deployL1DevToken(
+  client: L1Client,
+  name: string,
+  symbol: string,
+  decimals: number,
+): Promise<Hex> {
+  console.log(`Deploying L1 Token ${name} (${symbol})...`);
+  const walletClient = client.getWalletClient();
+  const account = walletClient.account;
+  if (!account) {
+    throw new Error('No account connected to wallet client');
+  }
+
+  const txHash = await walletClient.deployContract({
+    abi: InsecureMintableTokenABI,
+    bytecode: InsecureMintableTokenBytecode,
+    args: [name, symbol, decimals],
+    account,
+    chain: walletClient.chain,
+  });
+
+  const receipt = await client.getPublicClient().waitForTransactionReceipt({
+    hash: txHash,
+  });
+  if (receipt.status !== 'success') {
+    throw new Error(`Deploy failed: ${receipt}`);
+  }
+
+  const contractAddress = receipt.contractAddress;
+  if (!contractAddress) {
+    throw new Error(`Contract address not found in receipt: ${receipt}`);
+  }
+
+  console.log(`InsecureMintableToken deployed at ${contractAddress}`);
+  await fundL1DevToken(client, contractAddress, BigInt(1000e18));
+  return contractAddress;
+}
+
+async function fundL1DevToken(
+  client: L1Client,
+  tokenAddr: Hex,
+  amount: bigint,
+) {
+  const walletClient = client.getWalletClient();
+  const publicClient = client.getPublicClient();
+  const account = walletClient.account;
+
+  if (!account) {
+    throw new Error('No account available on wallet');
+  }
+
+  const tokenContract = await getContract({
+    address: tokenAddr,
+    abi: InsecureMintableTokenABI,
+    client: {
+      public: publicClient,
+      wallet: walletClient,
+    },
+  });
+
+  const walletAddress = account.address;
+
+  const mintHash = await tokenContract.write.mint([walletAddress, amount], {
+    account,
+    chain: walletClient.chain,
+  });
+  const mintReceipt = await publicClient.waitForTransactionReceipt({
+    hash: mintHash,
+  });
+  if (mintReceipt.status !== 'success') {
+    throw new Error(`Mint failed: ${mintReceipt}`);
+  }
+  console.log(`Minted ${amount} tokens for ${walletAddress}`);
+}
+
+async function proposeL1DevToken(
+  client: L1Client,
+  tokenAddr: Address,
+  l1AllowList: Address,
+) {
+  console.log(`Proposing token ${tokenAddr} to L1 allowlist ${l1AllowList}`);
+  const allowList = new L1AllowList(l1AllowList, client);
+  const proposeReceipt = await allowList.propose(tokenAddr);
+  if (proposeReceipt.status !== 'success') {
+    throw new Error(`propose() failed: ${proposeReceipt}`);
+  }
+  console.log(`Proposed token in tx ${proposeReceipt.transactionHash}`);
+}
+
+async function acceptL1DevToken(
+  client: L1Client,
+  tokenAddr: Address,
+  l1AllowList: Address,
+) {
+  const allowList = new L1AllowList(l1AllowList, client);
+  const acceptReceipt = await allowList.accept(tokenAddr, client);
+  if (acceptReceipt.status !== 'success') {
+    throw new Error(`accept() failed: ${acceptReceipt}`);
+  }
+  console.log(`Accepted proposal in tx ${acceptReceipt.transactionHash}`);
+}
+
+async function registerL1DevToken(
+  client: L1Client,
+  tokenAddr: Address,
+  l1PortalAddr: Address,
+) {
+  console.log(`Registering token ${tokenAddr} with L1 Portal ${l1PortalAddr}`);
+  const l1Portal = new L1Portal(l1PortalAddr, client);
+  const { txHash, messageHash, messageIndex, l2BlockNumber } =
+    await l1Portal.register(tokenAddr);
+  console.log(
+    `L1 registration tx: ${txHash}, messageHash: ${messageHash}, messageIndex: ${messageIndex}`,
+  );
+  return { txHash, messageHash, messageIndex, l2BlockNumber };
+}
+
+async function deployL2DevToken(
+  l2Client: L2Client,
+  aztecPortal: AztecAddress,
+  name: string,
+  symbol: string,
+  decimals: number,
+): Promise<L2Token> {
+  console.log(`Deploying L2 Token ${name} (${symbol})...`);
+  const token = await L2Token.deploy(
+    l2Client,
+    aztecPortal,
+    name,
+    symbol,
+    decimals,
+  );
+  console.log(`TokenContract deployed at ${token.getAddress().toString()}`);
+  return token;
+}
+
+async function registerL2DevToken(
+  l2Client: L2Client,
+  aztecPortalAddr: string,
+  l1TokenAddr: string,
+  l2TokenAddr: string,
+  name: string,
+  symbol: string,
+  decimals: number,
+  index: bigint,
+  l2BlockNumber: number,
+  msgHash: string,
+): Promise<void> {
+  console.log(`Registering L2 token ${symbol} (${l2TokenAddr})...`);
+
+  await waitForL2Block(l2Client, l2BlockNumber);
+
+  const portal = new L2Portal(
+    AztecAddress.fromString(aztecPortalAddr),
+    l2Client,
+  );
+
+  const l1ToL2Message = Fr.fromHexString(msgHash);
+
+  console.log(
+    `Waiting for L1 to L2 message ${l1ToL2Message.toString()} to be available...`,
+  );
+  await retryUntil(
+    async () => {
+      console.log('Still waiting...');
+      return await l2Client.getNode().isL1ToL2MessageSynced(l1ToL2Message);
+    },
+    'L1 to L2 message to be synced',
+    30,
+  );
+
+  const registerTokenTx = await portal.registerToken(
+    l1TokenAddr,
+    l2TokenAddr,
+    name,
+    symbol,
+    decimals,
+    index,
+  );
+
+  console.log(`Transaction submitted: ${await registerTokenTx.getTxHash()}`);
+  const aztecRegisterReceipt = await registerTokenTx.wait();
+  if (aztecRegisterReceipt.status !== TxStatus.SUCCESS) {
+    throw new Error(
+      `registerToken() failed. status: ${aztecRegisterReceipt.status}`,
+    );
+  }
+  console.log(
+    `Token ${symbol} registered with the Aztec Portal in tx ${aztecRegisterReceipt.txHash}`,
+  );
+}
 
 export function registerDeployAndRegisterToken(program: Command) {
   return program
@@ -29,7 +231,6 @@ export function registerDeployAndRegisterToken(program: Command) {
       'Deploy a token on L1 and register it with the Turnstile Portal on L1 & L2',
     )
     .addOption(commonOpts.keys)
-    .addOption(commonOpts.pxe)
     .addOption(commonOpts.aztecNode)
     .addOption(commonOpts.l1Chain)
     .addOption(commonOpts.rpc)
@@ -40,9 +241,8 @@ export function registerDeployAndRegisterToken(program: Command) {
       // Get deployment data and setup clients
       const factory = await TurnstileFactory.fromConfig(options.deploymentData);
       const deploymentData = factory.getDeploymentData();
-      const pxe = createPXEClient(options.pxe);
-      const { l2Client } = await getClients(
-        options.aztecNode,
+      const { l1Client, l2Client } = await getClients(
+        { node: options.aztecNode },
         {
           chain: getChain(options.l1Chain),
           transport: http(options.rpc),
@@ -56,79 +256,91 @@ export function registerDeployAndRegisterToken(program: Command) {
       const tokenSymbol = `TT${suffix}`;
       const tokenDecimals = 18;
 
-      // Create simplified variables for addresses
-      const l1PortalAddr = getAddress(deploymentData.l1Portal);
-      const l1TokenAddr = '0x1234567890123456789012345678901234567890'; // Mock address for example
-      console.log(`Using L1 token at address ${l1TokenAddr}`);
-      console.log(
-        '(Note: In a real scenario, you would deploy and register the token on L1 first.)',
-      );
-
-      // Skip the L1 operations for this example
-      console.log('--------------------------------------------------');
-      console.log(
-        'Skipping L1 token deployment, allowlisting, and registration',
-      );
-      console.log(
-        'These would normally be required steps in a real deployment',
-      );
+      console.log(`Deploying token: ${tokenName} (${tokenSymbol})`);
       console.log('--------------------------------------------------');
 
-      // Simulate L1->L2 message parameters
-      const messageIndex = 0n;
-      const l2BlockNumber = 1n;
-
-      console.log('Creating L2 client and deploying L2 token...');
-
-      // Deploy the L2 token
       try {
+        // Step 1: Deploy L1 Token
+        console.log(`1. Deploying L1 Token ${tokenName} (${tokenSymbol})...`);
+        const l1TokenAddr = await deployL1DevToken(
+          l1Client,
+          tokenName,
+          tokenSymbol,
+          tokenDecimals,
+        );
+        console.log(`✅ L1 token deployed at: ${l1TokenAddr}`);
+
+        // Step 2: Propose token to allowlist
+        console.log('2. Proposing token to L1 allowlist...');
+        const l1AllowListAddr = getAddress(deploymentData.l1AllowList);
+        await proposeL1DevToken(l1Client, l1TokenAddr, l1AllowListAddr);
+        console.log('✅ Token proposed to allowlist');
+
+        // Step 3: Accept token proposal (in dev environment, same account can do this)
+        console.log('3. Accepting token proposal...');
+        await acceptL1DevToken(l1Client, l1TokenAddr, l1AllowListAddr);
+        console.log('✅ Token accepted on allowlist');
+
+        // Step 4: Register token with L1 Portal
+        console.log('4. Registering token with L1 Portal...');
+        const l1PortalAddr = getAddress(deploymentData.l1Portal);
+        const { txHash, messageHash, messageIndex, l2BlockNumber } =
+          await registerL1DevToken(l1Client, l1TokenAddr, l1PortalAddr);
+        console.log('✅ L1 registration complete:');
+        console.log(`   - TX: ${txHash}`);
+        console.log(`   - Message Hash: ${messageHash}`);
+        console.log(`   - Message Index: ${messageIndex}`);
+        console.log(`   - L2 Block Number: ${l2BlockNumber}`);
+
+        // Step 5: Deploy L2 Token
+        console.log('5. Deploying L2 Token...');
         const aztecPortalAddr = AztecAddress.fromString(
           deploymentData.aztecPortal,
         );
-
-        // Deploy L2 token
-        console.log(`Deploying L2 token ${tokenSymbol}...`);
-        const aztecToken = await L2Token.deploy(
+        const l2Token = await deployL2DevToken(
           l2Client,
           aztecPortalAddr,
           tokenName,
           tokenSymbol,
           tokenDecimals,
         );
+        console.log(`✅ L2 token deployed at: ${l2Token.getAddress()}`);
 
-        console.log(`L2 token deployed at ${aztecToken.getAddress()}`);
+        // Step 6: Register token on L2
 
-        // Advance L2 blocks if needed
-        console.log(`Waiting for L2 block ${l2BlockNumber}...`);
-        await waitForL2Block(l2Client, Number(l2BlockNumber));
+        // Ensure L2 Portal is registered in the PXE
+        console.log(`Registering L2 Portal in PXE: ${aztecPortalAddr}`);
+        await L2Portal.register(
+          l2Client,
+          EthAddress.fromString(deploymentData.l1Portal),
+          Fr.fromHexString(deploymentData.aztecTokenContractClassID),
+          AztecAddress.fromString(deploymentData.aztecShieldGateway),
+        );
 
-        // Register token on L2
-        console.log('Registering token on L2...');
-        const aztecPortal = new L2Portal(aztecPortalAddr, l2Client);
-
-        const registerTx = await aztecPortal.registerToken(
+        console.log('6. Registering token on L2...');
+        await registerL2DevToken(
+          l2Client,
+          deploymentData.aztecPortal,
           l1TokenAddr,
-          aztecToken.getAddress().toString(),
+          l2Token.getAddress().toString(),
           tokenName,
           tokenSymbol,
           tokenDecimals,
           messageIndex,
+          Number(l2BlockNumber),
+          messageHash,
         );
-
-        console.log(`L2 registration tx: ${await registerTx.getTxHash()}`);
-
-        const receipt = await registerTx.wait();
-        if (receipt.status !== TxStatus.SUCCESS) {
-          throw new Error(`L2 token registration failed: ${receipt.status}`);
-        }
+        console.log('✅ L2 registration complete');
 
         console.log('--------------------------------------------------');
-        console.log(`Token ${tokenSymbol} successfully registered on L2!`);
-        console.log(`- L1 address: ${l1TokenAddr}`);
-        console.log(`- L2 address: ${aztecToken.getAddress().toString()}`);
+        console.log(
+          `🎉 Token ${tokenSymbol} successfully deployed and registered!`,
+        );
+        console.log(`📍 L1 Address: ${l1TokenAddr}`);
+        console.log(`📍 L2 Address: ${l2Token.getAddress()}`);
         console.log('--------------------------------------------------');
       } catch (error) {
-        console.error('Error during token registration:', error);
+        console.error('❌ Error during token deployment:', error);
         throw error;
       }
     });

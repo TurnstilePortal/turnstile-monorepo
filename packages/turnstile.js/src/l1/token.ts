@@ -3,7 +3,7 @@ import type {
   TransactionReceipt,
   TransactionRequest,
 } from 'viem';
-import { ErrorCode, createL1Error } from '../errors.js';
+import { ErrorCode, createError } from '../errors.js';
 import { validateWallet, validatePositiveAmount } from '../validator.js';
 import { IL1Client } from './client.js';
 import { TOKEN_ABIS } from './abi.js';
@@ -111,7 +111,7 @@ export class L1Token implements IL1Token {
         functionName: 'symbol',
       }) as string;
     } catch (error) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_TOKEN_OPERATION,
         `Failed to get symbol for token ${this.address}`,
         { tokenAddress: this.address },
@@ -132,7 +132,7 @@ export class L1Token implements IL1Token {
         functionName: 'name',
       }) as string;
     } catch (error) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_TOKEN_OPERATION,
         `Failed to get name for token ${this.address}`,
         { tokenAddress: this.address },
@@ -153,7 +153,7 @@ export class L1Token implements IL1Token {
         functionName: 'decimals',
       }));
     } catch (error) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_TOKEN_OPERATION,
         `Failed to get decimals for token ${this.address}`,
         { tokenAddress: this.address },
@@ -176,7 +176,7 @@ export class L1Token implements IL1Token {
         args: [address],
       }) as bigint;
     } catch (error) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_TOKEN_OPERATION,
         `Failed to get balance for token ${this.address} for address ${address}`,
         { tokenAddress: this.address, userAddress: address },
@@ -200,7 +200,7 @@ export class L1Token implements IL1Token {
         args: [owner, spender],
       }) as bigint;
     } catch (error) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_TOKEN_OPERATION,
         `Failed to get allowance for token ${this.address} for owner ${owner} and spender ${spender}`,
         { tokenAddress: this.address, owner, spender },
@@ -240,7 +240,7 @@ export class L1Token implements IL1Token {
 
       return await this.client.getPublicClient().waitForTransactionReceipt({ hash });
     } catch (error) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_TOKEN_OPERATION,
         `Failed to approve ${amount} tokens for spender ${spender} for token ${this.address}`,
         { tokenAddress: this.address, amount: amount.toString(), spender },
@@ -280,7 +280,7 @@ export class L1Token implements IL1Token {
 
       return await this.client.getPublicClient().waitForTransactionReceipt({ hash });
     } catch (error) {
-      throw createL1Error(
+      throw createError(
         ErrorCode.L1_TOKEN_OPERATION,
         `Failed to transfer ${amount} tokens to ${to} for token ${this.address}`,
         { tokenAddress: this.address, amount: amount.toString(), recipient: to },

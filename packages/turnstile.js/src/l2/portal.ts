@@ -15,12 +15,7 @@ import {
   ShieldGatewayContractArtifact,
 } from '@turnstile-portal/aztec-artifacts';
 
-import {
-  ErrorCode,
-  createL2Error,
-  isTurnstileError,
-  createBridgeError,
-} from '../errors.js';
+import { ErrorCode, createError, isTurnstileError } from '../errors.js';
 import type { IL2Client } from './client.js';
 import { L2_CONTRACT_DEPLOYMENT_SALT } from './constants.js';
 
@@ -206,7 +201,7 @@ export class L2Portal implements IL2Portal {
       };
       return this.config;
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_CONTRACT_INTERACTION,
         `Failed to get portal configuration from ${this.portalAddr}`,
         { portalAddress: this.portalAddr.toString() },
@@ -249,7 +244,7 @@ export class L2Portal implements IL2Portal {
         )
         .send();
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.BRIDGE_DEPOSIT,
         `Failed to claim deposit for token ${l1TokenAddr} to recipient ${l2RecipientAddr}`,
         {
@@ -288,7 +283,7 @@ export class L2Portal implements IL2Portal {
         )
         .send();
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.BRIDGE_DEPOSIT,
         `Failed to claim shielded deposit for token ${l1TokenAddr} to recipient ${l2RecipientAddr}`,
         {
@@ -323,7 +318,7 @@ export class L2Portal implements IL2Portal {
         return true;
       }
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.BRIDGE_MESSAGE,
         `Failed to check if deposit is claimed for hash ${hash}`,
         {
@@ -368,7 +363,7 @@ export class L2Portal implements IL2Portal {
         )
         .send();
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.BRIDGE_REGISTER,
         `Failed to register token ${l1TokenAddr} as ${l2TokenAddr}`,
         {
@@ -424,7 +419,7 @@ export class L2Portal implements IL2Portal {
 
       return { tx, leaf };
     } catch (error) {
-      throw createBridgeError(
+      throw createError(
         ErrorCode.BRIDGE_WITHDRAW,
         `Failed to withdraw ${amount} tokens to ${l1RecipientAddr}`,
         {
@@ -450,7 +445,7 @@ export class L2Portal implements IL2Portal {
         .simulate();
       return AztecAddress.fromBigInt(result);
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_TOKEN_OPERATION,
         `Failed to get L2 token for L1 token ${l1TokenAddr}`,
         { l1TokenAddress: l1TokenAddr },
@@ -474,7 +469,7 @@ export class L2Portal implements IL2Portal {
         `0x${result.inner.toString(16).padStart(40, '0')}`,
       );
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_TOKEN_OPERATION,
         `Failed to get L1 token for L2 token ${l2TokenAddr}`,
         { l2TokenAddress: l2TokenAddr },
@@ -495,7 +490,7 @@ export class L2Portal implements IL2Portal {
         .is_registered_l1_unconstrained(EthAddress.fromString(l1TokenAddr))
         .simulate();
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_TOKEN_OPERATION,
         `Failed to check if token ${l1TokenAddr} is registered by L1 address`,
         { l1TokenAddress: l1TokenAddr },
@@ -516,7 +511,7 @@ export class L2Portal implements IL2Portal {
         .is_registered_l2_unconstrained(AztecAddress.fromString(l2TokenAddr))
         .simulate();
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_TOKEN_OPERATION,
         `Failed to check if token ${l2TokenAddr} is registered by L2 address`,
         { l2TokenAddress: l2TokenAddr },
@@ -540,7 +535,7 @@ export class L2Portal implements IL2Portal {
         Fr.fromHexString(l1ToL2Message),
       );
       if (!wit) {
-        throw createL2Error(
+        throw createError(
           ErrorCode.BRIDGE_MESSAGE,
           `No membership witness found for L1ToL2Message ${l1ToL2Message}`,
           { l1ToL2Message },
@@ -552,7 +547,7 @@ export class L2Portal implements IL2Portal {
       if (isTurnstileError(error)) {
         throw error;
       }
-      throw createL2Error(
+      throw createError(
         ErrorCode.BRIDGE_MESSAGE,
         `Failed to get L1ToL2Message leaf index for ${l1ToL2Message}`,
         { l1ToL2Message },
@@ -606,7 +601,7 @@ export class L2Portal implements IL2Portal {
       const combinedBuffer = Buffer.concat(leafData);
       return Fr.fromBuffer(combinedBuffer);
     } catch (error) {
-      throw createBridgeError(
+      throw createError(
         ErrorCode.BRIDGE_MESSAGE,
         `Failed to get L2ToL1Message leaf for token ${l1TokenAddr} to recipient ${l1RecipientAddr}`,
         {
@@ -729,7 +724,7 @@ export class L2Portal implements IL2Portal {
     try {
       if (register) {
         if (!l1Portal || !tokenContractClassId || !shieldGateway) {
-          throw createL2Error(
+          throw createError(
             ErrorCode.L2_CONTRACT_INTERACTION,
             'Missing required parameters for portal registration: l1Portal, tokenContractClassId, and shieldGateway are required when register is true',
             { portalAddress: address.toString() },
@@ -744,7 +739,7 @@ export class L2Portal implements IL2Portal {
       }
       return new L2Portal(address, client);
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_CONTRACT_INTERACTION,
         `Failed to create portal from address ${address}`,
         { portalAddress: address.toString() },
@@ -829,7 +824,7 @@ export class L2Portal implements IL2Portal {
         shieldGateway,
       };
     } catch (error) {
-      throw createL2Error(
+      throw createError(
         ErrorCode.L2_DEPLOYMENT,
         `Failed to deploy portal with L1 portal address ${l1PortalAddress}`,
         { l1PortalAddress: l1PortalAddress.toString() },

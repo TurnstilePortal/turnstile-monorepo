@@ -1,12 +1,12 @@
 import type { Command } from 'commander';
-import {
-  createAztecNodeClient,
-  createPXEClient,
-  AztecAddress,
-} from '@aztec/aztec.js';
+import { createAztecNodeClient, AztecAddress } from '@aztec/aztec.js';
 import type { Wallet } from '@aztec/aztec.js';
 import { getInitialTestAccountsWallets } from '@aztec/accounts/testing';
-import { readKeyData, createL2Client } from '@turnstile-portal/turnstile-dev';
+import {
+  readKeyData,
+  createL2Client,
+  createPXE,
+} from '@turnstile-portal/turnstile-dev';
 
 import { commonOpts } from '@turnstile-portal/deploy/commands';
 
@@ -46,7 +46,6 @@ export function registerAztecTransferPublic(program: Command) {
     .command('aztec-transfer-public')
     .description('Transfer Aztec tokens publicly')
     .addOption(commonOpts.keys)
-    .addOption(commonOpts.pxe)
     .addOption(commonOpts.aztecNode)
     .addOption(commonOpts.rpc)
     .addOption(commonOpts.deploymentData)
@@ -58,7 +57,8 @@ export function registerAztecTransferPublic(program: Command) {
       const tokenInfo = factory.getTokenInfo(options.token);
       const tokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
 
-      const pxe = createPXEClient(options.pxe);
+      const node = createAztecNodeClient(options.aztecNode);
+      const pxe = await createPXE(node);
 
       const keyData = await readKeyData(options.keys);
       const l2Client = await createL2Client(options.aztecNode, keyData);
