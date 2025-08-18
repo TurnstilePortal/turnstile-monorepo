@@ -1,5 +1,7 @@
 # @turnstile-portal/aztec-artifacts
 
+## 0.3.8
+
 ## 0.3.7
 
 ## 0.3.6
