@@ -1,5 +1,11 @@
 # @turnstile-portal/l1-artifacts-dev
 
+## 0.3.8
+
+### Patch Changes
+
+- e2a3147: Fix some examples & simplify error handling in turnstile.js
+
 ## 0.3.7
 
 ## 0.3.6

@@ -1,5 +1,14 @@
 # @turnstile-portal/turnstile.js
 
+## 0.3.8
+
+### Patch Changes
+
+- e2a3147: Fix some examples & simplify error handling in turnstile.js
+- Updated dependencies [e2a3147]
+  - @turnstile-portal/l1-artifacts-abi@0.3.8
+  - @turnstile-portal/aztec-artifacts@0.3.8
+
 ## 0.3.7
 
 ### Patch Changes
