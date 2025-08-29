@@ -1,5 +1,11 @@
 # @turnstile-portal/l1-artifacts-bytecode
 
+## 0.4.0
+
+### Minor Changes
+
+- 684e307: Update to aztec-packages 1.2.1 & updated token standard
+
 ## 0.3.8
 
 ### Patch Changes
