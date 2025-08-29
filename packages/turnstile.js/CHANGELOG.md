@@ -1,5 +1,17 @@
 # @turnstile-portal/turnstile.js
 
+## 0.4.0
+
+### Minor Changes
+
+- 684e307: Update to aztec-packages 1.2.1 & updated token standard
+
+### Patch Changes
+
+- Updated dependencies [684e307]
+  - @turnstile-portal/l1-artifacts-abi@0.4.0
+  - @turnstile-portal/aztec-artifacts@0.4.0
+
 ## 0.3.8
 
 ### Patch Changes
