@@ -1,13 +1,13 @@
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
-import type { DeploySetup } from './setup-interface.js';
 import type { DeployConfig } from '../config/types.js';
+import type { DeploySetup } from './setup-interface.js';
 import { registerSetup } from './setup-interface.js';
 
 const execAsync = promisify(exec);
 
 export class LocalSandboxSetup implements DeploySetup {
-  async setup(config: DeployConfig, keysFile: string): Promise<void> {
+  async setup(config: DeployConfig, _keysFile: string): Promise<void> {
     console.log('Setting up sandbox environment...');
     await this.startOrResetSandbox();
     await this.waitForSandboxReady(config.connection.aztec.node);
@@ -39,7 +39,7 @@ export class LocalSandboxSetup implements DeploySetup {
         await execAsync(`docker stop ${containerId}`);
         console.log(`Stopped existing sandbox container ${containerId}`);
       }
-    } catch (error) {
+    } catch (_error) {
       console.log('Container not running or not found, continuing...');
     }
 
@@ -75,7 +75,7 @@ export class LocalSandboxSetup implements DeploySetup {
           console.log('Sandbox is ready!');
           return;
         }
-      } catch (error) {
+      } catch (_error) {
         // Ignore errors and keep trying
       }
 

@@ -9,7 +9,8 @@ pub contract Portal {
     use std::meta::derive;
 
     use aztec::{
-        event::event_interface::EventInterface,
+        authwit::auth::assert_current_call_valid_authwit_public,
+        event::event_interface::emit_event_in_public_log,
         hash::hash_args,
         macros::{
             events::event,
@@ -26,10 +27,7 @@ pub contract Portal {
             traits::{FromField, Serialize, ToField},
         },
         state_vars::{Map, PublicImmutable},
-        unencrypted_logs::unencrypted_event_emission::encode_event,
     };
-
-    use authwit::auth::assert_current_call_valid_authwit_public;
 
     use token::Token;
 
@@ -127,7 +125,13 @@ pub contract Portal {
 
         // Ensure the supplied token address matches the expected address. This ensures its deployed with
         // the correct code and initialization parameters.
-        let initializer = Token::interface().init(context.this_address() /* minter */, name, symbol, decimals);
+        let initializer = Token::interface().constructor_with_minter(
+            name,
+            symbol,
+            decimals,
+            context.this_address() /* minter */,
+            AztecAddress::zero(), /* not upgradable */
+        );
         let args_hash = hash_args(initializer.args);
         aztec::oracle::debug_log::debug_log_format("Args hash: {0}", [args_hash]);
         let init_hash = compute_initialization_hash(initializer.selector, args_hash);
@@ -139,19 +143,23 @@ pub contract Portal {
             AztecAddress::from_field(0),
         );
 
-        aztec::oracle::debug_log::debug_log_format("Computed partial address: {0}", [partial_address.to_field()]);
+        aztec::oracle::debug_log::debug_log_format(
+            "Computed partial address: {0}",
+            [partial_address.to_field()],
+        );
         let computed_address = AztecAddress::compute(PublicKeys::default(), partial_address);
-        aztec::oracle::debug_log::debug_log_format("Computed address: {0}", [computed_address.to_field()]);
+        aztec::oracle::debug_log::debug_log_format(
+            "Computed address: {0}",
+            [computed_address.to_field()],
+        );
 
         assert(
             computed_address == aztec_token,
-            "Expected address did not match supplized token address",
+            "Expected address did not match supplied token address",
         );
 
         // Set the shield gateway
-        Token::at(aztec_token)
-            .set_shield_gateway(config.shield_gateway)
-            .enqueue(&mut context);
+        Token::at(aztec_token).set_shield_gateway(config.shield_gateway).enqueue(&mut context);
 
         // Consume the message
         aztec::oracle::debug_log::debug_log_format(
@@ -179,7 +187,7 @@ pub contract Portal {
         // Initialize the token mappings
         storage.l1_tokens.at(eth_token).initialize(aztec_token);
         storage.l2_tokens.at(aztec_token).initialize(eth_token);
-        Register { eth_token, aztec_token }.emit(encode_event(&mut context));
+        emit_event_in_public_log(Register { eth_token, aztec_token }, &mut context);
     }
 
     #[private]
@@ -244,9 +252,9 @@ pub contract Portal {
             message_leaf_index,
         );
 
-        Token::at(storage.l1_tokens.at(eth_token).read()).mint_shielded(recipient, amount).call(
-            &mut context,
-        );
+        Token::at(storage.l1_tokens.at(eth_token).read())
+            .mint_to_private(recipient, recipient, amount)
+            .call(&mut context);
 
         Portal::at(context.this_address())
             ._log_claim(eth_token, recipient, amount, message_leaf_index)
@@ -261,9 +269,10 @@ pub contract Portal {
         amount: u128,
         message_leaf_index: Field,
     ) {
-        Deposit { eth_token, recipient, amount, message_leaf_index }.emit(encode_event(
+        emit_event_in_public_log(
+            Deposit { eth_token, recipient, amount, message_leaf_index },
             &mut context,
-        ));
+        );
     }
 
     #[public]
@@ -294,7 +303,10 @@ pub contract Portal {
 
         aztec::oracle::debug_log::debug_log_format("Withdraw L2ToL1 Message {0}", [content_hash]);
 
-        Withdraw { token: eth_token, from, to: recipient, amount }.emit(encode_event(&mut context));
+        emit_event_in_public_log(
+            Withdraw { token: eth_token, from, to: recipient, amount },
+            &mut context,
+        );
     }
 
     #[utility]

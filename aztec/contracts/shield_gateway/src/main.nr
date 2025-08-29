@@ -7,11 +7,10 @@ pub contract ShieldGateway {
     use std::meta::derive;
 
     use aztec::{
-        event::event_interface::EventInterface,
+        event::event_interface::{emit_event_in_public_log, EventInterface},
         macros::{events::event, functions::{initializer, internal, private, public, view}},
         oracle::capsules,
         protocol_types::{address::AztecAddress, traits::{FromField, Hash, Serialize, ToField}},
-        unencrypted_logs::unencrypted_event_emission::encode_event,
     };
 
     pub global VP_SLOT: Field = 0x1dfeed;
@@ -62,7 +61,7 @@ pub contract ShieldGateway {
     #[public]
     #[internal]
     fn _log_transfer(serial: Field, token: AztecAddress, binnedAmount: u128) {
-        TransferEvent { serial, token, binnedAmount }.emit(encode_event(&mut context));
+        emit_event_in_public_log(TransferEvent { serial, token, binnedAmount }, &mut context);
     }
 
     #[private]

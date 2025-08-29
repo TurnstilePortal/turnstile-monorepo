@@ -1,19 +1,17 @@
-import { getContract, type Hex, type Address } from 'viem';
-import { AztecAddress, Fr, TxStatus, retryUntil } from '@aztec/aztec.js';
-
-import { waitForL2Block } from '@turnstile-portal/turnstile-dev';
-
-import type { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
-import {
-  L1Portal,
-  L1AllowList,
-  L2Portal,
-  L2Token,
-} from '@turnstile-portal/turnstile.js';
+import { AztecAddress, Fr, retryUntil, TxStatus } from '@aztec/aztec.js';
 import {
   InsecureMintableTokenABI,
   InsecureMintableTokenBytecode,
 } from '@turnstile-portal/l1-artifacts-dev';
+import type { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
+import {
+  L1AllowList,
+  L1Portal,
+  L2Portal,
+  L2Token,
+} from '@turnstile-portal/turnstile.js';
+import { waitForL2Block } from '@turnstile-portal/turnstile-dev';
+import { type Address, getContract, type Hex } from 'viem';
 
 const ADDITIONAL_L1_ADDRESSES_TO_FUND: `0x${string}`[] = [
   '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',

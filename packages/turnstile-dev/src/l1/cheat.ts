@@ -38,7 +38,7 @@ export async function getAztecRollupContract(
 export async function setAssumeProven(
   anvilURL: string,
   rollupAddr: Address,
-  l2BlockNumber: bigint,
+  l2BlockNumber: number,
 ) {
   const ethCheatCodes = new EthCheatCodes([anvilURL]);
   const rollupCheatCodes = new RollupCheatCodes(ethCheatCodes, { rollupAddress: EthAddress.fromString(rollupAddr) });

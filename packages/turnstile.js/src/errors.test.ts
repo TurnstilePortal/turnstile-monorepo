@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  ErrorCode,
-  TurnstileError,
-  type ErrorContext,
   createError,
+  ErrorCode,
+  type ErrorContext,
+  TurnstileError,
 } from './errors.js';
 
 describe('TurnstileError', () => {

@@ -1,15 +1,29 @@
-import type { Command } from 'commander';
 import { TurnstileFactory } from '@turnstile-portal/turnstile.js';
-
-import { commonOpts } from '@turnstile-portal/deploy/commands';
+import type { Command } from 'commander';
 
 export function registerLookupAztecTokens(program: Command) {
   return program
     .command('lookup-aztec-tokens')
     .description('Obtains all registered tokens from Portal events')
-    .addOption(commonOpts.deploymentData)
-    .action(async (options) => {
-      const factory = await TurnstileFactory.fromConfig(options.deploymentData);
+    .action(async (_options, command) => {
+      // Get global and local options together
+      const allOptions = command.optsWithGlobals();
+      if (!allOptions.configDir) {
+        throw new Error(
+          'Config directory is required. Use -c or --config-dir option.',
+        );
+      }
+
+      // Load configuration from files
+      const configDir = allOptions.configDir;
+      const configPaths = await import('@turnstile-portal/deploy').then((m) =>
+        m.getConfigPaths(configDir),
+      );
+
+      // Use the deployment data from config directory
+      const factory = await TurnstileFactory.fromConfig(
+        configPaths.deploymentFile,
+      );
 
       // Get the mapping of tokens from the deployment data directly
       const tokens = factory.getDeploymentData().tokens;
@@ -34,7 +48,7 @@ export function registerLookupAztecTokens(program: Command) {
     });
 }
 
-function mod2hexlength(n: bigint): string {
+function _mod2hexlength(n: bigint): string {
   let hex = n.toString(16);
   if (hex.length % 2 !== 0) {
     hex = `0${hex}`;

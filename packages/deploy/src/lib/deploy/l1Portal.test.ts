@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { setL2PortalOnL1Portal } from './l1Portal.js';
-import { L1Portal } from '@turnstile-portal/turnstile.js';
 import type { L1Client } from '@turnstile-portal/turnstile.js';
+import { L1Portal } from '@turnstile-portal/turnstile.js';
 import type { Address, TransactionReceipt } from 'viem';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { setL2PortalOnL1Portal } from './l1Portal.js';
 
 // Mock dependencies
 vi.mock('@turnstile-portal/turnstile.js');

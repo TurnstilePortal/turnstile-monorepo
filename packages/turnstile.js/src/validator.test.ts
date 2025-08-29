@@ -1,16 +1,15 @@
-import { describe, it, expect } from 'vitest';
-import {
-  validate,
-  validateWallet,
-  validateAddress,
-  validateRange,
-  validatePositiveAmount,
-  validateNonEmptyString,
-  validateDefined,
-  type Predicate,
-  predicates,
-} from './validator.js';
+import { describe, expect, it } from 'vitest';
 import { ErrorCode, TurnstileError } from './errors.js';
+import {
+  predicates,
+  validate,
+  validateAddress,
+  validateDefined,
+  validateNonEmptyString,
+  validatePositiveAmount,
+  validateRange,
+  validateWallet,
+} from './validator.js';
 
 describe('Validator Core', () => {
   it('should allow valid values that pass a predicate', () => {

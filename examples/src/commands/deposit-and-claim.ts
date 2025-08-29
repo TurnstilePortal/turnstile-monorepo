@@ -1,24 +1,20 @@
-import type { Command } from 'commander';
-import { TxStatus, AztecAddress, EthAddress, Fr } from '@aztec/aztec.js';
-import { http, getAddress } from 'viem';
-import type { Address } from 'viem';
+import { AztecAddress, EthAddress, Fr, TxStatus } from '@aztec/aztec.js';
 import {
-  waitForL2Block,
+  type L1Client,
+  L1Portal,
+  L2Portal,
+  L2Token,
+  TurnstileFactory,
+} from '@turnstile-portal/turnstile.js';
+import {
   getChain,
   getClients,
   InsecureMintableToken,
+  waitForL2Block,
 } from '@turnstile-portal/turnstile-dev';
-
-import { L2Token } from '@turnstile-portal/turnstile.js';
-
-import { commonOpts } from '@turnstile-portal/deploy/commands';
-
-import {
-  L1Portal,
-  L2Portal,
-  type L1Client,
-  TurnstileFactory,
-} from '@turnstile-portal/turnstile.js';
+import type { Command } from 'commander';
+import type { Address } from 'viem';
+import { getAddress, http } from 'viem';
 
 async function l1MintAndDeposit({
   l1PortalAddr,
@@ -80,30 +76,48 @@ export function registerDepositAndClaim(program: Command) {
   return program
     .command('deposit-and-claim')
     .description('Deposit tokens from L1 to L2 and claim them')
-    .addOption(commonOpts.keys)
-    .addOption(commonOpts.aztecNode)
-    .addOption(commonOpts.l1Chain)
-    .addOption(commonOpts.rpc)
-    .addOption(commonOpts.deploymentData)
-    .option('--token <symbol>', 'Token Symbol', 'TT1')
+    .option('--token <symbol>', 'Token symbol', 'TT1')
+    .option('--amount <amount>', 'Amount to deposit', '1000000000')
     .option('--l2-recipient <address>', 'L2 Recipient Address')
-    .option('--amount <a>', 'Amount', '1000000000')
-    .action(async (options) => {
-      // Use the new configuration system
-      const factory = await TurnstileFactory.fromConfig(options.deploymentData);
-      const tokenInfo = factory.getTokenInfo(options.token);
+    .action(async (options, command) => {
+      // Get global and local options together
+      const allOptions = command.optsWithGlobals();
+      if (!allOptions.configDir) {
+        throw new Error(
+          'Config directory is required. Use -c or --config-dir option.',
+        );
+      }
+
+      // Load configuration from files
+      const configDir = allOptions.configDir;
+      const configPaths = await import('@turnstile-portal/deploy').then((m) =>
+        m.getConfigPaths(configDir),
+      );
+      const config = await import('@turnstile-portal/deploy').then((m) =>
+        m.loadDeployConfig(configPaths.configFile),
+      );
+
+      // Use the deployment data from config directory
+      const factory = await TurnstileFactory.fromConfig(
+        configPaths.deploymentFile,
+      );
+
+      // Get token from command option
+      const tokenSymbol = options.token;
+      const tokenInfo = factory.getTokenInfo(tokenSymbol);
       const l1TokenAddr = tokenInfo.l1Address;
       const l2TokenAddr = tokenInfo.l2Address;
 
       const { l1Client, l2Client } = await getClients(
-        { node: options.aztecNode },
+        { node: config.connection.aztec.node },
         {
-          chain: getChain(options.l1Chain),
-          transport: http(options.rpc),
+          chain: getChain(config.connection.ethereum.chainName),
+          transport: http(config.connection.ethereum.rpc),
         },
-        options.keys,
+        configPaths.keysFile,
       );
 
+      // Get amount from command option
       const amount = BigInt(options.amount);
 
       const l2Recipient = options.l2Recipient
@@ -154,7 +168,7 @@ export function registerDepositAndClaim(program: Command) {
       const tx = await aztecPortal.claimDeposit(
         l1TokenAddr,
         l2Recipient,
-        BigInt(options.amount),
+        amount,
         BigInt(index),
       );
       console.log(
@@ -164,6 +178,6 @@ export function registerDepositAndClaim(program: Command) {
       if (receipt.status !== TxStatus.SUCCESS) {
         throw new Error(`claimDeposit() failed. status: ${receipt.status}`);
       }
-      console.log(`Deposit and claim for token ${options.token} complete`);
+      console.log(`Deposit and claim for token ${tokenSymbol} complete`);
     });
 }

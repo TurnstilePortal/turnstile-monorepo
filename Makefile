@@ -32,10 +32,20 @@ test-l1:
 test-aztec:
 	make -C aztec test
 
+.PHONY: test-e2e
+test-e2e: build sandbox
+	bash scripts/test-e2e.sh
+
 .PHONY: lint
 lint:
 	make -C l1 lint
-	make -C aztec lint
+	pnpm run lint:fix
+
+.PHONY: fmt
+fmt:
+	make -C l1 fmt
+	make -C aztec fmt
+	pnpm run check:fix
 
 .PHONY: artifacts
 artifacts: l1-artifacts aztec-artifacts
@@ -57,8 +67,6 @@ $(AZTEC_ARTIFACTS_PACKAGE_DIR)/index.ts: $(patsubst aztec/target/%,$(AZTEC_ARTIF
 	@echo "Regenerating $(AZTEC_ARTIFACTS_PACKAGE_DIR)/artifacts/index.ts..."
 	find $(AZTEC_ARTIFACTS_PACKAGE_DIR) -type f -name '*.ts' -not -name 'index.ts' -exec basename {} .ts \; | \
 		xargs -I % echo "export * from './%.js';" > $(AZTEC_ARTIFACTS_PACKAGE_DIR)/index.ts
-	# TODO: remove when https://github.com/AztecProtocol/aztec-packages/issues/13593 is fixed
-	sed -i -e 's/assert/with/' $(AZTEC_ARTIFACTS_PACKAGE_DIR)/*.ts
 
 $(AZTEC_ARTIFACTS_PACKAGE_DIR)/%.json: aztec/target/%.json
 	cp "$^" $(AZTEC_ARTIFACTS_PACKAGE_DIR)

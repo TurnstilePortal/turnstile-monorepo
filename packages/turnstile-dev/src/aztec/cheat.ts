@@ -1,6 +1,6 @@
-import type { L2Client } from '@turnstile-portal/turnstile.js';
 import { retryUntil } from '@aztec/aztec.js';
 import { CounterContract } from '@aztec/noir-test-contracts.js/Counter';
+import type { L2Client } from '@turnstile-portal/turnstile.js';
 
 // Counter contract singleton
 let counterContract: CounterContract | undefined;

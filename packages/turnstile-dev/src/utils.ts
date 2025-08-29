@@ -1,41 +1,40 @@
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { anvil, sepolia, mainnet } from 'viem/chains';
-import {
-  createPublicClient,
-  createWalletClient,
-  http,
-  defineChain,
-  type Account,
-  type Chain,
-  type Transport,
-  type Hex,
-} from 'viem';
-import {
-  createPXEClient,
-  Fr,
-  GrumpkinScalar,
-  createAztecNodeClient,
-  waitForNode,
-  waitForPXE,
-} from '@aztec/aztec.js';
-import { createPXEService, getPXEServiceConfig } from '@aztec/pxe/server';
-import { createStore } from '@aztec/kv-store/lmdb';
+import type { ChildProcess } from 'node:child_process';
+import { spawn } from 'node:child_process';
+import { getSchnorrAccount, getSchnorrWallet } from '@aztec/accounts/schnorr';
+import { getDeployedTestAccountsWallets } from '@aztec/accounts/testing';
 import type {
   AccountWallet,
   AztecAddress,
   AztecNode,
-  PXE,
   Wallet as AztecWallet,
+  PXE,
 } from '@aztec/aztec.js';
-import { getSchnorrAccount, getSchnorrWallet } from '@aztec/accounts/schnorr';
-import { getDeployedTestAccountsWallets } from '@aztec/accounts/testing';
+import {
+  createAztecNodeClient,
+  createPXEClient,
+  Fr,
+  GrumpkinScalar,
+  waitForNode,
+  waitForPXE,
+} from '@aztec/aztec.js';
+import { createStore } from '@aztec/kv-store/lmdb';
+import { createPXEService, getPXEServiceConfig } from '@aztec/pxe/server';
 import { deriveSigningKey } from '@aztec/stdlib/keys';
 import { L1Client } from '@turnstile-portal/turnstile.js';
-
-import { readKeyData, type KeyData } from './keyData.js';
-import { spawn } from 'node:child_process';
-import type { ChildProcess } from 'node:child_process';
+import {
+  type Account,
+  type Chain,
+  createPublicClient,
+  createWalletClient,
+  defineChain,
+  type Hex,
+  http,
+  type Transport,
+} from 'viem';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { anvil, mainnet, sepolia } from 'viem/chains';
 import { DevL2Client } from './aztec/devL2Client.js';
+import { type KeyData, readKeyData } from './keyData.js';
 
 export async function createPXE(node: AztecNode): Promise<PXE> {
   const l1Contracts = await node.getL1ContractAddresses();
@@ -85,7 +84,7 @@ export async function generateAndDeployAztecAccountSchnorr(pxe: PXE): Promise<{
 }
 
 export async function generateAztecAccountSchnorr(
-  pxe: PXE,
+  _pxe: PXE,
 ): Promise<{ salt: Fr; secretKey: Fr; signingKey: GrumpkinScalar }> {
   const salt = Fr.random();
   const secretKey = Fr.random();
@@ -136,7 +135,7 @@ export async function getClients(
   l2Config: { node: string },
   l1Config: { chain: Chain; transport: Transport },
   keyDataFile: string,
-  pxe?: PXE,
+  _pxe?: PXE,
 ): Promise<{
   l1Client: L1Client;
   l2Client: DevL2Client;
@@ -174,7 +173,7 @@ export async function createL1Client(
 
 export async function createL2Client(
   l2Config: { node: string },
-  keyData: KeyData,
+  keyData: Pick<KeyData, 'l2SecretKey' | 'l2SigningKey' | 'l2Salt'>,
   pxe?: PXE,
 ): Promise<DevL2Client> {
   const node = createAztecNodeClient(l2Config.node);

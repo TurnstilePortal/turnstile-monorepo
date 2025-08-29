@@ -67,7 +67,7 @@ export interface IL1Portal {
     txHash: Hash;
     messageHash: `0x${string}`;
     messageIndex: bigint;
-    l2BlockNumber: bigint;
+    l2BlockNumber: number;
   }>;
 
   /**
@@ -85,15 +85,15 @@ export interface IL1Portal {
 
   /**
    * Withdraws tokens from L2
-   * @param leaf The L2 to L1 message leaf
+   * @param message The L2 to L1 message
    * @param l2BlockNumber The L2 block number
    * @param leafIndex The leaf index
    * @param siblingPath The sibling path
    * @returns The transaction hash
    */
   withdraw(
-    leaf: `0x${string}`,
-    l2BlockNumber: bigint,
+    message: `0x${string}`,
+    l2BlockNumber: number,
     leafIndex: bigint,
     siblingPath: SiblingPath<number>
   ): Promise<Hash>;
@@ -103,7 +103,7 @@ export interface IL1Portal {
    * @param l2BlockNumber The L2 block number
    * @returns True if the block is available on L1
    */
-  isBlockAvailableOnL1(l2BlockNumber: bigint): Promise<boolean>;
+  isBlockAvailableOnL1(l2BlockNumber: number): Promise<boolean>;
 
   /**
    * Waits for a block to be available on L1
@@ -112,7 +112,7 @@ export interface IL1Portal {
    * @param intervalSeconds The polling interval in seconds
    */
   waitForBlockOnL1(
-    l2BlockNumber: bigint,
+    l2BlockNumber: number,
     timeoutSeconds?: number,
     intervalSeconds?: number
   ): Promise<void>;
@@ -224,7 +224,7 @@ export class L1Portal implements IL1Portal {
     txHash: Hash;
     messageHash: `0x${string}`;
     messageIndex: bigint;
-    l2BlockNumber: bigint;
+    l2BlockNumber: number;
   }> {
     try {
       const walletClient = this.client.getWalletClient();
@@ -280,7 +280,7 @@ export class L1Portal implements IL1Portal {
     txHash: Hash;
     messageHash: `0x${string}`;
     messageIndex: bigint;
-    l2BlockNumber: bigint;
+    l2BlockNumber: number;
   }> {
     try {
       const tokenPortal = await this.tokenPortal();
@@ -325,8 +325,8 @@ export class L1Portal implements IL1Portal {
    * @returns The transaction hash
    */
   async withdraw(
-    leaf: `0x${string}`,
-    l2BlockNumber: bigint,
+    message: `0x${string}`,
+    l2BlockNumber: number,
     leafIndex: bigint,
     siblingPath: SiblingPath<number>
   ): Promise<Hash> {
@@ -341,21 +341,16 @@ export class L1Portal implements IL1Portal {
         .map((buf: Buffer) => `0x${buf.toString('hex')}`) as readonly `0x${string}`[];
 
       const tokenPortal = await this.tokenPortal();
-      // Note: The ABI expects _data as first parameter, but we're passing leaf
-      // This matches the current implementation
-      const hash = await tokenPortal.write.withdraw([leaf, l2BlockNumber, leafIndex, siblingPathHex], {
-        account: this.client.getAddress(),
-        chain: walletClient.chain
-      });
-
+      const { request } = await tokenPortal.simulate.withdraw([message, BigInt(l2BlockNumber), leafIndex, siblingPathHex], { account: this.client.getAddress(), chain: walletClient.chain });
+      const hash = await this.client.getWalletClient().writeContract(request);
       return hash;
     } catch (error) {
       throw createError(
         ErrorCode.BRIDGE_WITHDRAW,
-        `Failed to withdraw with leaf ${leaf}`,
+        `Failed to withdraw with message ${message}`,
         {
           portalAddress: this.address,
-          leaf,
+          message,
           l2BlockNumber: l2BlockNumber.toString(),
           leafIndex: leafIndex.toString()
         },
@@ -369,7 +364,7 @@ export class L1Portal implements IL1Portal {
    * @param l2BlockNumber The L2 block number
    * @returns True if the block is available on L1
    */
-  async isBlockAvailableOnL1(l2BlockNumber: bigint): Promise<boolean> {
+  async isBlockAvailableOnL1(l2BlockNumber: number): Promise<boolean> {
     try {
       const rollupAddress = await this.getRollupAddress();
       const publicClient = this.client.getPublicClient();
@@ -406,8 +401,8 @@ export class L1Portal implements IL1Portal {
    * @returns Promise that resolves to true if block becomes available, false if timeout occurs
    */
   async checkBlockAvailabilityWithTimeout(
-    l2BlockNumber: bigint,
-    checkFn: (blockNumber: bigint) => Promise<boolean>,
+    l2BlockNumber: number,
+    checkFn: (blockNumber: number) => Promise<boolean>,
     timeProvider: () => number = Date.now,
     sleep: (ms: number) => Promise<void> = ms => new Promise(resolve => setTimeout(resolve, ms)),
     timeoutSeconds = 60,
@@ -438,7 +433,7 @@ export class L1Portal implements IL1Portal {
    * @param intervalSeconds The polling interval in seconds
    */
   async waitForBlockOnL1(
-    l2BlockNumber: bigint,
+    l2BlockNumber: number,
     timeoutSeconds = 60,
     intervalSeconds = 5
   ): Promise<void> {
@@ -463,6 +458,7 @@ export class L1Portal implements IL1Portal {
         }
       );
     }
+    console.log(`Block ${l2BlockNumber} is now available on L1`);
   }
 
   /**
@@ -612,7 +608,7 @@ export class L1Portal implements IL1Portal {
    * @returns The message sent log
    */
   private parseMessageSentLog(receipt: TransactionReceipt): {
-    l2BlockNumber: bigint;
+    l2BlockNumber: number;
     index: bigint;
     hash: `0x${string}`;
   } {
@@ -641,7 +637,7 @@ export class L1Portal implements IL1Portal {
     }
 
     return {
-      l2BlockNumber: log.args.l2BlockNumber,
+      l2BlockNumber: Number(log.args.l2BlockNumber),
       index: log.args.index,
       hash: log.args.hash,
     };

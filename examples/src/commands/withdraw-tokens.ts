@@ -1,24 +1,27 @@
-import type { Command } from 'commander';
-import { createAztecNodeClient, AztecAddress, TxStatus } from '@aztec/aztec.js';
-import type { AztecNode, Fr } from '@aztec/aztec.js';
-import { http, getAddress, type Hex } from 'viem';
+import {
+  AztecAddress,
+  createAztecNodeClient,
+  EthAddress,
+  Fr,
+  TxStatus,
+} from '@aztec/aztec.js';
+import type { L2ToL1MembershipWitness } from '@aztec/stdlib/messaging';
+import {
+  type IL1Client,
+  type IL2Client,
+  L1Portal,
+  L1Token,
+  L2Portal,
+  L2Token,
+  TurnstileFactory,
+} from '@turnstile-portal/turnstile.js';
 import {
   getChain,
   getClients,
   setAssumeProven,
 } from '@turnstile-portal/turnstile-dev';
-
-import { commonOpts } from '@turnstile-portal/deploy/commands';
-
-import {
-  L1Token,
-  L1Portal,
-  L2Token,
-  L2Portal,
-  type L2Client,
-  type IL1Client,
-  TurnstileFactory,
-} from '@turnstile-portal/turnstile.js';
+import type { Command } from 'commander';
+import { getAddress, type Hex, http } from 'viem';
 
 async function initiateL2Withdrawal({
   l2Client,
@@ -27,13 +30,15 @@ async function initiateL2Withdrawal({
   l1TokenAddr,
   l1Recipient,
   amount,
+  l1Client,
 }: {
-  l2Client: L2Client;
+  l2Client: IL2Client;
   l2TokenAddr: AztecAddress;
   l2PortalAddr: AztecAddress;
   l1Recipient: Hex;
   l1TokenAddr: Hex;
   amount: bigint;
+  l1Client: IL1Client;
 }) {
   // Get L2 token
   const l2Token = await L2Token.fromAddress(l2TokenAddr, l2Client);
@@ -55,7 +60,9 @@ async function initiateL2Withdrawal({
   );
 
   console.log('Setting up burn authorization...');
-  const burnAuthTx = await action.send();
+  const burnAuthTx = await action.send({
+    fee: l2Client.getFeeOpts(),
+  });
 
   console.log(
     `Waiting for burn authorization transaction ${await burnAuthTx.getTxHash()}...`,
@@ -66,39 +73,51 @@ async function initiateL2Withdrawal({
   );
 
   // Use the L2Portal
-  const l2Portal = new L2Portal(l2PortalAddr, l2Client);
+  const l2Portal = new L2Portal(l2PortalAddr, l2Client, l1Client);
 
   // Initiate the withdrawal from the Portal
-  const { tx: withdrawTx, leaf } = await l2Portal.withdrawPublic(
+  const { tx: withdrawTx, withdrawData } = await l2Portal.withdrawPublic(
     l1TokenAddr,
     l1Recipient,
     amount,
     nonce,
+    { fee: l2Client.getFeeOpts() },
   );
 
   console.log(
     `Withdrawal initiated on L2. Tx: ${(await withdrawTx.getTxHash()).toString()}`,
   );
-  console.log(`L2 to L1 message leaf: ${leaf}`);
 
   const receipt = await withdrawTx.wait();
   if (receipt.status !== TxStatus.SUCCESS) {
     throw new Error('Withdrawal failed');
   }
-  if (!receipt.blockNumber) {
+  const l2BlockNumber = receipt.blockNumber;
+  if (!l2BlockNumber) {
     throw new Error('Failed to get block number');
   }
-  const l2BlockNumber = BigInt(receipt.blockNumber);
-  console.log(`L2 block number: ${l2BlockNumber}`);
+
+  const { l1ContractAddresses } = await l2Client.getNode().getNodeInfo();
+  const outboxVersion = await l2Portal.getAztecL1OutboxVersion(
+    l1ContractAddresses.outboxAddress,
+  );
+  const message = await l2Portal.computeL2ToL1Message(
+    l1TokenAddr,
+    l1Recipient,
+    amount,
+    outboxVersion,
+  );
+  const witness = await l2Portal.getL2ToL1MembershipWitness(
+    l2BlockNumber,
+    message,
+  );
+
   console.log(
     'New L2 balance:',
     await l2Token.balanceOfPublic(l2Client.getAddress()),
   );
 
-  // Create withdrawal data manually
-  const withdrawData: Hex = `0x${l1TokenAddr.slice(2)}${l1Recipient.slice(2)}${amount.toString(16).padStart(64, '0')}`;
-
-  return { l2BlockNumber, leaf, withdrawData };
+  return { l2BlockNumber, witness, message, withdrawData };
 }
 
 async function completeL1Withdrawal({
@@ -107,16 +126,14 @@ async function completeL1Withdrawal({
   l1Portal,
   withdrawData,
   l2BlockNumber,
-  leaf,
-  node,
+  witness,
 }: {
   l1Client: IL1Client;
   l1TokenAddr: Hex;
   l1Portal: L1Portal;
   withdrawData: Hex;
-  l2BlockNumber: bigint;
-  node: AztecNode;
-  leaf: Fr;
+  l2BlockNumber: number;
+  witness: L2ToL1MembershipWitness;
 }) {
   console.log('Waiting for L2 block to be available on L1...');
   await l1Portal.waitForBlockOnL1(
@@ -124,8 +141,7 @@ async function completeL1Withdrawal({
     60, // Timeout in seconds
   );
 
-  const [l2ToL1MessageIndex, siblingPath] =
-    await node.getL2ToL1MessageMembershipWitness(Number(l2BlockNumber), leaf);
+  const { siblingPath, l2MessageIndex } = witness;
 
   const l1Token = new L1Token(l1TokenAddr, l1Client);
   console.log(
@@ -135,7 +151,7 @@ async function completeL1Withdrawal({
   const tx = await l1Portal.withdraw(
     withdrawData,
     l2BlockNumber,
-    l2ToL1MessageIndex,
+    l2MessageIndex,
     siblingPath,
   );
   console.log(`L1 Withdraw transaction hash: ${tx}`);
@@ -143,7 +159,9 @@ async function completeL1Withdrawal({
   const receipt = await l1Client
     .getPublicClient()
     .waitForTransactionReceipt({ hash: tx });
+
   if (receipt.status !== 'success') {
+    console.log('L1 Withdraw transaction receipt:', receipt);
     throw new Error(`L1 Withdraw transaction failed: ${receipt.status}`);
   }
   console.log('L1 Withdrawal complete');
@@ -156,45 +174,88 @@ export function registerWithdrawTokens(program: Command) {
   return program
     .command('withdraw-tokens')
     .description('Withdraw tokens from L2 to L1')
-    .addOption(commonOpts.keys)
-    .addOption(commonOpts.aztecNode)
-    .addOption(commonOpts.l1Chain)
-    .addOption(commonOpts.rpc)
-    .addOption(commonOpts.deploymentData)
-    .option('--token <symbol>', 'Token Symbol', 'TT1')
+    .option('--token <symbol>', 'Token symbol', 'TT1')
+    .option('--amount <amount>', 'Amount to withdraw', '1000')
     .option('--l1-recipient <address>', 'L1 Recipient Address')
-    .option('--amount <a>', 'Amount', '1000')
-    .action(async (options) => {
-      const factory = await TurnstileFactory.fromConfig(options.deploymentData);
-      const tokenInfo = factory.getTokenInfo(options.token);
+    .action(async (options, command) => {
+      // Get global and local options together
+      const allOptions = command.optsWithGlobals();
+      if (!allOptions.configDir) {
+        throw new Error(
+          'Config directory is required. Use -c or --config-dir option.',
+        );
+      }
+
+      // Load configuration from files
+      const configDir = allOptions.configDir;
+      const configPaths = await import('@turnstile-portal/deploy').then((m) =>
+        m.getConfigPaths(configDir),
+      );
+      const config = await import('@turnstile-portal/deploy').then((m) =>
+        m.loadDeployConfig(configPaths.configFile),
+      );
+
+      // Use the deployment data from config directory
+      const factory = await TurnstileFactory.fromConfig(
+        configPaths.deploymentFile,
+      );
+
+      // Get token from command option
+      const tokenSymbol = options.token;
+      const tokenInfo = factory.getTokenInfo(tokenSymbol);
       const deploymentData = factory.getDeploymentData();
       const l2TokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
       const l1TokenAddr = getAddress(tokenInfo.l1Address) as `0x${string}`;
 
-      const node = createAztecNodeClient(options.aztecNode);
+      const _node = createAztecNodeClient(config.connection.aztec.node);
 
       const { l1Client, l2Client } = await getClients(
-        { node: options.aztecNode },
+        { node: config.connection.aztec.node },
         {
-          chain: getChain(options.l1Chain),
-          transport: http(options.rpc),
+          chain: getChain(config.connection.ethereum.chainName),
+          transport: http(config.connection.ethereum.rpc),
         },
-        options.keys,
+        configPaths.keysFile,
       );
 
-      const l1Recipient = options.l1RecipientAddr
+      const l1Recipient = options.l1Recipient
         ? getAddress(options.l1Recipient)
         : l1Client.getAddress();
       const amount = BigInt(options.amount);
 
-      const { l2BlockNumber, leaf, withdrawData } = await initiateL2Withdrawal({
+      // Ensure L2 Token is registered in the PXE
+      console.log(
+        `Registering Token in L2 Client PXE: ${l2TokenAddr.toString()}`,
+      );
+      await L2Token.register(
         l2Client,
         l2TokenAddr,
-        l2PortalAddr: AztecAddress.fromString(deploymentData.aztecPortal),
-        l1TokenAddr,
-        l1Recipient,
-        amount,
-      });
+        AztecAddress.fromString(factory.getDeploymentData().aztecPortal),
+        tokenInfo.name,
+        tokenInfo.symbol,
+        tokenInfo.decimals,
+      );
+      // Ensure the L2 Portal is registered in the PXE
+      console.log(
+        `Registering L2 Portal in L2 Client PXE: ${deploymentData.aztecPortal}`,
+      );
+      await L2Portal.register(
+        l2Client,
+        EthAddress.fromString(deploymentData.l1Portal),
+        Fr.fromHexString(deploymentData.aztecTokenContractClassID),
+        AztecAddress.fromString(deploymentData.aztecShieldGateway),
+      );
+
+      const { l2BlockNumber, witness, withdrawData } =
+        await initiateL2Withdrawal({
+          l2Client,
+          l2TokenAddr,
+          l2PortalAddr: AztecAddress.fromString(deploymentData.aztecPortal),
+          l1TokenAddr,
+          l1Recipient,
+          amount,
+          l1Client,
+        });
 
       // Wait for the L2 block to be available on the L1 chain
       const l1Portal = new L1Portal(
@@ -205,7 +266,7 @@ export function registerWithdrawTokens(program: Command) {
       // Cheat to make the L2 block available on L1
       // Note: rollupAddress will be obtained automatically by L1Portal
       await setAssumeProven(
-        options.rpc,
+        config.connection.ethereum.rpc,
         await l1Portal.getRollupAddress(),
         l2BlockNumber,
       );
@@ -221,8 +282,7 @@ export function registerWithdrawTokens(program: Command) {
         l1Portal,
         withdrawData,
         l2BlockNumber,
-        leaf,
-        node,
+        witness,
       });
     });
 }

@@ -17,12 +17,7 @@ interface ITokenPortal {
     /// Emitted when a new token is registered with the portal.
     event Registered(address indexed token, bytes32 leaf, uint256 index);
     /// Emitted when a token is deposited into the portal.
-    event Deposit(
-        address indexed token,
-        address indexed sender,
-        bytes32 leaf,
-        uint256 index
-    );
+    event Deposit(address indexed token, address indexed sender, bytes32 leaf, uint256 index);
 
     /// Error when attempting to use an unregistered token
     error TokenPortal__NotRegistered(address);
@@ -72,9 +67,7 @@ interface ITokenPortal {
     /// @param _token address of the token
     /// @return leaf The hash of the entry in the Inbox
     /// @return index The global index of the entry in the Inbox
-    function register(
-        address _token
-    ) external returns (bytes32 leaf, uint256 index);
+    function register(address _token) external returns (bytes32 leaf, uint256 index);
 
     /// Propose a token to be registered with the portal.
     /// @param _token address of the token
@@ -88,21 +81,15 @@ interface ITokenPortal {
     /// @param _data encoded deposit message
     /// @return leaf The hash of the entry in the Inbox
     /// @return index The global index of the entry in the Inbox
-    function deposit(
-        bytes calldata _data
-    ) external returns (bytes32 leaf, uint256 index);
+    function deposit(bytes calldata _data) external returns (bytes32 leaf, uint256 index);
 
     /// Withdraw tokens from the portal
     /// @param _data encoded withdraw message
     /// @param _l2BlockNumber the L2 block number
     /// @param _leafIndex the leaf index
     /// @param _path the path to the leaf
-    function withdraw(
-        bytes calldata _data,
-        uint256 _l2BlockNumber,
-        uint256 _leafIndex,
-        bytes32[] calldata _path
-    ) external;
+    function withdraw(bytes calldata _data, uint256 _l2BlockNumber, uint256 _leafIndex, bytes32[] calldata _path)
+        external;
 
     /// Set the L2 Portal address. This can only be called by the deployer and is only callable once.
     /// @param _l2Portal the paired Aztec L2 Portal contract address

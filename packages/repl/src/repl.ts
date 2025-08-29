@@ -1,24 +1,18 @@
 #!/usr/bin/env node
 
-import { start } from 'node:repl';
-import path from 'node:path';
 import { existsSync } from 'node:fs';
-import { Command } from 'commander';
-import * as turnstilejs from '@turnstile-portal/turnstile.js';
-import * as turnstileAztecArtifacts from '@turnstile-portal/aztec-artifacts';
+import path from 'node:path';
+import { start } from 'node:repl';
 import * as aztecjs from '@aztec/aztec.js';
-import * as viem from 'viem';
 import { createAztecNodeClient, Fr } from '@aztec/aztec.js';
 import { SerializableContractInstance } from '@aztec/stdlib/contract';
+import * as turnstileAztecArtifacts from '@turnstile-portal/aztec-artifacts';
+import * as turnstilejs from '@turnstile-portal/turnstile.js';
+import { getClients, readKeyData } from '@turnstile-portal/turnstile-dev';
+import { Command } from 'commander';
+import * as viem from 'viem';
 import { createPublicClient, http } from 'viem';
-
 import { anvil } from 'viem/chains';
-
-import {
-  getClients,
-  readKeyData,
-  createPXE,
-} from '@turnstile-portal/turnstile-dev';
 
 async function main() {
   const program = new Command();

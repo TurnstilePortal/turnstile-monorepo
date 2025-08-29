@@ -1,13 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
 import { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
-import type { AccountWallet, AztecNode, PXE } from '@aztec/aztec.js';
-import type {
-  PublicClient,
-  WalletClient,
-  Transport,
-  Chain,
-  Account,
-} from 'viem';
+import type { Chain, Transport } from 'viem';
+import { describe, expect, it, vi } from 'vitest';
 
 // Mock the imports
 vi.mock('@turnstile-portal/turnstile.js');

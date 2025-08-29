@@ -1,16 +1,16 @@
-// docs:start:balance_set
-use dep::aztec::{
+use aztec::{
     context::{PrivateContext, UtilityContext},
     note::{
         note_emission::OuterNoteEmission, note_getter_options::SortOrder,
         note_interface::NoteProperties, retrieved_note::RetrievedNote,
     },
+    prelude::{NoteGetterOptions, NoteViewerOptions, PrivateSet},
     protocol_types::{address::AztecAddress, constants::MAX_NOTE_HASH_READ_REQUESTS_PER_CALL},
     state_vars::storage::Storage,
 };
-use dep::aztec::prelude::{NoteGetterOptions, NoteViewerOptions, PrivateSet};
-use dep::uint_note::uint_note::UintNote;
+
 use std::ops::Add;
+use uint_note::uint_note::UintNote;
 
 pub struct BalanceSet<Context> {
     pub set: PrivateSet<UintNote, Context>,
@@ -133,4 +133,3 @@ pub fn preprocess_notes_min_sum(
     }
     selected
 }
-// docs:end:balance_set

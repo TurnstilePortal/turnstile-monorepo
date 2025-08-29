@@ -190,6 +190,9 @@ l2_tokens: {
     /** is_registered_l2_unconstrained(aztec_token: struct) */
     is_registered_l2_unconstrained: ((aztec_token: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
+    /** process_message(message_ciphertext: struct, message_context: struct) */
+    process_message: ((message_ciphertext: FieldLike[], message_context: { tx_hash: FieldLike, unique_note_hashes_in_tx: FieldLike[], first_nullifier_in_tx: FieldLike, recipient: AztecAddressLike }) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
     /** public_dispatch(selector: field) */
     public_dispatch: ((selector: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
@@ -222,7 +225,7 @@ l2_tokens: {
                         }
                     }
                 ],
-                "path": "authwit::aztec::protocol_types::address::eth_address::EthAddress"
+                "path": "aztec::protocol_types::address::eth_address::EthAddress"
             }
         },
         {
@@ -237,7 +240,7 @@ l2_tokens: {
                         }
                     }
                 ],
-                "path": "authwit::aztec::protocol_types::address::aztec_address::AztecAddress"
+                "path": "aztec::protocol_types::address::aztec_address::AztecAddress"
             }
         },
         {
@@ -252,7 +255,7 @@ l2_tokens: {
                         }
                     }
                 ],
-                "path": "authwit::aztec::protocol_types::address::eth_address::EthAddress"
+                "path": "aztec::protocol_types::address::eth_address::EthAddress"
             }
         },
         {
@@ -285,7 +288,7 @@ Register: {
                         }
                     }
                 ],
-                "path": "authwit::aztec::protocol_types::address::eth_address::EthAddress"
+                "path": "aztec::protocol_types::address::eth_address::EthAddress"
             }
         },
         {
@@ -300,7 +303,7 @@ Register: {
                         }
                     }
                 ],
-                "path": "authwit::aztec::protocol_types::address::aztec_address::AztecAddress"
+                "path": "aztec::protocol_types::address::aztec_address::AztecAddress"
             }
         }
     ],
@@ -325,7 +328,7 @@ Deposit: {
                         }
                     }
                 ],
-                "path": "authwit::aztec::protocol_types::address::eth_address::EthAddress"
+                "path": "aztec::protocol_types::address::eth_address::EthAddress"
             }
         },
         {
@@ -340,7 +343,7 @@ Deposit: {
                         }
                     }
                 ],
-                "path": "authwit::aztec::protocol_types::address::aztec_address::AztecAddress"
+                "path": "aztec::protocol_types::address::aztec_address::AztecAddress"
             }
         },
         {

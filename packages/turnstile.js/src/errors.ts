@@ -140,3 +140,134 @@ export function createError(
 export function isTurnstileError(error: unknown): error is TurnstileError {
   return error instanceof TurnstileError;
 }
+
+/**
+ * Error factory helpers for common error patterns
+ */
+export const ErrorFactories = {
+  /**
+   * Creates L2 token operation errors with consistent context
+   */
+  l2TokenError: (
+    operation: string,
+    tokenAddress: string,
+    details: ErrorContext = {},
+    cause?: unknown,
+  ) =>
+    createError(
+      ErrorCode.L2_TOKEN_OPERATION,
+      `Failed to ${operation} for token ${tokenAddress}`,
+      { tokenAddress, operation, ...details },
+      cause,
+    ),
+
+  /**
+   * Creates L2 contract interaction errors with consistent context
+   */
+  l2ContractError: (
+    operation: string,
+    contractAddress: string,
+    details: ErrorContext = {},
+    cause?: unknown,
+  ) =>
+    createError(
+      ErrorCode.L2_CONTRACT_INTERACTION,
+      `Failed to ${operation} for contract ${contractAddress}`,
+      { contractAddress, operation, ...details },
+      cause,
+    ),
+
+  /**
+   * Creates balance-related errors with consistent context
+   */
+  balanceError: (
+    operation: string,
+    address: string,
+    balanceType: 'public' | 'private',
+    tokenAddress?: string,
+    cause?: unknown,
+  ) =>
+    createError(
+      ErrorCode.L2_INSUFFICIENT_BALANCE,
+      `Failed to ${operation} ${balanceType} balance for address ${address}`,
+      { userAddress: address, balanceType, tokenAddress, operation },
+      cause,
+    ),
+
+  /**
+   * Creates bridge operation errors with consistent context
+   */
+  bridgeError: (
+    operation: 'deposit' | 'withdraw' | 'register' | 'claim' | 'message',
+    details: ErrorContext = {},
+    cause?: unknown,
+  ) => {
+    const codeMap = {
+      deposit: ErrorCode.BRIDGE_DEPOSIT,
+      withdraw: ErrorCode.BRIDGE_WITHDRAW,
+      register: ErrorCode.BRIDGE_REGISTER,
+      claim: ErrorCode.BRIDGE_CLAIM,
+      message: ErrorCode.BRIDGE_MESSAGE,
+    };
+
+    return createError(
+      codeMap[operation],
+      `Failed to ${operation}`,
+      { operation, ...details },
+      cause,
+    );
+  },
+
+  /**
+   * Creates L2 deployment errors with consistent context
+   */
+  deploymentError: (
+    contractType: string,
+    details: ErrorContext = {},
+    cause?: unknown,
+  ) =>
+    createError(
+      ErrorCode.L2_DEPLOYMENT,
+      `Failed to deploy ${contractType}`,
+      { contractType, ...details },
+      cause,
+    ),
+
+  /**
+   * Creates shield/unshield operation errors with consistent context
+   */
+  shieldError: (
+    operation: 'shield' | 'unshield',
+    amount: string,
+    tokenAddress: string,
+    cause?: unknown,
+  ) => {
+    const code =
+      operation === 'shield'
+        ? ErrorCode.L2_SHIELD_OPERATION
+        : ErrorCode.L2_UNSHIELD_OPERATION;
+
+    return createError(
+      code,
+      `Failed to ${operation} ${amount} tokens for token ${tokenAddress}`,
+      { tokenAddress, amount, operation },
+      cause,
+    );
+  },
+
+  /**
+   * Creates burn operation errors with consistent context
+   */
+  burnError: (
+    amount: string,
+    fromAddress: string,
+    tokenAddress: string,
+    cause?: unknown,
+  ) =>
+    createError(
+      ErrorCode.L2_BURN_OPERATION,
+      `Failed to burn ${amount} tokens from ${fromAddress} for token ${tokenAddress}`,
+      { tokenAddress, amount, userAddress: fromAddress },
+      cause,
+    ),
+};

@@ -1,11 +1,10 @@
 /**
  * Config loader for the new unified deploy configuration
  */
-import { promises as fs } from 'node:fs';
-import { existsSync } from 'node:fs';
+import { existsSync, promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { DeployConfig, TokenConfig } from './types.js';
 import { DEV_TOKENS } from '../lib/tokens.js';
+import type { DeployConfig, TokenConfig } from './types.js';
 
 const DEFAULT_CONFIG_DIR = path.join(process.cwd(), 'config');
 

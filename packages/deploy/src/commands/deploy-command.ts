@@ -1,33 +1,33 @@
 /**
  * Unified deploy command
  */
-import type { Command } from 'commander';
+
 import { existsSync } from 'node:fs';
-import {
-  getConfigPaths,
-  ensureConfigDirectory,
-  loadDeployConfig,
-  createDefaultConfig,
-} from '../config/config-loader.js';
-import type { DeployConfig } from '../config/types.js';
 import { createAztecNodeClient } from '@aztec/aztec.js';
-import { http } from 'viem';
 import {
-  writeDeploymentData,
+  type DeploymentData,
   getChain,
   getClients,
-  type DeploymentData,
+  writeDeploymentData,
 } from '@turnstile-portal/turnstile-dev';
-import { deployTurnstileContracts } from '../lib/deployment.js';
-import { deployToken } from '../lib/tokens.js';
-import { getSetup, setupRegistry } from '../setup/index.js';
-
+import type { Command } from 'commander';
+import { http } from 'viem';
 import {
-  proposeL1DevToken,
+  createDefaultConfig,
+  ensureConfigDirectory,
+  getConfigPaths,
+  loadDeployConfig,
+} from '../config/config-loader.js';
+import type { DeployConfig } from '../config/types.js';
+import {
   acceptL1DevToken,
+  proposeL1DevToken,
   registerL1DevToken,
   registerL2DevToken,
 } from '../lib/deploy/devTokens.js';
+import { deployTurnstileContracts } from '../lib/deployment.js';
+import { deployToken } from '../lib/tokens.js';
+import { getSetup, setupRegistry } from '../setup/index.js';
 
 export function registerDeployCommand(program: Command) {
   return program

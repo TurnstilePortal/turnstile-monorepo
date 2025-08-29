@@ -21,20 +21,20 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@aztec/accounts": "0.87.9",
-    "@aztec/aztec.js": "0.87.9",
-    "@aztec/cli": "0.87.9",
-    "@aztec/entrypoints": "0.87.9",
-    "@aztec/ethereum": "0.87.9",
-    "@aztec/foundation": "0.87.9",
-    "@aztec/l1-artifacts": "0.87.9",
-    "@aztec/protocol-contracts": "0.87.9",
-    "@aztec/stdlib": "0.87.9",
+    "@aztec/accounts": "1.2.1",
+    "@aztec/aztec.js": "1.2.1",
+    "@aztec/cli": "1.2.1",
+    "@aztec/entrypoints": "1.2.1",
+    "@aztec/ethereum": "1.2.1",
+    "@aztec/foundation": "1.2.1",
+    "@aztec/l1-artifacts": "1.2.1",
+    "@aztec/protocol-contracts": "1.2.1",
+    "@aztec/stdlib": "1.2.1",
     "@turnstile-portal/aztec-artifacts": "workspace:^",
     "@turnstile-portal/l1-artifacts-abi": "workspace:^",
-    "viem": "^2.23.13"
+    "viem": "^2.36.0"
   },
   "devDependencies": {
-    "typedoc": "^0.26.9"
+    "typedoc": "^0.28.11"
   }
 }

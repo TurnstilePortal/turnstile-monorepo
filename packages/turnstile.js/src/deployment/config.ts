@@ -1,93 +1,11 @@
-import { ErrorCode, createError } from '../errors.js';
+import { createError, ErrorCode } from '../errors.js';
 import type {
-  NetworkConfig,
-  TurnstileConfig,
   ConfigSource,
-  NetworkName,
   DeploymentData,
   DeploymentDataToken,
+  NetworkConfig,
+  TurnstileConfig,
 } from './types.js';
-
-/**
- * Default network configurations
- */
-const DEFAULT_NETWORKS: Partial<Record<NetworkName, NetworkConfig>> = {
-  testnet: {
-    name: 'testnet',
-    description: 'Aztec Testnet Environment',
-    l1ChainId: 11155111, // Sepolia
-    l2ChainId: 1,
-    rpc: {
-      l1: 'https://sepolia.infura.io/v3/your-api-key',
-      l2: 'https://testnet.aztec.walletmesh.com',
-    },
-    deployment: {
-      l1Portal: '0x0000000000000000000000000000000000000000',
-      l1AllowList: '0x0000000000000000000000000000000000000000',
-      aztecTokenContractClassID:
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-      aztecPortal:
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-      serializedAztecPortalInstance:
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-      aztecShieldGateway:
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-      serializedShieldGatewayInstance:
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-      tokens: {},
-    },
-  },
-  mainnet: {
-    name: 'mainnet',
-    description: 'Aztec Mainnet Environment',
-    l1ChainId: 1, // Ethereum mainnet
-    l2ChainId: 1,
-    rpc: {
-      l1: 'https://mainnet.infura.io/v3/your-api-key',
-      l2: 'https://mainnet.aztec.walletmesh.com',
-    },
-    deployment: {
-      l1Portal: '0x0000000000000000000000000000000000000000',
-      l1AllowList: '0x0000000000000000000000000000000000000000',
-      aztecTokenContractClassID:
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-      aztecPortal:
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-      serializedAztecPortalInstance:
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-      aztecShieldGateway:
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-      serializedShieldGatewayInstance:
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-      tokens: {},
-    },
-  },
-  local: {
-    name: 'local',
-    description: 'Local Development Environment',
-    l1ChainId: 31337, // Hardhat default
-    l2ChainId: 1,
-    rpc: {
-      l1: 'http://localhost:8545',
-      l2: 'http://localhost:8080',
-    },
-    deployment: {
-      l1Portal: '0x0000000000000000000000000000000000000000',
-      l1AllowList: '0x0000000000000000000000000000000000000000',
-      aztecTokenContractClassID:
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-      aztecPortal:
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-      serializedAztecPortalInstance:
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-      aztecShieldGateway:
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-      serializedShieldGatewayInstance:
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-      tokens: {},
-    },
-  },
-};
 
 /**
  * Configuration cache to avoid repeated network requests
@@ -95,99 +13,43 @@ const DEFAULT_NETWORKS: Partial<Record<NetworkName, NetworkConfig>> = {
 const configCache = new Map<string, TurnstileConfig>();
 
 /**
- * Loads sandbox configuration from the live API endpoint
- * @returns The sandbox network configuration
+ * Checks if a source string is a URL
+ * @param source The source to check
+ * @returns True if it's a URL
  */
-async function loadSandboxConfig(): Promise<NetworkConfig> {
-  try {
-    const response = await fetch(
-      'https://sandbox.aztec.walletmesh.com/api/v1/turnstile/deployment.json',
-    );
-    if (!response.ok) {
-      throw new Error(`Failed to fetch sandbox config: ${response.statusText}`);
-    }
-
-    const deploymentData = (await response.json()) as DeploymentData;
-
-    return {
-      name: 'sandbox',
-      description: 'Aztec Sandbox Environment',
-      l1ChainId: 11155111, // Sepolia
-      l2ChainId: 1,
-      rpc: {
-        l1: 'https://sandbox.ethereum.walletmesh.com/api/v1/public',
-        l2: 'https://sandbox.aztec.walletmesh.com/api/v1/public',
-      },
-      deployment: deploymentData,
-    };
-  } catch (error) {
-    throw createError(
-      ErrorCode.CONFIG_INVALID_PARAMETER,
-      'Failed to load sandbox configuration from API',
-      {
-        url: 'https://sandbox.aztec.walletmesh.com/api/v1/turnstile/deployment.json',
-      },
-      error,
-    );
-  }
+function isUrl(source: string): boolean {
+  return source.startsWith('http://') || source.startsWith('https://');
 }
 
 /**
- * Loads configuration from a static file in the deployments directory
- * @param networkName The network name
- * @returns The network configuration
+ * Loads configuration from a local file
+ * @param filePath The file path to load configuration from
+ * @returns The deployment data
  */
-async function loadStaticConfig(
-  networkName: NetworkName,
-): Promise<NetworkConfig> {
-  // Handle sandbox configuration separately - load from API
-  if (networkName === 'sandbox') {
-    return loadSandboxConfig();
-  }
-
+async function loadFileConfig(filePath: string): Promise<DeploymentData> {
   try {
-    // Try to load from static deployments directory
-    const configPath = `./deployments/${networkName}.json`;
-
-    if (typeof window === 'undefined') {
-      // Node.js environment
-      const { readFileSync } = await import('node:fs');
-      const { join } = await import('node:path');
-      const { fileURLToPath } = await import('node:url');
-
-      const __filename = fileURLToPath(import.meta.url);
-      const __dirname = join(__filename, '..');
-      const fullPath = join(
-        __dirname,
-        '..',
-        'deployments',
-        `${networkName}.json`,
-      );
-
-      const data = readFileSync(fullPath, 'utf-8');
-      return JSON.parse(data) as NetworkConfig;
-    }
-
-    // Browser environment
-    const response = await fetch(configPath);
-    if (!response.ok) {
+    if (typeof window !== 'undefined') {
+      // Browser environment - can't access local files directly
       throw new Error(
-        `Failed to load config from ${configPath}: ${response.statusText}`,
+        'Local file access is not supported in browser environment',
       );
     }
-    const data = await response.json();
-    return data as NetworkConfig;
+
+    // Node.js environment
+    const { readFileSync } = await import('node:fs');
+    const { resolve } = await import('node:path');
+
+    // Resolve the path relative to the current working directory
+    const fullPath = resolve(filePath);
+    const data = readFileSync(fullPath, 'utf-8');
+    return JSON.parse(data) as DeploymentData;
   } catch (error) {
-    // Fall back to default configuration
-    const defaultConfig = DEFAULT_NETWORKS[networkName];
-    if (!defaultConfig) {
-      throw createError(
-        ErrorCode.CONFIG_MISSING_PARAMETER,
-        `No configuration found for network: ${networkName}`,
-        { networkName },
-      );
-    }
-    return defaultConfig;
+    throw createError(
+      ErrorCode.CONFIG_INVALID_PARAMETER,
+      `Failed to load configuration from file: ${filePath}`,
+      { filePath },
+      error,
+    );
   }
 }
 
@@ -218,7 +80,7 @@ async function loadUrlConfig(url: string): Promise<DeploymentData> {
 
 /**
  * Loads a Turnstile configuration from various sources
- * @param source The configuration source (network name or URL)
+ * @param source The configuration source (URL or file path)
  * @param customTokens Optional custom token configurations
  * @returns The Turnstile configuration
  */
@@ -233,28 +95,29 @@ export async function loadConfig(
     return cachedConfig;
   }
 
-  let networkConfig: NetworkConfig;
+  let deploymentData: DeploymentData;
 
-  if (isNetworkName(source)) {
-    // Load from static configuration
-    networkConfig = await loadStaticConfig(source);
-  } else {
+  if (isUrl(source)) {
     // Load from URL
-    const deploymentData = await loadUrlConfig(source);
-
-    // Create a minimal network config from deployment data
-    networkConfig = {
-      name: 'custom',
-      description: 'Custom network configuration',
-      l1ChainId: 1, // Default values - should be overridden
-      l2ChainId: 1,
-      rpc: {
-        l1: 'https://ethereum.rpc',
-        l2: 'https://aztec.rpc',
-      },
-      deployment: deploymentData,
-    };
+    deploymentData = await loadUrlConfig(source);
+  } else {
+    // Load from file path
+    deploymentData = await loadFileConfig(source);
   }
+
+  // Create a network config from deployment data
+  // Since we don't have predefined networks, we'll create a generic one
+  const networkConfig: NetworkConfig = {
+    name: 'custom',
+    description: `Configuration loaded from ${isUrl(source) ? 'URL' : 'file'}: ${source}`,
+    l1ChainId: 1, // Default values - should be overridden via RPC config or other means
+    l2ChainId: 1,
+    rpc: {
+      l1: 'http://localhost:8545', // Default values - should be overridden
+      l2: 'http://localhost:8080',
+    },
+    deployment: deploymentData,
+  };
 
   const config: TurnstileConfig = {
     network: networkConfig,
@@ -264,41 +127,6 @@ export async function loadConfig(
   // Cache the configuration
   configCache.set(cacheKey, config);
 
-  return config;
-}
-
-/**
- * Checks if a string is a valid network name
- * @param source The source to check
- * @returns True if it's a network name
- */
-function isNetworkName(source: ConfigSource): source is NetworkName {
-  return ['sandbox', 'testnet', 'mainnet', 'local'].includes(source);
-}
-
-/**
- * Gets the default configuration for a network
- * @param networkName The network name
- * @returns The default network configuration
- */
-export function getDefaultConfig(networkName: NetworkName): NetworkConfig {
-  // Handle sandbox specially since it's loaded dynamically
-  if (networkName === 'sandbox') {
-    throw createError(
-      ErrorCode.CONFIG_MISSING_PARAMETER,
-      'Sandbox configuration is loaded dynamically from API and cannot be retrieved as a default configuration',
-      { networkName },
-    );
-  }
-
-  const config = DEFAULT_NETWORKS[networkName];
-  if (!config) {
-    throw createError(
-      ErrorCode.CONFIG_MISSING_PARAMETER,
-      `No default configuration found for network: ${networkName}`,
-      { networkName },
-    );
-  }
   return config;
 }
 

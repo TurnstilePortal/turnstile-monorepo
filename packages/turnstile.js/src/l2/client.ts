@@ -1,7 +1,7 @@
 import {
-  FeeJuicePaymentMethod,
   type AztecAddress,
   type AztecNode,
+  FeeJuicePaymentMethod,
   type Wallet,
 } from '@aztec/aztec.js';
 import type { UserFeeOptions } from '@aztec/entrypoints/interfaces';
