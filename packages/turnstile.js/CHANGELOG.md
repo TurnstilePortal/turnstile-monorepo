@@ -1,5 +1,13 @@
 # @turnstile-portal/turnstile.js
 
+## 0.4.1
+
+### Patch Changes
+
+- 2c135ea: bring back support for automatic configuration for sandbox/testnet/mainnet environments
+  - @turnstile-portal/aztec-artifacts@0.4.1
+  - @turnstile-portal/l1-artifacts-abi@0.4.1
+
 ## 0.4.0
 
 ### Minor Changes
