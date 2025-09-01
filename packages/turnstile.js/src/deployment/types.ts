@@ -62,6 +62,11 @@ export interface TurnstileConfig {
 }
 
 /**
- * Configuration source type - can be a URL or file path
+ * Supported network names for predefined configurations
  */
-export type ConfigSource = string; // URL or file path
+export type NetworkName = 'sandbox' | 'testnet' | 'mainnet' | 'local';
+
+/**
+ * Configuration source type - can be a network name, URL, or file path
+ */
+export type ConfigSource = NetworkName | string; // NetworkName or URL or file path

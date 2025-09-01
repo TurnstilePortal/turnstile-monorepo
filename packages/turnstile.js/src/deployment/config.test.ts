@@ -26,6 +26,83 @@ describe('Configuration Loading', () => {
     clearConfigCache();
   });
 
+  describe('Sandbox Configuration', () => {
+    it('should load sandbox configuration from API', async () => {
+      const mockSandboxConfig = {
+        l1AllowList: '0x700b6a60ce7eaaea56f065753d8dcb9653dbad35',
+        l1Portal: '0xa15bb66138824a1c7167f5e85b957d04dd34e468',
+        aztecTokenContractClassID:
+          '0x2fa717d121ca3d6dd87fd94854b97c34ed7a02c67c3f798f22f7d2b8e2be01db',
+        aztecPortal:
+          '0x140c2f99dae0c673525a02063a5ff01ad9613072f41454b453b00aadcd0af63a',
+        serializedAztecPortalInstance: '0x01234...',
+        aztecShieldGateway:
+          '0x21a3d4ec396b4899e04172ca5bc0d624b4cb8d8baaba81c8ded9af7fd2d43b9a',
+        serializedShieldGatewayInstance: '0x01234...',
+        tokens: {
+          DAI: {
+            name: 'DAI',
+            symbol: 'DAI',
+            decimals: 18,
+            l1Address: '0x8ce361602b935680e8dec218b820ff5056beb7af',
+            l2Address:
+              '0x131d3ec54a7f5395c2b67a55f186e4eb0113a60debcc3e541e5b01a639018d02',
+            serializedL2TokenInstance: '0x01234...',
+          },
+        },
+      };
+
+      const mockResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue(mockSandboxConfig),
+      };
+
+      mockFetch.mockResolvedValue(mockResponse);
+
+      const config = await loadConfig('sandbox');
+
+      expect(fetch).toHaveBeenCalledWith(
+        'https://sandbox.aztec.walletmesh.com/api/v1/turnstile/deployment.json',
+      );
+      expect(config.network.name).toBe('sandbox');
+      expect(config.network.description).toBe('Aztec Sandbox Environment');
+      expect(config.network.l1ChainId).toBe(11155111);
+      expect(config.network.l2ChainId).toBe(1);
+      expect(config.network.rpc.l1).toBe(
+        'https://sandbox.ethereum.walletmesh.com/api/v1/public',
+      );
+      expect(config.network.rpc.l2).toBe(
+        'https://sandbox.aztec.walletmesh.com/api/v1/public',
+      );
+      expect(config.network.deployment.l1Portal).toBe(
+        '0xa15bb66138824a1c7167f5e85b957d04dd34e468',
+      );
+      expect(config.network.deployment.tokens.DAI).toBeDefined();
+    });
+
+    it('should throw error when sandbox API fails', async () => {
+      const mockResponse = {
+        ok: false,
+        statusText: 'Not Found',
+      };
+
+      mockFetch.mockResolvedValue(mockResponse);
+
+      await expect(loadConfig('sandbox')).rejects.toMatchObject({
+        code: ErrorCode.CONFIG_INVALID_PARAMETER,
+        message: 'Failed to load sandbox configuration from API',
+      });
+    });
+
+    it('should throw error for unsupported network', async () => {
+      await expect(loadConfig('testnet')).rejects.toMatchObject({
+        code: ErrorCode.CONFIG_MISSING_PARAMETER,
+        message:
+          'Testnet environment is not yet available. Use a URL or file path instead.',
+      });
+    });
+  });
+
   describe('URL Configuration', () => {
     it('should load configuration from HTTPS URL', async () => {
       const mockConfig = {

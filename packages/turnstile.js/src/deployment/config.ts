@@ -4,6 +4,7 @@ import type {
   DeploymentData,
   DeploymentDataToken,
   NetworkConfig,
+  NetworkName,
   TurnstileConfig,
 } from './types.js';
 
@@ -19,6 +20,15 @@ const configCache = new Map<string, TurnstileConfig>();
  */
 function isUrl(source: string): boolean {
   return source.startsWith('http://') || source.startsWith('https://');
+}
+
+/**
+ * Checks if a source string is a recognized network name
+ * @param source The source to check
+ * @returns True if it's a network name
+ */
+function isNetworkName(source: ConfigSource): source is NetworkName {
+  return ['sandbox', 'testnet', 'mainnet', 'local'].includes(source as string);
 }
 
 /**
@@ -79,8 +89,84 @@ async function loadUrlConfig(url: string): Promise<DeploymentData> {
 }
 
 /**
+ * Loads sandbox configuration from the live API endpoint
+ * @returns The sandbox network configuration
+ */
+async function loadSandboxConfig(): Promise<NetworkConfig> {
+  try {
+    const response = await fetch(
+      'https://sandbox.aztec.walletmesh.com/api/v1/turnstile/deployment.json',
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to fetch sandbox config: ${response.statusText}`);
+    }
+
+    const deploymentData = (await response.json()) as DeploymentData;
+
+    return {
+      name: 'sandbox',
+      description: 'Aztec Sandbox Environment',
+      l1ChainId: 11155111, // Sepolia
+      l2ChainId: 1,
+      rpc: {
+        l1: 'https://sandbox.ethereum.walletmesh.com/api/v1/public',
+        l2: 'https://sandbox.aztec.walletmesh.com/api/v1/public',
+      },
+      deployment: deploymentData,
+    };
+  } catch (error) {
+    throw createError(
+      ErrorCode.CONFIG_INVALID_PARAMETER,
+      'Failed to load sandbox configuration from API',
+      {
+        url: 'https://sandbox.aztec.walletmesh.com/api/v1/turnstile/deployment.json',
+      },
+      error,
+    );
+  }
+}
+
+/**
+ * Loads a predefined network configuration
+ * @param networkName The network name to load
+ * @returns The network configuration
+ */
+async function loadNetworkConfig(
+  networkName: NetworkName,
+): Promise<NetworkConfig> {
+  switch (networkName) {
+    case 'sandbox':
+      return loadSandboxConfig();
+    case 'testnet':
+      throw createError(
+        ErrorCode.CONFIG_MISSING_PARAMETER,
+        'Testnet environment is not yet available. Use a URL or file path instead.',
+        { networkName },
+      );
+    case 'mainnet':
+      throw createError(
+        ErrorCode.CONFIG_MISSING_PARAMETER,
+        'Mainnet environment is not yet available. Use a URL or file path instead.',
+        { networkName },
+      );
+    case 'local':
+      throw createError(
+        ErrorCode.CONFIG_MISSING_PARAMETER,
+        'Local environment is not yet available. Use a URL or file path instead.',
+        { networkName },
+      );
+    default:
+      throw createError(
+        ErrorCode.CONFIG_INVALID_PARAMETER,
+        `Unknown network name: ${networkName}. Supported networks: sandbox, testnet, mainnet, local`,
+        { networkName },
+      );
+  }
+}
+
+/**
  * Loads a Turnstile configuration from various sources
- * @param source The configuration source (URL or file path)
+ * @param source The configuration source (network name, URL, or file path)
  * @param customTokens Optional custom token configurations
  * @returns The Turnstile configuration
  */
@@ -95,29 +181,40 @@ export async function loadConfig(
     return cachedConfig;
   }
 
-  let deploymentData: DeploymentData;
+  let networkConfig: NetworkConfig;
 
-  if (isUrl(source)) {
+  if (isNetworkName(source)) {
+    // Load from predefined network configuration
+    networkConfig = await loadNetworkConfig(source);
+  } else if (isUrl(source)) {
     // Load from URL
-    deploymentData = await loadUrlConfig(source);
+    const deploymentData = await loadUrlConfig(source);
+    networkConfig = {
+      name: 'custom',
+      description: `Configuration loaded from URL: ${source}`,
+      l1ChainId: 1, // Default values - should be overridden via RPC config or other means
+      l2ChainId: 1,
+      rpc: {
+        l1: 'http://localhost:8545', // Default values - should be overridden
+        l2: 'http://localhost:8080',
+      },
+      deployment: deploymentData,
+    };
   } else {
     // Load from file path
-    deploymentData = await loadFileConfig(source);
+    const deploymentData = await loadFileConfig(source);
+    networkConfig = {
+      name: 'custom',
+      description: `Configuration loaded from file: ${source}`,
+      l1ChainId: 1, // Default values - should be overridden via RPC config or other means
+      l2ChainId: 1,
+      rpc: {
+        l1: 'http://localhost:8545', // Default values - should be overridden
+        l2: 'http://localhost:8080',
+      },
+      deployment: deploymentData,
+    };
   }
-
-  // Create a network config from deployment data
-  // Since we don't have predefined networks, we'll create a generic one
-  const networkConfig: NetworkConfig = {
-    name: 'custom',
-    description: `Configuration loaded from ${isUrl(source) ? 'URL' : 'file'}: ${source}`,
-    l1ChainId: 1, // Default values - should be overridden via RPC config or other means
-    l2ChainId: 1,
-    rpc: {
-      l1: 'http://localhost:8545', // Default values - should be overridden
-      l2: 'http://localhost:8080',
-    },
-    deployment: deploymentData,
-  };
 
   const config: TurnstileConfig = {
     network: networkConfig,

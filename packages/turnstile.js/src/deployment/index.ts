@@ -12,5 +12,6 @@ export type {
   DeploymentData,
   DeploymentDataToken,
   NetworkConfig,
+  NetworkName,
   TurnstileConfig,
 } from './types.js';
