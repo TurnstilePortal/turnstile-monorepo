@@ -1,16 +1,19 @@
 import type { Hex } from 'viem';
 
-/**
- * Token information for deployment configuration
- */
-export interface DeploymentDataToken {
+export interface TokenInfo {
   name: string;
   symbol: string;
   decimals: number;
   l2Address: Hex;
   l1Address: Hex;
-  serializedL2TokenInstance: Hex;
 }
+
+/**
+ * Token information for deployment configuration
+ */
+export type DeploymentDataToken = TokenInfo & {
+  serializedL2TokenInstance: Hex;
+};
 
 /**
  * Core deployment data containing contract addresses and instances

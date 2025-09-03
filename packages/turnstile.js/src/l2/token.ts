@@ -540,13 +540,9 @@ export class L2Token implements IL2Token {
   static async fromAddress(
     address: AztecAddress,
     client: IL2Client,
-    register = true,
   ): Promise<L2Token> {
     try {
       const token = await TokenContract.at(address, client.getWallet());
-      if (register) {
-        await client.getWallet().registerContract(token);
-      }
       return new L2Token(token, client);
     } catch (error) {
       throw createError(
@@ -625,7 +621,7 @@ export class L2Token implements IL2Token {
     name: string,
     symbol: string,
     decimals: number,
-  ) {
+  ): Promise<L2Token> {
     const instance = await getContractInstanceFromDeployParams(
       TokenContractArtifact,
       {
@@ -657,6 +653,8 @@ export class L2Token implements IL2Token {
     await client
       .getWallet()
       .registerContract({ instance, artifact: TokenContractArtifact });
+
+    return L2Token.fromAddress(tokenAddress, client);
   }
 }
 

@@ -1,38 +1,17 @@
 import { getInitialTestAccounts } from '@aztec/accounts/testing';
-import {
-  AztecAddress,
-  createAztecNodeClient,
-  Fr,
-  TxStatus,
-} from '@aztec/aztec.js';
-import {
-  type L2Client,
-  L2Token,
-  registerShieldGatewayInPXE,
-  TurnstileFactory,
-} from '@turnstile-portal/turnstile.js';
-import {
-  createL2Client,
-  createPXE,
-  readKeyData,
-} from '@turnstile-portal/turnstile-dev';
+import { AztecAddress, Fr, TxStatus } from '@aztec/aztec.js';
+import { getConfigPaths, loadDeployConfig } from '@turnstile-portal/deploy';
+import { type L2Token, TurnstileFactory } from '@turnstile-portal/turnstile.js';
+import { createL2Client, readKeyData } from '@turnstile-portal/turnstile-dev';
 import type { Command } from 'commander';
 
 async function doTransfer(
-  l2Client: L2Client,
-  tokenAddr: AztecAddress,
+  token: L2Token,
   recipient: AztecAddress,
   amount: bigint,
 ): Promise<number> {
-  const token = await L2Token.fromAddress(tokenAddr, l2Client);
-
   const symbol = await token.getSymbol();
   console.log(`PRIVATELY Transferring ${amount} ${symbol} to ${recipient}...`);
-
-  const balance = await token.balanceOfPrivate(l2Client.getAddress());
-  if (balance < amount) {
-    throw new Error('Insufficient balance');
-  }
 
   // TODO: Use a correctly formatted verified ID
   const verifiedID: Fr[] & { length: 5 } = [
@@ -78,12 +57,8 @@ export function registerAztecTransferPrivate(program: Command) {
 
       // Load configuration from files
       const configDir = allOptions.configDir;
-      const configPaths = await import('@turnstile-portal/deploy').then((m) =>
-        m.getConfigPaths(configDir),
-      );
-      const config = await import('@turnstile-portal/deploy').then((m) =>
-        m.loadDeployConfig(configPaths.configFile),
-      );
+      const configPaths = await getConfigPaths(configDir);
+      const config = await loadDeployConfig(configPaths.configFile);
 
       // Use the deployment data from config directory
       const factory = await TurnstileFactory.fromConfig(
@@ -95,8 +70,6 @@ export function registerAztecTransferPrivate(program: Command) {
       const tokenInfo = factory.getTokenInfo(tokenSymbol);
       const tokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
 
-      const node = createAztecNodeClient(config.connection.aztec.node);
-      const _pxe = await createPXE(node);
       const aztecTestAccounts = await getInitialTestAccounts();
 
       function recipientError(msg: string): Error {
@@ -123,23 +96,11 @@ export function registerAztecTransferPrivate(program: Command) {
       );
       const amount = BigInt(options.amount);
 
-      // Ensure L2 Token is registered in the PXE
-      console.log(`Registering Token in SENDER PXE: ${tokenAddr.toString()}`);
-      await L2Token.register(
-        senderClient,
-        tokenAddr,
-        AztecAddress.fromString(factory.getDeploymentData().aztecPortal),
-        tokenInfo.name,
-        tokenInfo.symbol,
-        tokenInfo.decimals,
-      );
-      const shieldGatewayAddr = AztecAddress.fromString(
-        factory.getDeploymentData().aztecShieldGateway,
-      );
-      console.log(
-        `Registering ShieldGateway in SENDER PXE: ${shieldGatewayAddr.toString()}`,
-      );
-      await registerShieldGatewayInPXE(senderClient, shieldGatewayAddr);
+      // Ensure L2Portal & ShieldGateway are registered in the sender's PXE
+      await factory.createL2Portal(senderClient);
+
+      // Ensure L2 Token is registered in the PXE & get sender's token instance
+      const senderToken = await factory.createL2Token(senderClient, tokenInfo);
 
       const recipientKeyData = {
         l2SigningKey: recipientAccount.signingKey.toString(),
@@ -166,41 +127,41 @@ export function registerAztecTransferPrivate(program: Command) {
       console.log(
         `Registering Token in RECIPIENT PXE: ${tokenAddr.toString()}`,
       );
-      await L2Token.register(
+      const recipientToken = await factory.createL2Token(
         recipientClient,
-        tokenAddr,
-        AztecAddress.fromString(factory.getDeploymentData().aztecPortal),
-        tokenInfo.name,
-        tokenInfo.symbol,
-        tokenInfo.decimals,
+        tokenInfo,
       );
 
-      const initialRecipientBalance = await (
-        await L2Token.fromAddress(tokenAddr, recipientClient)
-      ).balanceOfPrivate(recipient);
+      const initialRecipientBalance =
+        await recipientToken.balanceOfPrivate(recipient);
       console.log(
         `Initial recipient balance (${recipient}): ${initialRecipientBalance}`,
       );
 
-      const initialSenderBalance = await (
-        await L2Token.fromAddress(tokenAddr, senderClient)
-      ).balanceOfPrivate(senderClient.getAddress());
+      const initialSenderBalance = await senderToken.balanceOfPrivate(
+        senderClient.getAddress(),
+      );
       console.log(
         `Initial sender balance (${senderClient.getAddress()}): ${initialSenderBalance}`,
       );
 
-      await doTransfer(senderClient, tokenAddr, recipient, amount);
+      const balance = await senderToken.balanceOfPrivate(
+        senderClient.getAddress(),
+      );
+      if (balance < amount) {
+        throw new Error('Insufficient balance');
+      }
 
-      const endingRecipientBalance = await (
-        await L2Token.fromAddress(tokenAddr, recipientClient)
-      ).balanceOfPrivate(recipient);
+      await doTransfer(senderToken, recipient, amount);
+
+      const endingRecipientBalance =
+        await recipientToken.balanceOfPrivate(recipient);
       console.log(
         `Final recipient balance (${recipient}): ${endingRecipientBalance}`,
       );
-
-      const endingSenderBalance = await (
-        await L2Token.fromAddress(tokenAddr, senderClient)
-      ).balanceOfPrivate(senderClient.getAddress());
+      const endingSenderBalance = await senderToken.balanceOfPrivate(
+        senderClient.getAddress(),
+      );
       console.log(
         `Final sender balance (${senderClient.getAddress()}): ${endingSenderBalance}`,
       );

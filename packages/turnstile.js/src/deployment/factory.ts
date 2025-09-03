@@ -25,6 +25,7 @@ import { loadConfig } from './config.js';
 import type {
   ConfigSource,
   DeploymentDataToken,
+  TokenInfo,
   TurnstileConfig,
 } from './types.js';
 
@@ -33,6 +34,8 @@ import type {
  */
 export class TurnstileFactory {
   private config: TurnstileConfig;
+  // Map of L2 client address to a map of addresses registered in its PXE during this session
+  private registeredInPXE = new Map<AztecAddress, Map<AztecAddress, boolean>>();
 
   /**
    * Creates a new TurnstileFactory
@@ -40,6 +43,23 @@ export class TurnstileFactory {
    */
   constructor(config: TurnstileConfig) {
     this.config = config;
+  }
+
+  private isRegistered(l2Client: IL2Client, address: AztecAddress): boolean {
+    const clientMap = this.registeredInPXE.get(l2Client.getAddress());
+    if (!clientMap) {
+      return false;
+    }
+    return clientMap.get(address) === true;
+  }
+
+  private setRegistered(l2Client: IL2Client, address: AztecAddress) {
+    let clientMap = this.registeredInPXE.get(l2Client.getAddress());
+    if (!clientMap) {
+      clientMap = new Map<AztecAddress, boolean>();
+      this.registeredInPXE.set(l2Client.getAddress(), clientMap);
+    }
+    clientMap.set(address, true);
   }
 
   /**
@@ -155,10 +175,20 @@ export class TurnstileFactory {
    * @param l2Client The L2 client
    * @returns The L2 portal
    */
-  async createL2Portal(l2Client: IL2Client): Promise<L2Portal> {
+  async createL2Portal(
+    l2Client: IL2Client,
+    l1Client?: IL1Client,
+  ): Promise<L2Portal> {
     const portalAddress = AztecAddress.fromString(
       this.config.network.deployment.aztecPortal,
     );
+
+    // If we've already registered this portal in the PXE, skip registration
+    if (this.isRegistered(l2Client, portalAddress)) {
+      return new L2Portal(portalAddress, l2Client, l1Client);
+    }
+
+    // Register the portal in the PXE
     const l1Portal = EthAddress.fromString(
       this.config.network.deployment.l1Portal,
     );
@@ -169,49 +199,45 @@ export class TurnstileFactory {
       this.config.network.deployment.aztecShieldGateway,
     );
 
-    return L2Portal.fromAddress(
-      portalAddress,
+    this.setRegistered(l2Client, portalAddress);
+    await L2Portal.register(
       l2Client,
-      true,
+      portalAddress,
       l1Portal,
       tokenContractClassId,
       shieldGateway,
     );
+    return new L2Portal(portalAddress, l2Client, l1Client);
   }
 
   /**
    * Creates an L2 token using the configured address or custom token info
    * @param l2Client The L2 client instance for Aztec network interactions
-   * @param tokenSymbol The token symbol to look up in configuration
-   * @param customTokenInfo Optional custom token information to override configuration
+   * @param tokenInfo The token information containing L1 and L2 addresses and metadata
    * @returns The L2 token instance
    * @throws {TurnstileError} With ErrorCode.CONFIG_MISSING_PARAMETER if token not found in configuration
    */
   async createL2Token(
     l2Client: IL2Client,
-    tokenSymbol: string,
-    customTokenInfo?: DeploymentDataToken,
+    tokenInfo: TokenInfo,
   ): Promise<L2Token> {
-    let tokenAddress: AztecAddress;
+    const tokenAddress = AztecAddress.fromString(tokenInfo.l2Address);
 
-    if (customTokenInfo) {
-      tokenAddress = AztecAddress.fromString(customTokenInfo.l2Address);
-    } else {
-      const token = this.config.network.deployment.tokens[tokenSymbol];
-      if (!token) {
-        throw createError(
-          ErrorCode.CONFIG_MISSING_PARAMETER,
-          `Token ${tokenSymbol} not found in configuration`,
-          {
-            tokenSymbol,
-            availableTokens: Object.keys(this.config.network.deployment.tokens),
-          },
-        );
-      }
-      tokenAddress = AztecAddress.fromString(token.l2Address);
+    // If we've already registered this token in the PXE, skip registration and return it
+    if (this.isRegistered(l2Client, tokenAddress)) {
+      return L2Token.fromAddress(tokenAddress, l2Client);
     }
 
-    return L2Token.fromAddress(tokenAddress, l2Client);
+    // Register the token in the PXE
+    this.setRegistered(l2Client, tokenAddress);
+    return L2Token.register(
+      l2Client,
+      tokenAddress,
+      AztecAddress.fromString(this.config.network.deployment.aztecPortal),
+      tokenInfo.name,
+      tokenInfo.symbol,
+      tokenInfo.decimals,
+    );
   }
 
   /**

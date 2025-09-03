@@ -23,12 +23,14 @@ import {
 import { encodeFunctionData, getContract } from 'viem';
 import { createError, ErrorCode, isTurnstileError } from '../errors.js';
 import type { IL1Client } from '../l1/client.js';
+import { L1Token } from '../l1/token.js';
 import type { IL2Client } from './client.js';
 import {
   L2_CONTRACT_DEPLOYMENT_SALT,
   PUBLIC_NOT_SECRET_SECRET,
 } from './constants.js';
 import { registerShieldGatewayInPXE } from './shield-gateway.js';
+import { L2Token } from './token.js';
 
 export type PortalConfig = {
   l1_portal: EthAddress;
@@ -461,13 +463,38 @@ export class L2Portal implements IL2Portal {
    * @param l1TokenAddr The L1 token address
    * @returns The L2 token address
    */
-  async getL2Token(l1TokenAddr: string): Promise<AztecAddress> {
+  async getL2Token(
+    l1TokenAddr: `0x${string}`,
+    registerInPXE?: boolean,
+  ): Promise<AztecAddress> {
     try {
       const portal = await this.getInstance();
       const result = await portal.methods
         .get_l2_token_unconstrained(EthAddress.fromString(l1TokenAddr))
         .simulate();
-      return AztecAddress.fromBigInt(result);
+
+      const l2TokenAddr = AztecAddress.fromBigInt(result);
+
+      if (registerInPXE) {
+        if (this.l1Client) {
+          const l1Token = new L1Token(l1TokenAddr, this.l1Client);
+          const name = await l1Token.getName();
+          const symbol = await l1Token.getSymbol();
+          const decimals = await l1Token.getDecimals();
+          await L2Token.register(
+            this.client,
+            l2TokenAddr,
+            this.getAddress() /* portal address */,
+            name,
+            symbol,
+            decimals,
+          );
+          console.debug(`Registered L2 token ${l2TokenAddr.toString()} in PXE`);
+        } else {
+          console.warn('L1 client not provided, cannot register token in PXE');
+        }
+      }
+      return l2TokenAddr;
     } catch (error) {
       throw createError(
         ErrorCode.L2_TOKEN_OPERATION,
@@ -735,6 +762,7 @@ export class L2Portal implements IL2Portal {
 
   static async registerPortal(
     client: IL2Client,
+    l2Portal: AztecAddress,
     l1Portal: EthAddress,
     tokenContractClassId: Fr,
     shieldGateway: AztecAddress,
@@ -749,6 +777,19 @@ export class L2Portal implements IL2Portal {
         publicKeys: PublicKeys.default(),
       },
     );
+
+    if (!instance.address.equals(l2Portal)) {
+      throw createError(
+        ErrorCode.L2_GENERAL,
+        `Portal address mismatch: expected ${l2Portal.toString()}, got ${instance.address.toString()}`,
+        {
+          expectedAddress: l2Portal.toString(),
+          actualAddress: instance.address.toString(),
+        },
+      );
+    }
+
+    console.debug(`Registering portal in PXE: ${l2Portal.toString()}...`);
     await client
       .getWallet()
       .registerContract({ instance, artifact: PortalContractArtifact });
@@ -758,6 +799,7 @@ export class L2Portal implements IL2Portal {
 
   static async register(
     client: IL2Client,
+    l2Portal: AztecAddress,
     l1Portal: EthAddress,
     tokenContractClassId: Fr,
     shieldGateway: AztecAddress,
@@ -765,56 +807,12 @@ export class L2Portal implements IL2Portal {
     await L2Portal.registerShieldGateway(client, shieldGateway);
     const instance = await L2Portal.registerPortal(
       client,
+      l2Portal,
       l1Portal,
       tokenContractClassId,
       shieldGateway,
     );
     return new L2Portal(instance.address, client);
-  }
-
-  /**
-   * Creates a new L2Portal from an address
-   * @param address The portal address
-   * @param client The L2 client
-   * @param register Whether to register the portal
-   * @param l1Portal The L1 portal address (required if register is true)
-   * @param tokenContractClassId The token contract class ID (required if register is true)
-   * @param shieldGateway The shield gateway address (required if register is true)
-   * @returns The portal
-   */
-  static async fromAddress(
-    address: AztecAddress,
-    client: IL2Client,
-    register = true,
-    l1Portal?: EthAddress,
-    tokenContractClassId?: Fr,
-    shieldGateway?: AztecAddress,
-  ): Promise<L2Portal> {
-    try {
-      if (register) {
-        if (!l1Portal || !tokenContractClassId || !shieldGateway) {
-          throw createError(
-            ErrorCode.L2_CONTRACT_INTERACTION,
-            'Missing required parameters for portal registration: l1Portal, tokenContractClassId, and shieldGateway are required when register is true',
-            { portalAddress: address.toString() },
-          );
-        }
-        await L2Portal.register(
-          client,
-          l1Portal,
-          tokenContractClassId,
-          shieldGateway,
-        );
-      }
-      return new L2Portal(address, client);
-    } catch (error) {
-      throw createError(
-        ErrorCode.L2_CONTRACT_INTERACTION,
-        `Failed to create portal from address ${address} `,
-        { portalAddress: address.toString() },
-        error,
-      );
-    }
   }
 
   /**

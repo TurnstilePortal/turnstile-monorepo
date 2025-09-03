@@ -1,18 +1,13 @@
-import {
-  AztecAddress,
-  createAztecNodeClient,
-  EthAddress,
-  Fr,
-  TxStatus,
-} from '@aztec/aztec.js';
+import { TxStatus } from '@aztec/aztec.js';
 import type { L2ToL1MembershipWitness } from '@aztec/stdlib/messaging';
+import { getConfigPaths, loadDeployConfig } from '@turnstile-portal/deploy';
 import {
   type IL1Client,
   type IL2Client,
   L1Portal,
   L1Token,
-  L2Portal,
-  L2Token,
+  type L2Portal,
+  type L2Token,
   TurnstileFactory,
 } from '@turnstile-portal/turnstile.js';
 import {
@@ -25,24 +20,19 @@ import { getAddress, type Hex, http } from 'viem';
 
 async function initiateL2Withdrawal({
   l2Client,
-  l2TokenAddr,
-  l2PortalAddr,
+  l2Token,
+  l2Portal,
   l1TokenAddr,
   l1Recipient,
   amount,
-  l1Client,
 }: {
   l2Client: IL2Client;
-  l2TokenAddr: AztecAddress;
-  l2PortalAddr: AztecAddress;
+  l2Token: L2Token;
+  l2Portal: L2Portal;
   l1Recipient: Hex;
   l1TokenAddr: Hex;
   amount: bigint;
-  l1Client: IL1Client;
 }) {
-  // Get L2 token
-  const l2Token = await L2Token.fromAddress(l2TokenAddr, l2Client);
-
   const symbol = await l2Token.getSymbol();
   console.log(
     `Initiating withdrawal of ${amount} ${symbol} to L1 recipient ${l1Recipient}`,
@@ -72,9 +62,6 @@ async function initiateL2Withdrawal({
     `Burn authorization sent. Status: ${burnAuthReceipt.status.toString()}`,
   );
 
-  // Use the L2Portal
-  const l2Portal = new L2Portal(l2PortalAddr, l2Client, l1Client);
-
   // Initiate the withdrawal from the Portal
   const { tx: withdrawTx, withdrawData } = await l2Portal.withdrawPublic(
     l1TokenAddr,
@@ -97,7 +84,7 @@ async function initiateL2Withdrawal({
     throw new Error('Failed to get block number');
   }
 
-  const { l1ContractAddresses } = await l2Client.getNode().getNodeInfo();
+  const l1ContractAddresses = await l2Client.getNode().getL1ContractAddresses();
   const outboxVersion = await l2Portal.getAztecL1OutboxVersion(
     l1ContractAddresses.outboxAddress,
   );
@@ -188,12 +175,8 @@ export function registerWithdrawTokens(program: Command) {
 
       // Load configuration from files
       const configDir = allOptions.configDir;
-      const configPaths = await import('@turnstile-portal/deploy').then((m) =>
-        m.getConfigPaths(configDir),
-      );
-      const config = await import('@turnstile-portal/deploy').then((m) =>
-        m.loadDeployConfig(configPaths.configFile),
-      );
+      const configPaths = await getConfigPaths(configDir);
+      const config = await loadDeployConfig(configPaths.configFile);
 
       // Use the deployment data from config directory
       const factory = await TurnstileFactory.fromConfig(
@@ -204,10 +187,7 @@ export function registerWithdrawTokens(program: Command) {
       const tokenSymbol = options.token;
       const tokenInfo = factory.getTokenInfo(tokenSymbol);
       const deploymentData = factory.getDeploymentData();
-      const l2TokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
       const l1TokenAddr = getAddress(tokenInfo.l1Address) as `0x${string}`;
-
-      const _node = createAztecNodeClient(config.connection.aztec.node);
 
       const { l1Client, l2Client } = await getClients(
         { node: config.connection.aztec.node },
@@ -223,38 +203,23 @@ export function registerWithdrawTokens(program: Command) {
         : l1Client.getAddress();
       const amount = BigInt(options.amount);
 
-      // Ensure L2 Token is registered in the PXE
+      // Create L2 Portal & ensure it is registered in the PXE
+      const l2Portal = await factory.createL2Portal(l2Client, l1Client);
+      // Create L2 Token & ensure it is registered in the PXE
+      const l2Token = await factory.createL2Token(l2Client, tokenInfo);
+
       console.log(
-        `Registering Token in L2 Client PXE: ${l2TokenAddr.toString()}`,
-      );
-      await L2Token.register(
-        l2Client,
-        l2TokenAddr,
-        AztecAddress.fromString(factory.getDeploymentData().aztecPortal),
-        tokenInfo.name,
-        tokenInfo.symbol,
-        tokenInfo.decimals,
-      );
-      // Ensure the L2 Portal is registered in the PXE
-      console.log(
-        `Registering L2 Portal in L2 Client PXE: ${deploymentData.aztecPortal}`,
-      );
-      await L2Portal.register(
-        l2Client,
-        EthAddress.fromString(deploymentData.l1Portal),
-        Fr.fromHexString(deploymentData.aztecTokenContractClassID),
-        AztecAddress.fromString(deploymentData.aztecShieldGateway),
+        `Withdrawing ${amount} ${tokenSymbol} from L2 to L1 recipient ${l1Recipient}`,
       );
 
       const { l2BlockNumber, witness, withdrawData } =
         await initiateL2Withdrawal({
           l2Client,
-          l2TokenAddr,
-          l2PortalAddr: AztecAddress.fromString(deploymentData.aztecPortal),
+          l2Portal,
+          l2Token,
           l1TokenAddr,
           l1Recipient,
           amount,
-          l1Client,
         });
 
       // Wait for the L2 block to be available on the L1 chain

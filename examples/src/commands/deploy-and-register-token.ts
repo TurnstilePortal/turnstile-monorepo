@@ -1,11 +1,6 @@
 import { randomBytes } from 'node:crypto';
-import {
-  AztecAddress,
-  EthAddress,
-  Fr,
-  retryUntil,
-  TxStatus,
-} from '@aztec/aztec.js';
+import { AztecAddress, Fr, retryUntil, TxStatus } from '@aztec/aztec.js';
+import { getConfigPaths, loadDeployConfig } from '@turnstile-portal/deploy';
 import {
   InsecureMintableTokenABI,
   InsecureMintableTokenBytecode,
@@ -239,12 +234,8 @@ export function registerDeployAndRegisterToken(program: Command) {
 
       // Load configuration from files
       const configDir = allOptions.configDir;
-      const configPaths = await import('@turnstile-portal/deploy').then((m) =>
-        m.getConfigPaths(configDir),
-      );
-      const config = await import('@turnstile-portal/deploy').then((m) =>
-        m.loadDeployConfig(configPaths.configFile),
-      );
+      const configPaths = getConfigPaths(configDir);
+      const config = await loadDeployConfig(configPaths.configFile);
 
       // Use the deployment data from config directory
       const factory = await TurnstileFactory.fromConfig(
@@ -304,12 +295,12 @@ export function registerDeployAndRegisterToken(program: Command) {
 
         // Step 5: Deploy L2 Token
         console.log('5. Deploying L2 Token...');
-        const aztecPortalAddr = AztecAddress.fromString(
-          deploymentData.aztecPortal,
-        );
+        // Create L2Portal instance & ensure it's registered in PXE
+        const aztecPortal = await factory.createL2Portal(l2Client, l1Client);
+
         const l2Token = await deployL2DevToken(
           l2Client,
-          aztecPortalAddr,
+          aztecPortal.getAddress(),
           tokenName,
           tokenSymbol,
           tokenDecimals,
@@ -317,15 +308,6 @@ export function registerDeployAndRegisterToken(program: Command) {
         console.log(`✅ L2 token deployed at: ${l2Token.getAddress()}`);
 
         // Step 6: Register token on L2
-
-        // Ensure L2 Portal is registered in the PXE
-        console.log(`Registering L2 Portal in PXE: ${aztecPortalAddr}`);
-        await L2Portal.register(
-          l2Client,
-          EthAddress.fromString(deploymentData.l1Portal),
-          Fr.fromHexString(deploymentData.aztecTokenContractClassID),
-          AztecAddress.fromString(deploymentData.aztecShieldGateway),
-        );
 
         console.log('6. Registering token on L2...');
         await registerL2DevToken(

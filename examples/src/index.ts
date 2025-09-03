@@ -5,7 +5,6 @@ import { registerAztecTransferPrivate } from './commands/aztec-transfer-private.
 import { registerAztecTransferPublic } from './commands/aztec-transfer-public.js';
 import { registerDeployAndRegisterToken } from './commands/deploy-and-register-token.js';
 import { registerDepositAndClaim } from './commands/deposit-and-claim.js';
-import { registerLookupAztecTokens } from './commands/lookup-aztec-tokens.js';
 import { registerShieldTokens } from './commands/shield-tokens.js';
 import { registerUnshieldTokens } from './commands/unshield-tokens.js';
 import { registerWithdrawTokens } from './commands/withdraw-tokens.js';
@@ -30,7 +29,6 @@ async function main() {
   registerAztecTransferPrivate(program);
   registerAztecTransferPublic(program);
   registerUnshieldTokens(program);
-  registerLookupAztecTokens(program);
 
   await program.parseAsync();
 }

@@ -1,7 +1,8 @@
-import { AztecAddress, TxStatus } from '@aztec/aztec.js';
+import { TxStatus } from '@aztec/aztec.js';
+import { getConfigPaths, loadDeployConfig } from '@turnstile-portal/deploy';
 import {
   type L2Client,
-  L2Token,
+  type L2Token,
   TurnstileFactory,
 } from '@turnstile-portal/turnstile.js';
 import { createL2Client, readKeyData } from '@turnstile-portal/turnstile-dev';
@@ -39,12 +40,8 @@ export function registerShieldTokens(program: Command) {
 
       // Load configuration from files
       const configDir = allOptions.configDir;
-      const configPaths = await import('@turnstile-portal/deploy').then((m) =>
-        m.getConfigPaths(configDir),
-      );
-      const config = await import('@turnstile-portal/deploy').then((m) =>
-        m.loadDeployConfig(configPaths.configFile),
-      );
+      const configPaths = getConfigPaths(configDir);
+      const config = await loadDeployConfig(configPaths.configFile);
 
       // Use the deployment data from config directory
       const factory = await TurnstileFactory.fromConfig(
@@ -54,7 +51,6 @@ export function registerShieldTokens(program: Command) {
       // Get token from command option
       const tokenSymbol = options.token;
       const tokenInfo = factory.getTokenInfo(tokenSymbol);
-      const tokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
 
       const keyData = await readKeyData(configPaths.keysFile);
       const l2Client = await createL2Client(
@@ -65,18 +61,8 @@ export function registerShieldTokens(program: Command) {
       // Get amount from command option
       const amount = BigInt(options.amount);
 
-      // Ensure L2 Token is registered in the PXE
-      console.log(`Registering Token in PXE: ${tokenAddr.toString()}`);
-      await L2Token.register(
-        l2Client,
-        tokenAddr,
-        AztecAddress.fromString(factory.getDeploymentData().aztecPortal),
-        tokenInfo.name,
-        tokenInfo.symbol,
-        tokenInfo.decimals,
-      );
-
-      const token = await L2Token.fromAddress(tokenAddr, l2Client);
+      // Create token & ensure L2 Token is registered in the PXE
+      const token = await factory.createL2Token(l2Client, tokenInfo);
       const startingBalance = await token.balanceOfPublic(
         l2Client.getAddress(),
       );

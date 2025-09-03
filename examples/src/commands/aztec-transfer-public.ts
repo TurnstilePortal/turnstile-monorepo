@@ -1,27 +1,16 @@
 import { AztecAddress } from '@aztec/aztec.js';
-import {
-  type L2Client,
-  L2Token,
-  TurnstileFactory,
-} from '@turnstile-portal/turnstile.js';
+import { getConfigPaths, loadDeployConfig } from '@turnstile-portal/deploy';
+import { type L2Token, TurnstileFactory } from '@turnstile-portal/turnstile.js';
 import { createL2Client, readKeyData } from '@turnstile-portal/turnstile-dev';
 import type { Command } from 'commander';
 
 async function doTransfer(
-  l2Client: L2Client,
-  tokenAddr: AztecAddress,
+  token: L2Token,
   recipient: AztecAddress,
   amount: bigint,
 ) {
-  const token = await L2Token.fromAddress(tokenAddr, l2Client);
   const symbol = await token.getSymbol();
   console.log(`Transferring ${amount} ${symbol} to ${recipient}...`);
-
-  const balance = await token.balanceOfPublic(l2Client.getAddress());
-  console.log(`Current balance: ${balance}`);
-  if (balance < amount) {
-    throw new Error('Insufficient balance');
-  }
 
   const tx = await token.transferPublic(recipient, amount);
   console.log(
@@ -50,12 +39,8 @@ export function registerAztecTransferPublic(program: Command) {
 
       // Load configuration from files
       const configDir = allOptions.configDir;
-      const configPaths = await import('@turnstile-portal/deploy').then((m) =>
-        m.getConfigPaths(configDir),
-      );
-      const config = await import('@turnstile-portal/deploy').then((m) =>
-        m.loadDeployConfig(configPaths.configFile),
-      );
+      const configPaths = getConfigPaths(configDir);
+      const config = await loadDeployConfig(configPaths.configFile);
 
       // Use the deployment data from config directory
       const factory = await TurnstileFactory.fromConfig(
@@ -78,41 +63,33 @@ export function registerAztecTransferPublic(program: Command) {
 
       // Ensure L2 Token is registered in the PXE
       console.log(`Registering Token in PXE: ${tokenAddr.toString()}`);
-      await L2Token.register(
-        l2Client,
-        tokenAddr,
-        AztecAddress.fromString(factory.getDeploymentData().aztecPortal),
-        tokenInfo.name,
-        tokenInfo.symbol,
-        tokenInfo.decimals,
-      );
+      const l2Token = await factory.createL2Token(l2Client, tokenInfo);
 
-      const initialRecipientBalance = await (
-        await L2Token.fromAddress(tokenAddr, l2Client)
-      ).balanceOfPublic(recipient);
+      const initialRecipientBalance = await l2Token.balanceOfPrivate(recipient);
       console.log(
         `Initial recipient balance (${recipient}): ${initialRecipientBalance}`,
       );
 
-      const initialSenderBalance = await (
-        await L2Token.fromAddress(tokenAddr, l2Client)
-      ).balanceOfPublic(l2Client.getAddress());
+      const initialSenderBalance = await l2Token.balanceOfPublic(
+        l2Client.getAddress(),
+      );
       console.log(
         `Initial sender balance (${l2Client.getAddress()}): ${initialSenderBalance}`,
       );
 
-      await doTransfer(l2Client, tokenAddr, recipient, amount);
+      if (initialSenderBalance < amount) {
+        throw new Error('Insufficient balance');
+      }
+      await doTransfer(l2Token, recipient, amount);
 
-      const finalRecipientBalance = await (
-        await L2Token.fromAddress(tokenAddr, l2Client)
-      ).balanceOfPublic(recipient);
+      const finalRecipientBalance = await l2Token.balanceOfPublic(recipient);
       console.log(
         `Final recipient balance (${recipient}): ${finalRecipientBalance}`,
       );
 
-      const finalSenderBalance = await (
-        await L2Token.fromAddress(tokenAddr, l2Client)
-      ).balanceOfPublic(l2Client.getAddress());
+      const finalSenderBalance = await l2Token.balanceOfPublic(
+        l2Client.getAddress(),
+      );
       console.log(
         `Final sender balance (${l2Client.getAddress()}): ${finalSenderBalance}`,
       );
