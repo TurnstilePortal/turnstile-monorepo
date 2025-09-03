@@ -1,5 +1,13 @@
 # @turnstile-portal/turnstile.js
 
+## 0.4.2
+
+### Patch Changes
+
+- ce1599c: use turnstile factory for registering contracts in the PXE
+  - @turnstile-portal/aztec-artifacts@0.4.2
+  - @turnstile-portal/l1-artifacts-abi@0.4.2
+
 ## 0.4.1
 
 ### Patch Changes
