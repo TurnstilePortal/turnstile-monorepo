@@ -1,5 +1,7 @@
 # @turnstile-portal/l1-artifacts-dev
 
+## 0.4.4
+
 ## 0.4.3
 
 ## 0.4.2

@@ -1,5 +1,13 @@
 # @turnstile-portal/turnstile.js
 
+## 0.4.4
+
+### Patch Changes
+
+- 2406552: fix `getL2Token` as the return type of the underlying contract call changed
+  - @turnstile-portal/aztec-artifacts@0.4.4
+  - @turnstile-portal/l1-artifacts-abi@0.4.4
+
 ## 0.4.3
 
 ### Patch Changes
