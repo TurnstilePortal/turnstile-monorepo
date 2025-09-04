@@ -68,11 +68,9 @@ describe('L2Portal', () => {
           }),
         }),
         get_l2_token_unconstrained: vi.fn().mockReturnValue({
-          simulate: vi
-            .fn()
-            .mockResolvedValue(
-              BigInt('0x4567890123456789012345678901234567890123'),
-            ),
+          simulate: vi.fn().mockResolvedValue({
+            toString: () => '0x4567890123456789012345678901234567890123',
+          } as unknown as AztecAddress),
         }),
         get_l1_token_unconstrained: vi.fn().mockReturnValue({
           simulate: vi.fn().mockResolvedValue({

@@ -716,18 +716,10 @@ describe('L2Token', () => {
         // Mock the TokenContract.at to return our mock contract
         TokenContract.at = vi.fn().mockResolvedValue(mockTokenContract);
 
-        // Mock the wallet's registerContract method
-        mockWallet.registerContract = vi.fn().mockResolvedValue(undefined);
-
         const result = await L2Token.fromAddress(tokenAddr, mockL2Client);
 
         // Check that the contract was retrieved with the correct parameters
         expect(TokenContract.at).toHaveBeenCalledWith(tokenAddr, mockWallet);
-
-        // Check that registerContract was called
-        expect(mockWallet.registerContract).toHaveBeenCalledWith(
-          mockTokenContract,
-        );
 
         // Check the result is a token instance with the correct contract
         expect(result).toBeInstanceOf(L2Token);

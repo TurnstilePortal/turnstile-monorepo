@@ -469,11 +469,9 @@ export class L2Portal implements IL2Portal {
   ): Promise<AztecAddress> {
     try {
       const portal = await this.getInstance();
-      const result = await portal.methods
+      const l2TokenAddr = await portal.methods
         .get_l2_token_unconstrained(EthAddress.fromString(l1TokenAddr))
         .simulate();
-
-      const l2TokenAddr = AztecAddress.fromBigInt(result);
 
       if (registerInPXE) {
         if (this.l1Client) {
