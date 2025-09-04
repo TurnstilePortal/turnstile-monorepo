@@ -3,7 +3,7 @@
  */
 
 import { existsSync } from 'node:fs';
-import { createAztecNodeClient } from '@aztec/aztec.js';
+import { AztecAddress, createAztecNodeClient } from '@aztec/aztec.js';
 import {
   type DeploymentData,
   getChain,
@@ -21,6 +21,7 @@ import {
 import type { DeployConfig } from '../config/types.js';
 import {
   acceptL1DevToken,
+  bridgeL1ToL2DevToken,
   proposeL1DevToken,
   registerL1DevToken,
   registerL2DevToken,
@@ -235,11 +236,21 @@ async function runDeployment(
 
       console.log(`Deploying token: ${symbol}...`);
       try {
+        if (
+          !deploymentData.l1AllowList ||
+          !deploymentData.aztecPortal ||
+          !deploymentData.l1Portal
+        ) {
+          throw new Error(
+            'Missing required deployment data for token deployment',
+          );
+        }
+
         // Deploy single token
         const result = await deployToken(
           l1Client,
           l2Client,
-          deploymentData.aztecPortal as `0x${string}`,
+          deploymentData.aztecPortal,
           tokenConfig,
         );
 
@@ -247,14 +258,14 @@ async function runDeployment(
         await proposeL1DevToken(
           l1Client,
           result.l1Address,
-          deploymentData.l1AllowList as `0x${string}`,
+          deploymentData.l1AllowList,
         );
 
         // Accept the token
         await acceptL1DevToken(
           l1Client,
           result.l1Address,
-          deploymentData.l1AllowList as `0x${string}`,
+          deploymentData.l1AllowList,
         );
 
         // Register the token on L1 via the L2 portal
@@ -263,7 +274,7 @@ async function runDeployment(
           await registerL1DevToken(
             l1Client,
             result.l1Address,
-            deploymentData.l1Portal as `0x${string}`,
+            deploymentData.l1Portal,
           );
 
         // Register the token with the L2 Portal
@@ -278,6 +289,15 @@ async function runDeployment(
           messageIndex,
           Number(l2BlockNumber),
           messageHash,
+        );
+
+        await bridgeL1ToL2DevToken(
+          l1Client,
+          l2Client,
+          result.l1Address,
+          AztecAddress.fromString(result.l2Address),
+          deploymentData.l1Portal,
+          AztecAddress.fromString(deploymentData.aztecPortal),
         );
 
         // Update token data in deployment data

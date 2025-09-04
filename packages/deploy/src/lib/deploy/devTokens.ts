@@ -10,7 +10,10 @@ import {
   L2Portal,
   L2Token,
 } from '@turnstile-portal/turnstile.js';
-import { waitForL2Block } from '@turnstile-portal/turnstile-dev';
+import {
+  InsecureMintableToken,
+  waitForL2Block,
+} from '@turnstile-portal/turnstile-dev';
 import { type Address, getContract, type Hex } from 'viem';
 
 const ADDITIONAL_L1_ADDRESSES_TO_FUND: `0x${string}`[] = [
@@ -290,4 +293,56 @@ export async function deployL2DevToken(
     console.error(`Error deploying L2 token: ${error}`);
     throw error;
   }
+}
+
+export async function bridgeL1ToL2DevToken(
+  l1Client: L1Client,
+  l2Client: L2Client,
+  l1TokenAddr: Hex,
+  l2TokenAddr: AztecAddress,
+  l1PortalAddr: Hex,
+  l2PortalAddr: AztecAddress,
+  amount: bigint = BigInt(1000e18),
+): Promise<void> {
+  const l1TokenClient = new InsecureMintableToken(l1TokenAddr, l1Client);
+  const symbol = await l1TokenClient.getSymbol();
+  const recipient = l2Client.getAddress().toString();
+
+  console.log(
+    `Bridging ${amount} ${symbol} L1 addr ${l1TokenAddr} L2 addr ${l2TokenAddr.toString()} for ${recipient}...`,
+  );
+
+  await l1TokenClient.approve(l1PortalAddr, amount);
+
+  const l1Portal = new L1Portal(l1PortalAddr, l1Client);
+  const depositResult = await l1Portal.deposit(l1TokenAddr, recipient, amount);
+
+  console.log(
+    `L1 deposit tx submitted: ${depositResult.txHash}, messageHash: ${depositResult.messageHash}`,
+  );
+  const receipt = await l1Client.getPublicClient().waitForTransactionReceipt({
+    hash: depositResult.txHash,
+  });
+  if (receipt.status !== 'success') {
+    throw new Error(`L1 deposit transaction failed: ${receipt}`);
+  }
+
+  await waitForL2Block(l2Client, Number(depositResult.l2BlockNumber));
+  const l2Portal = new L2Portal(l2PortalAddr, l2Client);
+
+  const claimTx = await l2Portal.claimDeposit(
+    l1TokenAddr,
+    recipient,
+    amount,
+    depositResult.messageIndex,
+  );
+
+  console.log(`L2 claim tx submitted: ${await claimTx.getTxHash()}`);
+  const claimReceipt = await claimTx.wait();
+  if (claimReceipt.status !== TxStatus.SUCCESS) {
+    throw new Error(`L2 claim transaction failed: ${claimReceipt}`);
+  }
+  console.log(
+    `L2 claim of ${amount} ${symbol} succeeded in tx ${claimReceipt.txHash}`,
+  );
 }
