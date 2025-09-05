@@ -1,5 +1,13 @@
 # @turnstile-portal/turnstile.js
 
+## 0.4.6
+
+### Patch Changes
+
+- bf5be96: fix l1->l2 isClaimed check
+  - @turnstile-portal/aztec-artifacts@0.4.6
+  - @turnstile-portal/l1-artifacts-abi@0.4.6
+
 ## 0.4.5
 
 ### Patch Changes
