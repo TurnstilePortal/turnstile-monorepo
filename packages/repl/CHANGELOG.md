@@ -1,5 +1,15 @@
 # @turnstile-portal/repl
 
+## 0.4.5
+
+### Patch Changes
+
+- a6a9fa2: Improve the turnstile factory & fix a bugs for withdrawals
+- Updated dependencies [a6a9fa2]
+  - @turnstile-portal/turnstile-dev@0.4.5
+  - @turnstile-portal/turnstile.js@0.4.5
+  - @turnstile-portal/aztec-artifacts@0.4.5
+
 ## 0.4.4
 
 ### Patch Changes

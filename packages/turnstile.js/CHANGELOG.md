@@ -1,5 +1,13 @@
 # @turnstile-portal/turnstile.js
 
+## 0.4.5
+
+### Patch Changes
+
+- a6a9fa2: Improve the turnstile factory & fix a bugs for withdrawals
+  - @turnstile-portal/aztec-artifacts@0.4.5
+  - @turnstile-portal/l1-artifacts-abi@0.4.5
+
 ## 0.4.4
 
 ### Patch Changes
