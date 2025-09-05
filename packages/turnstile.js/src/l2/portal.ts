@@ -11,7 +11,11 @@ import {
 import { sha256ToField } from '@aztec/foundation/crypto';
 import { serializeToBuffer } from '@aztec/foundation/serialize';
 import { OutboxAbi } from '@aztec/l1-artifacts/OutboxAbi';
-import { computeL2ToL1MembershipWitness, type L2ToL1MembershipWitness } from '@aztec/stdlib/messaging';
+import {
+  computeL2ToL1MembershipWitness,
+  getNonNullifiedL1ToL2MessageWitness,
+  type L2ToL1MembershipWitness,
+} from '@aztec/stdlib/messaging';
 import { PortalContract, PortalContractArtifact, ShieldGatewayContract } from '@turnstile-portal/aztec-artifacts';
 import { encodeFunctionData, getContract } from 'viem';
 import { createError, ErrorCode, isTurnstileError } from '../errors.js';
@@ -70,12 +74,11 @@ export interface IL2Portal {
 
   /**
    * Checks if a deposit is claimed on the L2 chain
-   * @param l2BlockNumber The L2 block number
    * @param hash The hash of the L1ToL2Message
    * @returns True if the deposit is claimed
    * @throws {TurnstileError} With ErrorCode.BRIDGE_MESSAGE if check fails
    */
-  isClaimed(l2BlockNumber: number, hash: Hex): Promise<boolean>;
+  isClaimed(hash: Hex): Promise<boolean>;
 
   /**
    * Registers a token on the L2 chain
@@ -295,15 +298,17 @@ export class L2Portal implements IL2Portal {
    * @param hash The hash of the L1ToL2Message
    * @returns True if the deposit is claimed
    */
-  async isClaimed(l2BlockNumber: number, hash: Hex): Promise<boolean> {
+  async isClaimed(hash: Hex): Promise<boolean> {
     try {
       const node = this.client.getNode();
-      if ((await node.getBlockNumber()) < l2BlockNumber) {
-        return false;
-      }
 
       try {
-        await this.getL1ToL2MessageLeafIndex(hash);
+        await getNonNullifiedL1ToL2MessageWitness(
+          node,
+          this.getAddress(),
+          Fr.fromHexString(hash),
+          PUBLIC_NOT_SECRET_SECRET,
+        );
         return false;
       } catch (_err) {
         // If the message is not found and the block is mined, then the message was claimed
@@ -314,7 +319,6 @@ export class L2Portal implements IL2Portal {
         ErrorCode.BRIDGE_MESSAGE,
         `Failed to check if deposit is claimed for hash ${hash}`,
         {
-          l2BlockNumber: l2BlockNumber.toString(),
           hash,
         },
         error,
