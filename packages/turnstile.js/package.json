@@ -24,15 +24,17 @@
     "@aztec/accounts": "1.2.1",
     "@aztec/aztec.js": "1.2.1",
     "@aztec/cli": "1.2.1",
+    "@aztec/constants": "1.2.1",
     "@aztec/entrypoints": "1.2.1",
     "@aztec/ethereum": "1.2.1",
     "@aztec/foundation": "1.2.1",
     "@aztec/l1-artifacts": "1.2.1",
+    "@aztec/noir-contracts.js": "1.2.1",
     "@aztec/protocol-contracts": "1.2.1",
     "@aztec/stdlib": "1.2.1",
     "@turnstile-portal/aztec-artifacts": "workspace:^",
     "@turnstile-portal/l1-artifacts-abi": "workspace:^",
-    "viem": "^2.36.0"
+    "viem": "^2.37.3"
   },
   "devDependencies": {
     "typedoc": "^0.28.11"

@@ -5,11 +5,7 @@ import { type L2Token, TurnstileFactory } from '@turnstile-portal/turnstile.js';
 import { createL2Client, readKeyData } from '@turnstile-portal/turnstile-dev';
 import type { Command } from 'commander';
 
-async function doTransfer(
-  token: L2Token,
-  recipient: AztecAddress,
-  amount: bigint,
-): Promise<number> {
+async function doTransfer(token: L2Token, recipient: AztecAddress, amount: bigint): Promise<number> {
   const symbol = await token.getSymbol();
   console.log(`PRIVATELY Transferring ${amount} ${symbol} to ${recipient}...`);
 
@@ -24,9 +20,7 @@ async function doTransfer(
   console.log('Using Verified ID:', verifiedID);
 
   const tx = await token.transferPrivate(recipient, amount, verifiedID);
-  console.log(
-    `Transaction submitted: ${await tx.getTxHash()}\nWaiting for receipt...`,
-  );
+  console.log(`Transaction submitted: ${await tx.getTxHash()}\nWaiting for receipt...`);
   const receipt = await tx.wait();
   console.log('Transfer status:', receipt.status);
   if (receipt.status !== TxStatus.SUCCESS) {
@@ -50,9 +44,7 @@ export function registerAztecTransferPrivate(program: Command) {
       // Get global and local options together
       const allOptions = command.optsWithGlobals();
       if (!allOptions.configDir) {
-        throw new Error(
-          'Config directory is required. Use -c or --config-dir option.',
-        );
+        throw new Error('Config directory is required. Use -c or --config-dir option.');
       }
 
       // Load configuration from files
@@ -61,9 +53,7 @@ export function registerAztecTransferPrivate(program: Command) {
       const config = await loadDeployConfig(configPaths.configFile);
 
       // Use the deployment data from config directory
-      const factory = await TurnstileFactory.fromConfig(
-        configPaths.deploymentFile,
-      );
+      const factory = await TurnstileFactory.fromConfig(configPaths.deploymentFile);
 
       // Get token and recipient from command options
       const tokenSymbol = options.token;
@@ -82,18 +72,13 @@ export function registerAztecTransferPrivate(program: Command) {
       }
 
       const recipient = AztecAddress.fromString(options.recipient);
-      const recipientAccount = aztecTestAccounts.find((acc) =>
-        acc.address.equals(recipient),
-      );
+      const recipientAccount = aztecTestAccounts.find((acc) => acc.address.equals(recipient));
       if (!recipientAccount) {
         throw recipientError('Recipient account not found');
       }
 
       const keyData = await readKeyData(configPaths.keysFile);
-      const senderClient = await createL2Client(
-        { node: config.connection.aztec.node },
-        keyData,
-      );
+      const senderClient = await createL2Client({ node: config.connection.aztec.node }, keyData);
       const amount = BigInt(options.amount);
 
       // Ensure L2Portal & ShieldGateway are registered in the sender's PXE
@@ -108,62 +93,34 @@ export function registerAztecTransferPrivate(program: Command) {
         l2Salt: recipientAccount.salt.toString(),
       };
 
-      const recipientClient = await createL2Client(
-        { node: config.connection.aztec.node },
-        recipientKeyData,
-      );
+      const recipientClient = await createL2Client({ node: config.connection.aztec.node }, recipientKeyData);
       if (!recipientClient.getAddress().equals(recipient)) {
         throw new Error(
           `Recipient client address does not match recipient address. Got ${recipientClient.getAddress().toString()}, expected ${recipient.toString()}`,
         );
       }
       // Register the sender in the recipient's PXE
-      console.log(
-        `Registering Sender in RECIPIENT PXE: ${senderClient.getAddress().toString()}`,
-      );
-      await recipientClient
-        .getWallet()
-        .registerSender(senderClient.getAddress());
-      console.log(
-        `Registering Token in RECIPIENT PXE: ${tokenAddr.toString()}`,
-      );
-      const recipientToken = await factory.createL2Token(
-        recipientClient,
-        tokenInfo,
-      );
+      console.log(`Registering Sender in RECIPIENT PXE: ${senderClient.getAddress().toString()}`);
+      await recipientClient.getWallet().registerSender(senderClient.getAddress());
+      console.log(`Registering Token in RECIPIENT PXE: ${tokenAddr.toString()}`);
+      const recipientToken = await factory.createL2Token(recipientClient, tokenInfo);
 
-      const initialRecipientBalance =
-        await recipientToken.balanceOfPrivate(recipient);
-      console.log(
-        `Initial recipient balance (${recipient}): ${initialRecipientBalance}`,
-      );
+      const initialRecipientBalance = await recipientToken.balanceOfPrivate(recipient);
+      console.log(`Initial recipient balance (${recipient}): ${initialRecipientBalance}`);
 
-      const initialSenderBalance = await senderToken.balanceOfPrivate(
-        senderClient.getAddress(),
-      );
-      console.log(
-        `Initial sender balance (${senderClient.getAddress()}): ${initialSenderBalance}`,
-      );
+      const initialSenderBalance = await senderToken.balanceOfPrivate(senderClient.getAddress());
+      console.log(`Initial sender balance (${senderClient.getAddress()}): ${initialSenderBalance}`);
 
-      const balance = await senderToken.balanceOfPrivate(
-        senderClient.getAddress(),
-      );
+      const balance = await senderToken.balanceOfPrivate(senderClient.getAddress());
       if (balance < amount) {
         throw new Error('Insufficient balance');
       }
 
       await doTransfer(senderToken, recipient, amount);
 
-      const endingRecipientBalance =
-        await recipientToken.balanceOfPrivate(recipient);
-      console.log(
-        `Final recipient balance (${recipient}): ${endingRecipientBalance}`,
-      );
-      const endingSenderBalance = await senderToken.balanceOfPrivate(
-        senderClient.getAddress(),
-      );
-      console.log(
-        `Final sender balance (${senderClient.getAddress()}): ${endingSenderBalance}`,
-      );
+      const endingRecipientBalance = await recipientToken.balanceOfPrivate(recipient);
+      console.log(`Final recipient balance (${recipient}): ${endingRecipientBalance}`);
+      const endingSenderBalance = await senderToken.balanceOfPrivate(senderClient.getAddress());
+      console.log(`Final sender balance (${senderClient.getAddress()}): ${endingSenderBalance}`);
     });
 }

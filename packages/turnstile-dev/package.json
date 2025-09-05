@@ -25,6 +25,7 @@
     "@aztec/aztec.js": "1.2.1",
     "@aztec/cli": "1.2.1",
     "@aztec/ethereum": "1.2.1",
+    "@aztec/kv-store": "1.2.1",
     "@aztec/l1-artifacts": "1.2.1",
     "@aztec/noir-contracts.js": "1.2.1",
     "@aztec/noir-test-contracts.js": "1.2.1",
@@ -35,7 +36,7 @@
     "@turnstile-portal/l1-artifacts-bytecode": "workspace:^",
     "@turnstile-portal/l1-artifacts-dev": "workspace:^",
     "@turnstile-portal/turnstile.js": "workspace:^",
-    "viem": "^2.36.0"
+    "viem": "^2.37.3"
   },
   "publishConfig": {
     "access": "public"

@@ -120,13 +120,11 @@ export function validateRange(
   errorMessage = `Value must be between ${min} and ${max}`,
   context: ErrorContext = {},
 ): number {
-  return validate(
-    value,
-    (n) => n >= min && n <= max,
-    ErrorCode.VALIDATION_RANGE,
-    errorMessage,
-    { ...context, min, max },
-  );
+  return validate(value, (n) => n >= min && n <= max, ErrorCode.VALIDATION_RANGE, errorMessage, {
+    ...context,
+    min,
+    max,
+  });
 }
 
 /**
@@ -142,13 +140,7 @@ export function validatePositiveAmount(
   errorMessage = 'Amount must be positive',
   context: ErrorContext = {},
 ): bigint {
-  return validate(
-    amount,
-    (n) => n > 0n,
-    ErrorCode.VALIDATION_AMOUNT,
-    errorMessage,
-    context,
-  );
+  return validate(amount, (n) => n > 0n, ErrorCode.VALIDATION_AMOUNT, errorMessage, context);
 }
 
 /**
@@ -164,13 +156,7 @@ export function validateNonEmptyString(
   errorMessage = 'String cannot be empty',
   context: ErrorContext = {},
 ): string {
-  return validate(
-    value,
-    (s) => s.trim().length > 0,
-    ErrorCode.VALIDATION_REQUIRED,
-    errorMessage,
-    context,
-  );
+  return validate(value, (s) => s.trim().length > 0, ErrorCode.VALIDATION_REQUIRED, errorMessage, context);
 }
 
 /**
@@ -230,8 +216,7 @@ export const predicates = {
   /**
    * Checks if a value is defined (not null or undefined)
    */
-  isDefined: <T>(value: T | null | undefined): value is T =>
-    value !== null && value !== undefined,
+  isDefined: <T>(value: T | null | undefined): value is T => value !== null && value !== undefined,
 
   /**
    * Creates a predicate that negates another predicate

@@ -1,16 +1,7 @@
 import { TxStatus } from '@aztec/aztec.js';
 import { getConfigPaths, loadDeployConfig } from '@turnstile-portal/deploy';
-import {
-  type L1Client,
-  L1Portal,
-  TurnstileFactory,
-} from '@turnstile-portal/turnstile.js';
-import {
-  getChain,
-  getClients,
-  InsecureMintableToken,
-  waitForL2Block,
-} from '@turnstile-portal/turnstile-dev';
+import { type L1Client, L1Portal, TurnstileFactory } from '@turnstile-portal/turnstile.js';
+import { getChain, getClients, InsecureMintableToken, waitForL2Block } from '@turnstile-portal/turnstile-dev';
 import type { Command } from 'commander';
 import type { Address } from 'viem';
 import { getAddress, http } from 'viem';
@@ -54,15 +45,11 @@ async function l1MintAndDeposit({
   }
 
   console.log(`L1 Deposit successful. Transaction hash: ${result.txHash}`);
-  console.log(
-    `Message hash: ${result.messageHash}, Message index: ${result.messageIndex}`,
-  );
+  console.log(`Message hash: ${result.messageHash}, Message index: ${result.messageIndex}`);
 
   const { l2BlockNumber } = result;
 
-  console.log(
-    `Estimated L2 Block Number: ${l2BlockNumber}, Message Index: ${result.messageIndex}`,
-  );
+  console.log(`Estimated L2 Block Number: ${l2BlockNumber}, Message Index: ${result.messageIndex}`);
 
   return {
     hash: result.messageHash,
@@ -82,9 +69,7 @@ export function registerDepositAndClaim(program: Command) {
       // Get global and local options together
       const allOptions = command.optsWithGlobals();
       if (!allOptions.configDir) {
-        throw new Error(
-          'Config directory is required. Use -c or --config-dir option.',
-        );
+        throw new Error('Config directory is required. Use -c or --config-dir option.');
       }
 
       // Load configuration from files
@@ -93,9 +78,7 @@ export function registerDepositAndClaim(program: Command) {
       const config = await loadDeployConfig(configPaths.configFile);
 
       // Use the deployment data from config directory
-      const factory = await TurnstileFactory.fromConfig(
-        configPaths.deploymentFile,
-      );
+      const factory = await TurnstileFactory.fromConfig(configPaths.deploymentFile);
 
       // Get token from command option
       const tokenSymbol = options.token;
@@ -114,9 +97,7 @@ export function registerDepositAndClaim(program: Command) {
       // Get amount from command option
       const amount = BigInt(options.amount);
 
-      const l2Recipient = options.l2Recipient
-        ? options.l2Recipient
-        : l2Client.getAddress().toString();
+      const l2Recipient = options.l2Recipient ? options.l2Recipient : l2Client.getAddress().toString();
 
       const deploymentData = factory.getDeploymentData();
       const { index, l2BlockNumber } = await l1MintAndDeposit({
@@ -138,15 +119,8 @@ export function registerDepositAndClaim(program: Command) {
       // Ensure L2 Token is registered in the PXE
       await factory.createL2Token(l2Client, factory.getTokenInfo(tokenSymbol));
 
-      const tx = await aztecPortal.claimDeposit(
-        l1TokenAddr,
-        l2Recipient,
-        amount,
-        BigInt(index),
-      );
-      console.log(
-        `Claim transaction hash: ${await tx.getTxHash()}\nWaiting for receipt...`,
-      );
+      const tx = await aztecPortal.claimDeposit(l1TokenAddr, l2Recipient, amount, BigInt(index));
+      console.log(`Claim transaction hash: ${await tx.getTxHash()}\nWaiting for receipt...`);
       const receipt = await tx.wait();
       if (receipt.status !== TxStatus.SUCCESS) {
         throw new Error(`claimDeposit() failed. status: ${receipt.status}`);

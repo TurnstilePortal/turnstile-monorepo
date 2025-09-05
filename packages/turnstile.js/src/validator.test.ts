@@ -13,12 +13,7 @@ import {
 
 describe('Validator Core', () => {
   it('should allow valid values that pass a predicate', () => {
-    const result = validate(
-      10,
-      (n) => n > 5,
-      ErrorCode.VALIDATION_GENERAL,
-      'Number too small',
-    );
+    const result = validate(10, (n) => n > 5, ErrorCode.VALIDATION_GENERAL, 'Number too small');
     expect(result).toBe(10);
   });
 
@@ -28,32 +23,17 @@ describe('Validator Core', () => {
     }).toThrow(TurnstileError);
 
     expect(() => {
-      validate(
-        undefined,
-        () => true,
-        ErrorCode.VALIDATION_GENERAL,
-        'Value is undefined',
-      );
+      validate(undefined, () => true, ErrorCode.VALIDATION_GENERAL, 'Value is undefined');
     }).toThrow(TurnstileError);
   });
 
   it('should throw if the predicate returns false', () => {
     expect(() => {
-      validate(
-        3,
-        (n) => n > 5,
-        ErrorCode.VALIDATION_GENERAL,
-        'Number too small',
-      );
+      validate(3, (n) => n > 5, ErrorCode.VALIDATION_GENERAL, 'Number too small');
     }).toThrow(TurnstileError);
 
     const error = getErrorFromValidation(() => {
-      validate(
-        3,
-        (n) => n > 5,
-        ErrorCode.VALIDATION_GENERAL,
-        'Number too small',
-      );
+      validate(3, (n) => n > 5, ErrorCode.VALIDATION_GENERAL, 'Number too small');
     });
 
     expect(error.code).toBe(ErrorCode.VALIDATION_GENERAL);
@@ -65,13 +45,7 @@ describe('Validator Core', () => {
     const context = { min: 5, max: 10, source: 'test' };
 
     const error = getErrorFromValidation(() => {
-      validate(
-        3,
-        (n) => n > 5,
-        ErrorCode.VALIDATION_GENERAL,
-        'Number too small',
-        context,
-      );
+      validate(3, (n) => n > 5, ErrorCode.VALIDATION_GENERAL, 'Number too small', context);
     });
 
     expect(error.context.min).toBe(5);
@@ -178,9 +152,7 @@ describe('Specialized Validators', () => {
   describe('validatePositiveAmount', () => {
     it('should validate positive BigInt values', () => {
       expect(validatePositiveAmount(1n)).toBe(1n);
-      expect(validatePositiveAmount(BigInt(Number.MAX_SAFE_INTEGER))).toBe(
-        BigInt(Number.MAX_SAFE_INTEGER),
-      );
+      expect(validatePositiveAmount(BigInt(Number.MAX_SAFE_INTEGER))).toBe(BigInt(Number.MAX_SAFE_INTEGER));
     });
 
     it('should throw for zero or negative values', () => {
@@ -335,10 +307,7 @@ describe('Predicates', () => {
 
       // (isEven AND isPositive) AND NOT(isLessThan100)
       // This will match even positive numbers that are >= 100
-      const complexPredicate = predicates.and(
-        predicates.and(isEven, isPositive),
-        predicates.not(isLessThan100),
-      );
+      const complexPredicate = predicates.and(predicates.and(isEven, isPositive), predicates.not(isLessThan100));
 
       expect(complexPredicate(2)).toBe(false); // Even and positive but < 100
       expect(complexPredicate(3)).toBe(false); // Not even, positive, but < 100

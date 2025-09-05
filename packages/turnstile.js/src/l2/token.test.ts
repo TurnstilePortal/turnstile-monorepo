@@ -38,26 +38,20 @@ describe('L2Token', () => {
     vi.resetAllMocks();
 
     // Set up the readFieldCompressedString mock
-    (readFieldCompressedString as vi.Mock).mockImplementation(
-      (value: unknown) => {
-        // Mock different return values based on the input
-        // Check the first element of the array that would be returned by simulate()
-        if (Array.isArray(value) && value[0] === BigInt(1)) return 'TST';
-        if (Array.isArray(value) && value[0] === BigInt(4)) return 'Test Token';
-        return 'Unknown';
-      },
-    );
+    (readFieldCompressedString as vi.Mock).mockImplementation((value: unknown) => {
+      // Mock different return values based on the input
+      // Check the first element of the array that would be returned by simulate()
+      if (Array.isArray(value) && value[0] === BigInt(1)) return 'TST';
+      if (Array.isArray(value) && value[0] === BigInt(4)) return 'Test Token';
+      return 'Unknown';
+    });
 
     // Mock Fr.ZERO and Fr.random
     Object.defineProperty(Fr, 'ZERO', {
       value: { toString: () => 'fr_zero' },
       writable: true,
     });
-    Fr.random = vi
-      .fn()
-      .mockImplementation(
-        () => ({ toString: () => 'fr_random' }) as unknown as Fr,
-      );
+    Fr.random = vi.fn().mockImplementation(() => ({ toString: () => 'fr_random' }) as unknown as Fr);
 
     // Set up addresses
     tokenAddr = {
@@ -116,14 +110,10 @@ describe('L2Token', () => {
       address: tokenAddr,
       methods: {
         symbol: vi.fn().mockReturnValue({
-          simulate: vi
-            .fn()
-            .mockResolvedValue([BigInt(1), BigInt(2), BigInt(3)]),
+          simulate: vi.fn().mockResolvedValue([BigInt(1), BigInt(2), BigInt(3)]),
         }),
         name: vi.fn().mockReturnValue({
-          simulate: vi
-            .fn()
-            .mockResolvedValue([BigInt(4), BigInt(5), BigInt(6)]),
+          simulate: vi.fn().mockResolvedValue([BigInt(4), BigInt(5), BigInt(6)]),
         }),
         decimals: vi.fn().mockReturnValue({
           simulate: vi.fn().mockResolvedValue(18),
@@ -135,25 +125,17 @@ describe('L2Token', () => {
           simulate: vi.fn().mockResolvedValue(BigInt(2000)),
         }),
         transfer_public_to_public: vi.fn().mockReturnValue({
-          send: vi
-            .fn()
-            .mockResolvedValue({ txHash: '0xabcd' } as unknown as SentTx),
+          send: vi.fn().mockResolvedValue({ txHash: '0xabcd' } as unknown as SentTx),
         }),
         transfer_private_to_private: vi.fn().mockReturnValue({
           with: vi.fn().mockReturnThis(),
-          send: vi
-            .fn()
-            .mockResolvedValue({ txHash: '0xbcde' } as unknown as SentTx),
+          send: vi.fn().mockResolvedValue({ txHash: '0xbcde' } as unknown as SentTx),
         }),
         shield: vi.fn().mockReturnValue({
-          send: vi
-            .fn()
-            .mockResolvedValue({ txHash: '0xcdef' } as unknown as SentTx),
+          send: vi.fn().mockResolvedValue({ txHash: '0xcdef' } as unknown as SentTx),
         }),
         unshield: vi.fn().mockReturnValue({
-          send: vi
-            .fn()
-            .mockResolvedValue({ txHash: '0xdefg' } as unknown as SentTx),
+          send: vi.fn().mockResolvedValue({ txHash: '0xdefg' } as unknown as SentTx),
         }),
         burn_public: vi.fn().mockReturnValue({
           functionName: 'burn_public',
@@ -200,9 +182,7 @@ describe('L2Token', () => {
 
     it('should throw an error when contract interaction fails', async () => {
       // Mock the error
-      mockTokenContract.methods
-        .symbol()
-        .simulate.mockRejectedValueOnce(new Error('Simulation failed'));
+      mockTokenContract.methods.symbol().simulate.mockRejectedValueOnce(new Error('Simulation failed'));
 
       // Check that the error is thrown with the correct code
       await expect(token.getSymbol()).rejects.toMatchObject({
@@ -226,9 +206,7 @@ describe('L2Token', () => {
 
     it('should throw an error when contract interaction fails', async () => {
       // Mock the error
-      mockTokenContract.methods
-        .name()
-        .simulate.mockRejectedValueOnce(new Error('Simulation failed'));
+      mockTokenContract.methods.name().simulate.mockRejectedValueOnce(new Error('Simulation failed'));
 
       // Check that the error is thrown with the correct code
       await expect(token.getName()).rejects.toMatchObject({
@@ -252,9 +230,7 @@ describe('L2Token', () => {
 
     it('should throw an error when contract interaction fails', async () => {
       // Mock the error
-      mockTokenContract.methods
-        .decimals()
-        .simulate.mockRejectedValueOnce(new Error('Simulation failed'));
+      mockTokenContract.methods.decimals().simulate.mockRejectedValueOnce(new Error('Simulation failed'));
 
       // Check that the error is thrown with the correct code
       await expect(token.getDecimals()).rejects.toMatchObject({
@@ -269,12 +245,8 @@ describe('L2Token', () => {
       const balance = await token.balanceOfPublic(accountAddr);
 
       // Check that the contract method was called with the correct parameters
-      expect(mockTokenContract.methods.balance_of_public).toHaveBeenCalledWith(
-        accountAddr,
-      );
-      expect(
-        mockTokenContract.methods.balance_of_public().simulate,
-      ).toHaveBeenCalled();
+      expect(mockTokenContract.methods.balance_of_public).toHaveBeenCalledWith(accountAddr);
+      expect(mockTokenContract.methods.balance_of_public().simulate).toHaveBeenCalled();
 
       // Check that the result is as expected
       expect(balance).toBe(BigInt(1000));
@@ -282,9 +254,7 @@ describe('L2Token', () => {
 
     it('should throw an error when contract interaction fails', async () => {
       // Mock the error
-      mockTokenContract.methods
-        .balance_of_public()
-        .simulate.mockRejectedValueOnce(new Error('Simulation failed'));
+      mockTokenContract.methods.balance_of_public().simulate.mockRejectedValueOnce(new Error('Simulation failed'));
 
       // Check that the error is thrown with the correct code
       await expect(token.balanceOfPublic(accountAddr)).rejects.toMatchObject({
@@ -299,12 +269,8 @@ describe('L2Token', () => {
       const balance = await token.balanceOfPrivate(accountAddr);
 
       // Check that the contract method was called with the correct parameters
-      expect(mockTokenContract.methods.balance_of_private).toHaveBeenCalledWith(
-        accountAddr,
-      );
-      expect(
-        mockTokenContract.methods.balance_of_private().simulate,
-      ).toHaveBeenCalled();
+      expect(mockTokenContract.methods.balance_of_private).toHaveBeenCalledWith(accountAddr);
+      expect(mockTokenContract.methods.balance_of_private().simulate).toHaveBeenCalled();
 
       // Check that the result is as expected
       expect(balance).toBe(BigInt(2000));
@@ -312,9 +278,7 @@ describe('L2Token', () => {
 
     it('should throw an error when contract interaction fails', async () => {
       // Mock the error
-      mockTokenContract.methods
-        .balance_of_private()
-        .simulate.mockRejectedValueOnce(new Error('Simulation failed'));
+      mockTokenContract.methods.balance_of_private().simulate.mockRejectedValueOnce(new Error('Simulation failed'));
 
       // Check that the error is thrown with the correct code
       await expect(token.balanceOfPrivate(accountAddr)).rejects.toMatchObject({
@@ -337,12 +301,13 @@ describe('L2Token', () => {
       expect(mockL2Client.getAddress).toHaveBeenCalled();
 
       // Check that the contract method was called with the correct parameters
-      expect(
-        mockTokenContract.methods.transfer_public_to_public,
-      ).toHaveBeenCalledWith(accountAddr, recipient, amount, Fr.ZERO);
-      expect(
-        mockTokenContract.methods.transfer_public_to_public().send,
-      ).toHaveBeenCalled();
+      expect(mockTokenContract.methods.transfer_public_to_public).toHaveBeenCalledWith(
+        accountAddr,
+        recipient,
+        amount,
+        Fr.ZERO,
+      );
+      expect(mockTokenContract.methods.transfer_public_to_public().send).toHaveBeenCalled();
 
       // Check that the result is the expected transaction
       expect(tx).toEqual({ txHash: '0xabcd' });
@@ -350,19 +315,16 @@ describe('L2Token', () => {
 
     it('should throw an error when contract interaction fails', async () => {
       // Mock the error with a TurnstileError
-      const mockError = new TurnstileError(
-        ErrorCode.L2_TOKEN_OPERATION,
-        'Failed to transfer tokens publicly',
-        { amount: amount.toString() },
-      );
-      mockTokenContract.methods
-        .transfer_public_to_public()
-        .send.mockRejectedValueOnce(mockError);
+      const mockError = new TurnstileError(ErrorCode.L2_TOKEN_OPERATION, 'Failed to transfer tokens publicly', {
+        amount: amount.toString(),
+      });
+      mockTokenContract.methods.transfer_public_to_public().send.mockRejectedValueOnce(mockError);
 
       // Check that the error is thrown with the correct code
-      await expect(
-        token.transferPublic(recipient, amount),
-      ).rejects.toHaveProperty('code', ErrorCode.L2_TOKEN_OPERATION);
+      await expect(token.transferPublic(recipient, amount)).rejects.toHaveProperty(
+        'code',
+        ErrorCode.L2_TOKEN_OPERATION,
+      );
     });
   });
 
@@ -383,15 +345,11 @@ describe('L2Token', () => {
     const nullAddr = null as unknown as AztecAddress;
     const zeroAmount = BigInt(0);
     const negativeAmount = BigInt(-1);
-    const _invalidVerifiedID = [
-      { toString: () => 'invalid' },
-    ] as unknown as Fr[] & { length: 5 };
+    const _invalidVerifiedID = [{ toString: () => 'invalid' }] as unknown as Fr[] & { length: 5 };
 
     it('should transfer tokens privately', async () => {
       // Setup the mock for getShieldGatewayAddress
-      mockTokenContract.methods
-        .get_shield_gateway_public()
-        .simulate.mockResolvedValue(portalAddr);
+      mockTokenContract.methods.get_shield_gateway_public().simulate.mockResolvedValue(portalAddr);
 
       const tx = await token.transferPrivate(recipient, amount, verifiedID);
 
@@ -399,17 +357,16 @@ describe('L2Token', () => {
       expect(mockL2Client.getAddress).toHaveBeenCalled();
 
       // Indirectly check that getShieldGatewayAddress was called via the simulate method
-      expect(
-        mockTokenContract.methods.get_shield_gateway_public().simulate,
-      ).toHaveBeenCalled();
+      expect(mockTokenContract.methods.get_shield_gateway_public().simulate).toHaveBeenCalled();
 
       // Check that the contract method was called with the correct parameters
-      expect(
-        mockTokenContract.methods.transfer_private_to_private,
-      ).toHaveBeenCalledWith(accountAddr, recipient, amount, Fr.ZERO);
-      expect(
-        mockTokenContract.methods.transfer_private_to_private().send,
-      ).toHaveBeenCalled();
+      expect(mockTokenContract.methods.transfer_private_to_private).toHaveBeenCalledWith(
+        accountAddr,
+        recipient,
+        amount,
+        Fr.ZERO,
+      );
+      expect(mockTokenContract.methods.transfer_private_to_private().send).toHaveBeenCalled();
 
       // Check that the result is the expected transaction
       expect(tx).toEqual({ txHash: '0xbcde' });
@@ -417,19 +374,16 @@ describe('L2Token', () => {
 
     it('should throw an error when contract interaction fails', async () => {
       // Mock the error with a TurnstileError
-      const mockError = new TurnstileError(
-        ErrorCode.L2_TOKEN_OPERATION,
-        'Failed to transfer tokens privately',
-        { amount: amount.toString() },
-      );
-      mockTokenContract.methods
-        .transfer_private_to_private()
-        .send.mockRejectedValueOnce(mockError);
+      const mockError = new TurnstileError(ErrorCode.L2_TOKEN_OPERATION, 'Failed to transfer tokens privately', {
+        amount: amount.toString(),
+      });
+      mockTokenContract.methods.transfer_private_to_private().send.mockRejectedValueOnce(mockError);
 
       // Check that the error is thrown with the correct code
-      await expect(
-        token.transferPrivate(recipient, amount, verifiedID),
-      ).rejects.toHaveProperty('code', ErrorCode.L2_TOKEN_OPERATION);
+      await expect(token.transferPrivate(recipient, amount, verifiedID)).rejects.toHaveProperty(
+        'code',
+        ErrorCode.L2_TOKEN_OPERATION,
+      );
     });
 
     it('should throw an error when getting shield gateway address fails', async () => {
@@ -439,66 +393,64 @@ describe('L2Token', () => {
         'Failed to get shield gateway address',
         {},
       );
-      mockTokenContract.methods
-        .get_shield_gateway_public()
-        .simulate.mockRejectedValueOnce(mockError);
+      mockTokenContract.methods.get_shield_gateway_public().simulate.mockRejectedValueOnce(mockError);
 
       // Check that the error is thrown with the correct code (function implementation throws L2_CONTRACT_INTERACTION)
-      await expect(
-        token.transferPrivate(recipient, amount, verifiedID),
-      ).rejects.toHaveProperty('code', ErrorCode.L2_CONTRACT_INTERACTION);
+      await expect(token.transferPrivate(recipient, amount, verifiedID)).rejects.toHaveProperty(
+        'code',
+        ErrorCode.L2_CONTRACT_INTERACTION,
+      );
     });
 
     // Additional test to cover the edge case in transferPrivate method
     it('should throw an error when shield gateway address exists but transfer fails before the send', async () => {
       // Setup the mock for getShieldGatewayAddress
-      mockTokenContract.methods
-        .get_shield_gateway_public()
-        .simulate.mockResolvedValue(portalAddr);
+      mockTokenContract.methods.get_shield_gateway_public().simulate.mockResolvedValue(portalAddr);
 
       // Mock the with method to throw an error
-      mockTokenContract.methods
-        .transfer_private_to_private()
-        .with.mockImplementationOnce(() => {
-          throw new Error('Failed to set capsule');
-        });
+      mockTokenContract.methods.transfer_private_to_private().with.mockImplementationOnce(() => {
+        throw new Error('Failed to set capsule');
+      });
 
       // The error should be wrapped in a TurnstileError with the L2_TOKEN_OPERATION code
-      await expect(
-        token.transferPrivate(recipient, amount, verifiedID),
-      ).rejects.toHaveProperty('code', ErrorCode.L2_TOKEN_OPERATION);
+      await expect(token.transferPrivate(recipient, amount, verifiedID)).rejects.toHaveProperty(
+        'code',
+        ErrorCode.L2_TOKEN_OPERATION,
+      );
     });
 
     // Test that the implementation handles invalid inputs
     it('should handle null recipient address', async () => {
       // Set up the mock to return successfully even with null (verifying code actually passes it through)
-      mockTokenContract.methods
-        .get_shield_gateway_public()
-        .simulate.mockResolvedValue(portalAddr);
+      mockTokenContract.methods.get_shield_gateway_public().simulate.mockResolvedValue(portalAddr);
 
       // The implementation should handle this case one way or another
       await token.transferPrivate(nullAddr, amount, verifiedID);
 
       // Verify the contract method was called with the provided parameters
-      expect(
-        mockTokenContract.methods.transfer_private_to_private,
-      ).toHaveBeenCalledWith(accountAddr, nullAddr, amount, Fr.ZERO);
+      expect(mockTokenContract.methods.transfer_private_to_private).toHaveBeenCalledWith(
+        accountAddr,
+        nullAddr,
+        amount,
+        Fr.ZERO,
+      );
     });
 
     // Test that the implementation handles edge case amounts
     it('should handle edge case amounts', async () => {
       // Set up the mocks
-      mockTokenContract.methods
-        .get_shield_gateway_public()
-        .simulate.mockResolvedValue(portalAddr);
+      mockTokenContract.methods.get_shield_gateway_public().simulate.mockResolvedValue(portalAddr);
 
       // Call with negative amount
       await token.transferPrivate(recipient, negativeAmount, verifiedID);
 
       // Verify the contract method was called with the provided parameters
-      expect(
-        mockTokenContract.methods.transfer_private_to_private,
-      ).toHaveBeenCalledWith(accountAddr, recipient, negativeAmount, Fr.ZERO);
+      expect(mockTokenContract.methods.transfer_private_to_private).toHaveBeenCalledWith(
+        accountAddr,
+        recipient,
+        negativeAmount,
+        Fr.ZERO,
+      );
 
       // Reset the mock
       mockTokenContract.methods.transfer_private_to_private.mockClear();
@@ -507,9 +459,12 @@ describe('L2Token', () => {
       await token.transferPrivate(recipient, zeroAmount, verifiedID);
 
       // Verify the contract method was called with the provided parameters
-      expect(
-        mockTokenContract.methods.transfer_private_to_private,
-      ).toHaveBeenCalledWith(accountAddr, recipient, zeroAmount, Fr.ZERO);
+      expect(mockTokenContract.methods.transfer_private_to_private).toHaveBeenCalledWith(
+        accountAddr,
+        recipient,
+        zeroAmount,
+        Fr.ZERO,
+      );
     });
   });
 
@@ -525,11 +480,7 @@ describe('L2Token', () => {
       expect(mockL2Client.getAddress).toHaveBeenCalled();
 
       // Check that the contract method was called with the correct parameters
-      expect(mockTokenContract.methods.shield).toHaveBeenCalledWith(
-        accountAddr,
-        amount,
-        Fr.ZERO,
-      );
+      expect(mockTokenContract.methods.shield).toHaveBeenCalledWith(accountAddr, amount, Fr.ZERO);
       expect(mockTokenContract.methods.shield().send).toHaveBeenCalled();
 
       // Check that the result is the expected transaction
@@ -538,18 +489,13 @@ describe('L2Token', () => {
 
     it('should throw an error when contract interaction fails', async () => {
       // Mock the error with a TurnstileError
-      const mockError = new TurnstileError(
-        ErrorCode.L2_SHIELD_OPERATION,
-        'Failed to shield tokens',
-        { amount: amount.toString() },
-      );
+      const mockError = new TurnstileError(ErrorCode.L2_SHIELD_OPERATION, 'Failed to shield tokens', {
+        amount: amount.toString(),
+      });
       mockTokenContract.methods.shield().send.mockRejectedValueOnce(mockError);
 
       // Check that the error is thrown with the correct code
-      await expect(token.shield(amount)).rejects.toHaveProperty(
-        'code',
-        ErrorCode.L2_SHIELD_OPERATION,
-      );
+      await expect(token.shield(amount)).rejects.toHaveProperty('code', ErrorCode.L2_SHIELD_OPERATION);
     });
 
     // Test that implementation handles edge case amounts
@@ -558,11 +504,7 @@ describe('L2Token', () => {
       await token.shield(negativeAmount);
 
       // Verify the contract method was called with the provided parameters
-      expect(mockTokenContract.methods.shield).toHaveBeenCalledWith(
-        accountAddr,
-        negativeAmount,
-        Fr.ZERO,
-      );
+      expect(mockTokenContract.methods.shield).toHaveBeenCalledWith(accountAddr, negativeAmount, Fr.ZERO);
 
       // Reset the mock
       mockTokenContract.methods.shield.mockClear();
@@ -571,11 +513,7 @@ describe('L2Token', () => {
       await token.shield(zeroAmount);
 
       // Verify the contract method was called with the provided parameters
-      expect(mockTokenContract.methods.shield).toHaveBeenCalledWith(
-        accountAddr,
-        zeroAmount,
-        Fr.ZERO,
-      );
+      expect(mockTokenContract.methods.shield).toHaveBeenCalledWith(accountAddr, zeroAmount, Fr.ZERO);
     });
   });
 
@@ -591,11 +529,7 @@ describe('L2Token', () => {
       expect(mockL2Client.getAddress).toHaveBeenCalled();
 
       // Check that the contract method was called with the correct parameters
-      expect(mockTokenContract.methods.unshield).toHaveBeenCalledWith(
-        accountAddr,
-        amount,
-        Fr.ZERO,
-      );
+      expect(mockTokenContract.methods.unshield).toHaveBeenCalledWith(accountAddr, amount, Fr.ZERO);
       expect(mockTokenContract.methods.unshield().send).toHaveBeenCalled();
 
       // Check that the result is the expected transaction
@@ -604,20 +538,13 @@ describe('L2Token', () => {
 
     it('should throw an error when contract interaction fails', async () => {
       // Mock the error with a TurnstileError
-      const mockError = new TurnstileError(
-        ErrorCode.L2_UNSHIELD_OPERATION,
-        'Failed to unshield tokens',
-        { amount: amount.toString() },
-      );
-      mockTokenContract.methods
-        .unshield()
-        .send.mockRejectedValueOnce(mockError);
+      const mockError = new TurnstileError(ErrorCode.L2_UNSHIELD_OPERATION, 'Failed to unshield tokens', {
+        amount: amount.toString(),
+      });
+      mockTokenContract.methods.unshield().send.mockRejectedValueOnce(mockError);
 
       // Check that the error is thrown with the correct code
-      await expect(token.unshield(amount)).rejects.toHaveProperty(
-        'code',
-        ErrorCode.L2_UNSHIELD_OPERATION,
-      );
+      await expect(token.unshield(amount)).rejects.toHaveProperty('code', ErrorCode.L2_UNSHIELD_OPERATION);
     });
 
     // Test that implementation handles edge case amounts
@@ -626,11 +553,7 @@ describe('L2Token', () => {
       await token.unshield(negativeAmount);
 
       // Verify the contract method was called with the provided parameters
-      expect(mockTokenContract.methods.unshield).toHaveBeenCalledWith(
-        accountAddr,
-        negativeAmount,
-        Fr.ZERO,
-      );
+      expect(mockTokenContract.methods.unshield).toHaveBeenCalledWith(accountAddr, negativeAmount, Fr.ZERO);
 
       // Reset the mock
       mockTokenContract.methods.unshield.mockClear();
@@ -639,11 +562,7 @@ describe('L2Token', () => {
       await token.unshield(zeroAmount);
 
       // Verify the contract method was called with the provided parameters
-      expect(mockTokenContract.methods.unshield).toHaveBeenCalledWith(
-        accountAddr,
-        zeroAmount,
-        Fr.ZERO,
-      );
+      expect(mockTokenContract.methods.unshield).toHaveBeenCalledWith(accountAddr, zeroAmount, Fr.ZERO);
     });
   });
 
@@ -679,28 +598,25 @@ describe('L2Token', () => {
 
     it('should throw an error when contract interaction fails', async () => {
       // Mock the error - must match the TurnstileError structure
-      const mockError = new TurnstileError(
-        ErrorCode.L2_BURN_OPERATION,
-        'Failed to burn tokens',
-        { amount: amount.toString() },
-      );
+      const mockError = new TurnstileError(ErrorCode.L2_BURN_OPERATION, 'Failed to burn tokens', {
+        amount: amount.toString(),
+      });
 
       mockTokenContract.methods.burn_public.mockImplementationOnce(() => {
         throw mockError;
       });
 
       // Check that the error is thrown with the correct code
-      await expect(
-        token.createBurnAction(fromAddr, amount),
-      ).rejects.toHaveProperty('code', ErrorCode.L2_BURN_OPERATION);
+      await expect(token.createBurnAction(fromAddr, amount)).rejects.toHaveProperty(
+        'code',
+        ErrorCode.L2_BURN_OPERATION,
+      );
     });
 
     // Test to cover the case where we get a null or invalid action from the contract
     it('should handle invalid contract return value', async () => {
       // Setup the mock to return null or undefined
-      mockTokenContract.methods.burn_public.mockReturnValueOnce(
-        null as unknown as ContractFunctionInteraction,
-      );
+      mockTokenContract.methods.burn_public.mockReturnValueOnce(null as unknown as ContractFunctionInteraction);
 
       // This should still give us an action, but we might get undefined or an error
       const result = await token.createBurnAction(fromAddr, amount);
@@ -732,9 +648,10 @@ describe('L2Token', () => {
         TokenContract.at = vi.fn().mockRejectedValueOnce(mockError);
 
         // Check that the error is thrown with the correct code
-        await expect(
-          L2Token.fromAddress(tokenAddr, mockL2Client),
-        ).rejects.toHaveProperty('code', ErrorCode.L2_CONTRACT_INTERACTION);
+        await expect(L2Token.fromAddress(tokenAddr, mockL2Client)).rejects.toHaveProperty(
+          'code',
+          ErrorCode.L2_CONTRACT_INTERACTION,
+        );
       });
     });
 
@@ -752,13 +669,7 @@ describe('L2Token', () => {
         });
         TokenContract.at = vi.fn().mockResolvedValue(mockTokenContract);
 
-        const result = await L2Token.deploy(
-          mockL2Client,
-          portalAddr,
-          name,
-          symbol,
-          decimals,
-        );
+        const result = await L2Token.deploy(mockL2Client, portalAddr, name, symbol, decimals);
 
         // Check that the contract was deployed with the correct parameters
         expect(Contract.deploy).toHaveBeenCalledWith(
@@ -781,13 +692,7 @@ describe('L2Token', () => {
         });
         TokenContract.at = vi.fn().mockResolvedValue(mockTokenContract);
 
-        const result = await L2Token.deploy(
-          mockL2Client,
-          portalAddr,
-          name,
-          symbol,
-          decimals,
-        );
+        const result = await L2Token.deploy(mockL2Client, portalAddr, name, symbol, decimals);
 
         // Check that the contract was deployed with the correct parameters
         expect(Contract.deploy).toHaveBeenCalledWith(
@@ -804,11 +709,11 @@ describe('L2Token', () => {
 
       it('should throw an error when deployment fails', async () => {
         // Mock the error
-        const mockError = new TurnstileError(
-          ErrorCode.L2_DEPLOYMENT,
-          'Failed to deploy token',
-          { tokenName: name, tokenSymbol: symbol, decimals },
-        );
+        const mockError = new TurnstileError(ErrorCode.L2_DEPLOYMENT, 'Failed to deploy token', {
+          tokenName: name,
+          tokenSymbol: symbol,
+          decimals,
+        });
 
         Contract.deploy = vi.fn().mockReturnValue({
           send: vi.fn().mockImplementation(() => {
@@ -817,9 +722,10 @@ describe('L2Token', () => {
         });
 
         // Check that the error is thrown with the correct code
-        await expect(
-          L2Token.deploy(mockL2Client, portalAddr, name, symbol, decimals),
-        ).rejects.toHaveProperty('code', ErrorCode.L2_DEPLOYMENT);
+        await expect(L2Token.deploy(mockL2Client, portalAddr, name, symbol, decimals)).rejects.toHaveProperty(
+          'code',
+          ErrorCode.L2_DEPLOYMENT,
+        );
       });
     });
   });

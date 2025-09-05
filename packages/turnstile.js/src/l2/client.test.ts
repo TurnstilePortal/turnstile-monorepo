@@ -16,9 +16,7 @@ class MockAztecAddress {
 }
 
 // Mock the wallet
-const mockAddress = new MockAztecAddress(
-  '0x1234567890123456789012345678901234567890',
-);
+const mockAddress = new MockAztecAddress('0x1234567890123456789012345678901234567890');
 const mockWallet = {
   getAddress: vi.fn().mockReturnValue(mockAddress),
 };
@@ -34,10 +32,7 @@ describe('L2Client', () => {
     vi.resetAllMocks();
 
     // Create a new client for each test
-    client = new L2Client(
-      mockAztecNode as unknown as AztecNode,
-      mockWallet as unknown as Wallet,
-    );
+    client = new L2Client(mockAztecNode as unknown as AztecNode, mockWallet as unknown as Wallet);
   });
 
   describe('getNode', () => {

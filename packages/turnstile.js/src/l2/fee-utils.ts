@@ -15,10 +15,7 @@ import { SPONSORED_FPC_SALT } from '@aztec/constants';
 import { ExecutionPayload } from '@aztec/entrypoints/payload';
 import type { ExtendedViemWalletClient } from '@aztec/ethereum';
 import { InboxAbi } from '@aztec/l1-artifacts';
-import {
-  SponsoredFPCContract,
-  SponsoredFPCContractArtifact,
-} from '@aztec/noir-contracts.js/SponsoredFPC';
+import { SponsoredFPCContract, SponsoredFPCContractArtifact } from '@aztec/noir-contracts.js/SponsoredFPC';
 import { getCanonicalFeeJuice } from '@aztec/protocol-contracts/fee-juice';
 import { GasSettings } from '@aztec/stdlib/gas';
 import type { BlockNumber, BlockTag } from 'viem';
@@ -45,38 +42,22 @@ export async function bridgeL1FeeJuice(
   recipient: AztecAddress,
   amount = 1_000_000_000_000_000_000n, // Required value for sandbox
 ) {
-  console.log(
-    `Bridging ${amount} fee juice from ${l1Client.getAddress().toString()} to ${recipient}`,
-  );
+  console.log(`Bridging ${amount} fee juice from ${l1Client.getAddress().toString()} to ${recipient}`);
 
-  const extendedClient = l1Client
-    .getWalletClient()
-    .extend(publicActions) as unknown as ExtendedViemWalletClient;
+  const extendedClient = l1Client.getWalletClient().extend(publicActions) as unknown as ExtendedViemWalletClient;
 
   const portal = await L1FeeJuicePortalManager.new(
     l2Client.getWallet(),
     extendedClient,
     createLogger('turnstile.js:fee-utils'),
   );
-  const claim = await portal.bridgeTokensPublic(
-    recipient,
-    amount,
-    true /* mint */,
-  );
+  const claim = await portal.bridgeTokensPublic(recipient, amount, true /* mint */);
 
-  const l2BlockNumber = await getFeeJuiceClaimL2BlockNumber(
-    l1Client,
-    l2Client,
-    claim,
-  );
+  const l2BlockNumber = await getFeeJuiceClaimL2BlockNumber(l1Client, l2Client, claim);
 
-  console.log(
-    `Waiting for L1->L2 message to be synced (L2 block number ${l2BlockNumber.toString()})...`,
-  );
+  console.log(`Waiting for L1->L2 message to be synced (L2 block number ${l2BlockNumber.toString()})...`);
   const isSynced = async () => {
-    const currentBlockNumber = BigInt(
-      await l2Client.getNode().getBlockNumber(),
-    );
+    const currentBlockNumber = BigInt(await l2Client.getNode().getBlockNumber());
     console.log(`Current block number: ${currentBlockNumber.toString()}`);
     return currentBlockNumber >= l2BlockNumber;
   };
@@ -102,10 +83,7 @@ async function getFeeJuiceClaimL2BlockNumber(
   } = await l2Client.getNode().getNodeInfo();
 
   if (inboxAddress.isZero()) {
-    throw new TurnstileError(
-      ErrorCode.L1_GENERAL,
-      'Aztec L1 Inbox address not found',
-    );
+    throw new TurnstileError(ErrorCode.L1_GENERAL, 'Aztec L1 Inbox address not found');
   }
 
   const filter = await l1Client.getPublicClient().createContractEventFilter({
@@ -132,23 +110,15 @@ async function getFeeJuiceClaimL2BlockNumber(
 
 async function getFeeJuiceClaimSelector(_l2Client: L2Client) {
   const feeJuiceContract = await getCanonicalFeeJuice();
-  const claimFunc = feeJuiceContract.artifact.functions.find(
-    (f) => f.name === 'claim',
-  );
+  const claimFunc = feeJuiceContract.artifact.functions.find((f) => f.name === 'claim');
   if (!claimFunc) {
-    throw new TurnstileError(
-      ErrorCode.L2_GENERAL,
-      'Claim function not found in FeeJuice contract',
-    );
+    throw new TurnstileError(ErrorCode.L2_GENERAL, 'Claim function not found in FeeJuice contract');
   }
   return await FunctionSelector.fromNameAndParameters(claimFunc);
 }
 
 export async function getSponsoredFPCInstance() {
-  return await getContractInstanceFromDeployParams(
-    SponsoredFPCContract.artifact,
-    { salt: new Fr(SPONSORED_FPC_SALT) },
-  );
+  return await getContractInstanceFromDeployParams(SponsoredFPCContract.artifact, { salt: new Fr(SPONSORED_FPC_SALT) });
 }
 
 export async function getSponsoredFPCAddress() {
@@ -157,15 +127,10 @@ export async function getSponsoredFPCAddress() {
 
 export async function registerSponsoredFPC(l2Client: L2Client) {
   const instance = await getSponsoredFPCInstance();
-  await l2Client
-    .getWallet()
-    .registerContract({ instance, artifact: SponsoredFPCContractArtifact });
+  await l2Client.getWallet().registerContract({ instance, artifact: SponsoredFPCContractArtifact });
 }
 
-export async function claimFeeJuiceOnL2(
-  l2Client: L2Client,
-  claim: L2AmountClaim,
-) {
+export async function claimFeeJuiceOnL2(l2Client: L2Client, claim: L2AmountClaim) {
   console.log('Claiming fee juice on L2...');
   const selector = await getFeeJuiceClaimSelector(l2Client);
 
@@ -192,34 +157,20 @@ export async function claimFeeJuiceOnL2(
     [],
   );
 
-  const paymentMethod = await new SponsoredFeePaymentMethod(
-    await getSponsoredFPCAddress(),
-  );
+  const paymentMethod = await new SponsoredFeePaymentMethod(await getSponsoredFPCAddress());
   const maxFeesPerGas = (await wallet.getCurrentBaseFees()).mul(1.5);
   console.log(`Max fees per gas: ${maxFeesPerGas.toString()}`);
   const gasSettings = GasSettings.default({ maxFeesPerGas });
   const feeOpts = { paymentMethod, gasSettings };
 
   console.log('Creating tx request...');
-  const txRequest = await wallet.createTxExecutionRequest(
-    payload,
-    feeOpts,
-    {} /* TxExecutionOptions */,
-  );
+  const txRequest = await wallet.createTxExecutionRequest(payload, feeOpts, {} /* TxExecutionOptions */);
   console.log('Simulating tx...');
-  const txSimulationResult = await wallet.simulateTx(
-    txRequest,
-    true /* simulatePublic */,
-  );
+  const txSimulationResult = await wallet.simulateTx(txRequest, true /* simulatePublic */);
   console.log('Proving tx...');
-  const txProvingResult = await wallet.proveTx(
-    txRequest,
-    txSimulationResult.privateExecutionResult,
-  );
+  const txProvingResult = await wallet.proveTx(txRequest, txSimulationResult.privateExecutionResult);
   console.log('Sending tx...');
-  const sentTx = new SentTx(wallet, async () =>
-    wallet.sendTx(txProvingResult.toTx()),
-  );
+  const sentTx = new SentTx(wallet, async () => wallet.sendTx(txProvingResult.toTx()));
   console.log('Waiting for tx to be mined...');
   const receipt = await sentTx.wait();
   console.log(`Claimed fee juice in tx ${receipt.txHash.toString()}`);

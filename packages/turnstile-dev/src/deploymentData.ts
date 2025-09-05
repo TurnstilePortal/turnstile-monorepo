@@ -1,4 +1,4 @@
-import type { Hex } from 'viem';
+import type { Hex } from '@turnstile-portal/turnstile.js';
 
 export interface DeploymentDataToken {
   name: string;
@@ -24,9 +24,7 @@ export interface DeploymentData {
   tokens: Record<string, DeploymentDataToken>;
 }
 
-export async function readDeploymentData(
-  filePath: string,
-): Promise<DeploymentData> {
+export async function readDeploymentData(filePath: string): Promise<DeploymentData> {
   if (typeof window === 'undefined') {
     // Node.js environment
     const { readFileSync } = await import('node:fs');
@@ -38,10 +36,7 @@ export async function readDeploymentData(
   return data as DeploymentData;
 }
 
-export async function writeDeploymentData(
-  filePath: string,
-  data: DeploymentData,
-) {
+export async function writeDeploymentData(filePath: string, data: DeploymentData) {
   if (typeof window === 'undefined') {
     // Node.js environment
     const { writeFileSync } = await import('node:fs');

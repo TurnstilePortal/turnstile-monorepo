@@ -25,10 +25,8 @@ describe('L1Portal Deployment', () => {
     // Mock transaction receipt
     mockReceipt = {
       status: 'success',
-      transactionHash:
-        '0x0000000000000000000000000000000000000000000000000000000000000123',
-      blockHash:
-        '0x0000000000000000000000000000000000000000000000000000000000000456',
+      transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000123',
+      blockHash: '0x0000000000000000000000000000000000000000000000000000000000000456',
       blockNumber: 12345n,
       transactionIndex: 0,
       logsBloom: '0x00',
@@ -74,11 +72,7 @@ describe('L1Portal Deployment', () => {
   describe('setL2PortalOnL1Portal', () => {
     it('should set the L2 portal address on the L1 portal contract', async () => {
       // Call the function
-      await setL2PortalOnL1Portal(
-        mockL1Client,
-        l1PortalAddress,
-        l2PortalAddress,
-      );
+      await setL2PortalOnL1Portal(mockL1Client, l1PortalAddress, l2PortalAddress);
 
       // Verify the portal was created correctly
       expect(L1Portal).toHaveBeenCalledWith(l1PortalAddress, mockL1Client);
@@ -92,9 +86,7 @@ describe('L1Portal Deployment', () => {
       mockReceipt.status = 'reverted';
 
       // Expect the function to throw
-      await expect(
-        setL2PortalOnL1Portal(mockL1Client, l1PortalAddress, l2PortalAddress),
-      ).rejects.toThrow();
+      await expect(setL2PortalOnL1Portal(mockL1Client, l1PortalAddress, l2PortalAddress)).rejects.toThrow();
     });
   });
 });

@@ -6,15 +6,14 @@ import {
   type Client,
   type GetContractReturnType,
   type TransactionReceipt,
-  type TransactionRequest,
   type Hash,
 } from 'viem';
 import { SiblingPath } from '@aztec/aztec.js';
 import { ErrorCode, createError } from '../errors.js';
 import { validateWallet } from '../validator.js';
 import { IL1Client } from './client.js';
-import { ERC20TokenPortalABI, ITokenPortalABI } from '@turnstile-portal/l1-artifacts-abi';
-import { InboxAbi, OutboxAbi, RollupAbi } from "@aztec/l1-artifacts";
+import { ERC20TokenPortalABI } from '@turnstile-portal/l1-artifacts-abi';
+import { InboxAbi, RollupAbi } from "@aztec/l1-artifacts";
 
 
 /**

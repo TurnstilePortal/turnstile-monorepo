@@ -17,9 +17,7 @@ export interface ConfigPaths {
 /**
  * Get the paths for configuration files in a directory
  */
-export function getConfigPaths(
-  configDir: string = DEFAULT_CONFIG_DIR,
-): ConfigPaths {
+export function getConfigPaths(configDir: string = DEFAULT_CONFIG_DIR): ConfigPaths {
   return {
     configFile: path.join(configDir, 'config.json'),
     keysFile: path.join(configDir, 'keys.json'),
@@ -30,9 +28,7 @@ export function getConfigPaths(
 /**
  * Ensure the config directory exists
  */
-export async function ensureConfigDirectory(
-  configDir: string = DEFAULT_CONFIG_DIR,
-): Promise<void> {
+export async function ensureConfigDirectory(configDir: string = DEFAULT_CONFIG_DIR): Promise<void> {
   // Create directory if it doesn't exist
   if (!existsSync(configDir)) {
     await fs.mkdir(configDir, { recursive: true });
@@ -42,9 +38,7 @@ export async function ensureConfigDirectory(
 /**
  * Load the deploy configuration for an environment
  */
-export async function loadDeployConfig(
-  configPath: string,
-): Promise<DeployConfig> {
+export async function loadDeployConfig(configPath: string): Promise<DeployConfig> {
   if (!existsSync(configPath)) {
     throw new Error(`Config file not found: ${configPath}`);
   }
@@ -55,10 +49,8 @@ export async function loadDeployConfig(
   // Validate required properties
   if (!config.name) throw new Error('Missing "name" in config');
   if (!config.connection) throw new Error('Missing "connection" in config');
-  if (!config.connection.ethereum)
-    throw new Error('Missing "connection.ethereum" in config');
-  if (!config.connection.aztec)
-    throw new Error('Missing "connection.aztec" in config');
+  if (!config.connection.ethereum) throw new Error('Missing "connection.ethereum" in config');
+  if (!config.connection.aztec) throw new Error('Missing "connection.aztec" in config');
   if (!config.deployment) throw new Error('Missing "deployment" in config');
 
   // Apply defaults but preserve all other properties from the original config
@@ -96,8 +88,8 @@ export async function createDefaultConfig(
   const tokens: Record<string, TokenConfig> = {};
   if (options.withTokens) {
     // Use a subset of tokens for example
-    for (const [symbol, config] of Object.entries(DEV_TOKENS).filter(
-      ([symbol]) => ['DAI', 'USDC', 'WETH'].includes(symbol),
+    for (const [symbol, config] of Object.entries(DEV_TOKENS).filter(([symbol]) =>
+      ['DAI', 'USDC', 'WETH'].includes(symbol),
     )) {
       tokens[symbol] = config;
     }

@@ -29,7 +29,18 @@
     "overrides": {
       "@aztec/**": "1.2.1",
       "glob": "^11.0.0"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "bcrypto",
+      "bigint-buffer",
+      "c-kzg",
+      "esbuild",
+      "leveldown",
+      "lmdb",
+      "msgpackr-extract",
+      "protobufjs",
+      "unrs-resolver"
+    ]
   },
   "resolutions": {
     "@aztec/**": "1.2.1"

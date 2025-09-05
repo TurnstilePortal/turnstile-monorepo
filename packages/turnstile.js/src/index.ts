@@ -16,5 +16,7 @@ export { getFeeJuiceFromFaucet } from './l2/fee-utils.js';
 export * from './l2/portal.js';
 export * from './l2/shield-gateway.js';
 export * from './l2/token.js';
-// Validation utilities
+
+// Utilities
+export * from './types.js';
 export * from './validator.js';

@@ -1,16 +1,5 @@
-import {
-  AztecAddress,
-  type AztecNode,
-  EthAddress,
-  Fr,
-  type Wallet,
-} from '@aztec/aztec.js';
-import {
-  type Address,
-  createPublicClient,
-  createWalletClient,
-  http,
-} from 'viem';
+import { AztecAddress, type AztecNode, EthAddress, Fr, type Wallet } from '@aztec/aztec.js';
+import { type Address, createPublicClient, createWalletClient, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { sepolia } from 'viem/chains';
 import { createError, ErrorCode } from '../errors.js';
@@ -22,20 +11,16 @@ import { type IL2Client, L2Client } from '../l2/client.js';
 import { L2Portal } from '../l2/portal.js';
 import { L2Token } from '../l2/token.js';
 import { loadConfig } from './config.js';
-import type {
-  ConfigSource,
-  DeploymentDataToken,
-  TokenInfo,
-  TurnstileConfig,
-} from './types.js';
+import type { ConfigSource, DeploymentDataToken, TokenInfo, TurnstileConfig } from './types.js';
+
+// Map of L2 client address (as string) to a map of addresses (as strings) registered in its PXE during this session
+const registeredInPXE = new Map<string, Set<string>>();
 
 /**
  * Factory class for creating Turnstile objects with configuration
  */
 export class TurnstileFactory {
   private config: TurnstileConfig;
-  // Map of L2 client address to a map of addresses registered in its PXE during this session
-  private registeredInPXE = new Map<AztecAddress, Map<AztecAddress, boolean>>();
 
   /**
    * Creates a new TurnstileFactory
@@ -46,20 +31,24 @@ export class TurnstileFactory {
   }
 
   private isRegistered(l2Client: IL2Client, address: AztecAddress): boolean {
-    const clientMap = this.registeredInPXE.get(l2Client.getAddress());
-    if (!clientMap) {
+    const clientKey = l2Client.getAddress().toString();
+    const addressKey = address.toString();
+    const clientSet = registeredInPXE.get(clientKey);
+    if (!clientSet) {
       return false;
     }
-    return clientMap.get(address) === true;
+    return clientSet.has(addressKey);
   }
 
   private setRegistered(l2Client: IL2Client, address: AztecAddress) {
-    let clientMap = this.registeredInPXE.get(l2Client.getAddress());
-    if (!clientMap) {
-      clientMap = new Map<AztecAddress, boolean>();
-      this.registeredInPXE.set(l2Client.getAddress(), clientMap);
+    const clientKey = l2Client.getAddress().toString();
+    const addressKey = address.toString();
+    let clientSet = registeredInPXE.get(clientKey);
+    if (!clientSet) {
+      clientSet = new Set<string>();
+      registeredInPXE.set(clientKey, clientSet);
     }
-    clientMap.set(address, true);
+    clientSet.add(addressKey);
   }
 
   /**
@@ -126,12 +115,8 @@ export class TurnstileFactory {
    * @param approverL1Client Optional approver L1 client
    * @returns The L1 allow list
    */
-  createL1AllowList(
-    l1Client: IL1Client,
-    approverL1Client?: IL1Client,
-  ): L1AllowList {
-    const allowListAddress = this.config.network.deployment
-      .l1AllowList as Address;
+  createL1AllowList(l1Client: IL1Client, approverL1Client?: IL1Client): L1AllowList {
+    const allowListAddress = this.config.network.deployment.l1AllowList as Address;
     return new L1AllowList(allowListAddress, l1Client, approverL1Client);
   }
 
@@ -143,11 +128,7 @@ export class TurnstileFactory {
    * @returns The L1 token instance
    * @throws {TurnstileError} With ErrorCode.CONFIG_MISSING_PARAMETER if token not found in configuration
    */
-  createL1Token(
-    l1Client: IL1Client,
-    tokenSymbol: string,
-    customTokenInfo?: DeploymentDataToken,
-  ): L1Token {
+  createL1Token(l1Client: IL1Client, tokenSymbol: string, customTokenInfo?: DeploymentDataToken): L1Token {
     let tokenAddress: string;
 
     if (customTokenInfo) {
@@ -155,14 +136,10 @@ export class TurnstileFactory {
     } else {
       const token = this.config.network.deployment.tokens[tokenSymbol];
       if (!token) {
-        throw createError(
-          ErrorCode.CONFIG_MISSING_PARAMETER,
-          `Token ${tokenSymbol} not found in configuration`,
-          {
-            tokenSymbol,
-            availableTokens: Object.keys(this.config.network.deployment.tokens),
-          },
-        );
+        throw createError(ErrorCode.CONFIG_MISSING_PARAMETER, `Token ${tokenSymbol} not found in configuration`, {
+          tokenSymbol,
+          availableTokens: Object.keys(this.config.network.deployment.tokens),
+        });
       }
       tokenAddress = token.l1Address;
     }
@@ -175,38 +152,31 @@ export class TurnstileFactory {
    * @param l2Client The L2 client
    * @returns The L2 portal
    */
-  async createL2Portal(
-    l2Client: IL2Client,
-    l1Client?: IL1Client,
-  ): Promise<L2Portal> {
-    const portalAddress = AztecAddress.fromString(
-      this.config.network.deployment.aztecPortal,
+  async createL2Portal(l2Client: IL2Client, l1Client?: IL1Client): Promise<L2Portal> {
+    const portalAddress = AztecAddress.fromString(this.config.network.deployment.aztecPortal);
+
+    console.debug(
+      `Creating L2 portal at ${portalAddress.toString()} for L2 client address ${l2Client.getAddress().toString()} and L1 client ${l1Client?.getAddress().toString()}`,
     );
 
     // If we've already registered this portal in the PXE, skip registration
-    if (this.isRegistered(l2Client, portalAddress)) {
-      return new L2Portal(portalAddress, l2Client, l1Client);
+    if (!this.isRegistered(l2Client, portalAddress)) {
+      // Register the portal in the PXE
+      const l1Portal = EthAddress.fromString(this.config.network.deployment.l1Portal);
+      const tokenContractClassId = Fr.fromString(this.config.network.deployment.aztecTokenContractClassID);
+      const shieldGateway = AztecAddress.fromString(this.config.network.deployment.aztecShieldGateway);
+
+      const l2Portal = await L2Portal.register(
+        l2Client,
+        portalAddress,
+        l1Portal,
+        tokenContractClassId,
+        shieldGateway,
+        l1Client,
+      );
+      this.setRegistered(l2Client, portalAddress);
+      return l2Portal;
     }
-
-    // Register the portal in the PXE
-    const l1Portal = EthAddress.fromString(
-      this.config.network.deployment.l1Portal,
-    );
-    const tokenContractClassId = Fr.fromString(
-      this.config.network.deployment.aztecTokenContractClassID,
-    );
-    const shieldGateway = AztecAddress.fromString(
-      this.config.network.deployment.aztecShieldGateway,
-    );
-
-    this.setRegistered(l2Client, portalAddress);
-    await L2Portal.register(
-      l2Client,
-      portalAddress,
-      l1Portal,
-      tokenContractClassId,
-      shieldGateway,
-    );
     return new L2Portal(portalAddress, l2Client, l1Client);
   }
 
@@ -217,27 +187,22 @@ export class TurnstileFactory {
    * @returns The L2 token instance
    * @throws {TurnstileError} With ErrorCode.CONFIG_MISSING_PARAMETER if token not found in configuration
    */
-  async createL2Token(
-    l2Client: IL2Client,
-    tokenInfo: TokenInfo,
-  ): Promise<L2Token> {
+  async createL2Token(l2Client: IL2Client, tokenInfo: TokenInfo): Promise<L2Token> {
     const tokenAddress = AztecAddress.fromString(tokenInfo.l2Address);
-
-    // If we've already registered this token in the PXE, skip registration and return it
-    if (this.isRegistered(l2Client, tokenAddress)) {
-      return L2Token.fromAddress(tokenAddress, l2Client);
+    if (!this.isRegistered(l2Client, tokenAddress)) {
+      // Register the token in the PXE
+      const l2Token = await L2Token.register(
+        l2Client,
+        tokenAddress,
+        AztecAddress.fromString(this.config.network.deployment.aztecPortal),
+        tokenInfo.name,
+        tokenInfo.symbol,
+        tokenInfo.decimals,
+      );
+      this.setRegistered(l2Client, tokenAddress);
+      return l2Token;
     }
-
-    // Register the token in the PXE
-    this.setRegistered(l2Client, tokenAddress);
-    return L2Token.register(
-      l2Client,
-      tokenAddress,
-      AztecAddress.fromString(this.config.network.deployment.aztecPortal),
-      tokenInfo.name,
-      tokenInfo.symbol,
-      tokenInfo.decimals,
-    );
+    return L2Token.fromAddress(tokenAddress, l2Client);
   }
 
   /**
@@ -255,14 +220,10 @@ export class TurnstileFactory {
     // Check configured tokens
     const token = this.config.network.deployment.tokens[tokenSymbol];
     if (!token) {
-      throw createError(
-        ErrorCode.CONFIG_MISSING_PARAMETER,
-        `Token ${tokenSymbol} not found in configuration`,
-        {
-          tokenSymbol,
-          availableTokens: Object.keys(this.config.network.deployment.tokens),
-        },
-      );
+      throw createError(ErrorCode.CONFIG_MISSING_PARAMETER, `Token ${tokenSymbol} not found in configuration`, {
+        tokenSymbol,
+        availableTokens: Object.keys(this.config.network.deployment.tokens),
+      });
     }
 
     return token;
@@ -274,9 +235,7 @@ export class TurnstileFactory {
    */
   getAvailableTokens(): string[] {
     const configuredTokens = Object.keys(this.config.network.deployment.tokens);
-    const customTokens = this.config.customTokens
-      ? Object.keys(this.config.customTokens)
-      : [];
+    const customTokens = this.config.customTokens ? Object.keys(this.config.customTokens) : [];
 
     return [...new Set([...configuredTokens, ...customTokens])];
   }

@@ -1,4 +1,4 @@
-import type { Hex } from 'viem';
+import type { Hex } from '@turnstile-portal/turnstile.js';
 
 /**
  * Unified deploy configuration

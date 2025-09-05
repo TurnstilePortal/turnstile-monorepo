@@ -1,10 +1,6 @@
 import { TxStatus } from '@aztec/aztec.js';
 import { getConfigPaths, loadDeployConfig } from '@turnstile-portal/deploy';
-import {
-  type L2Client,
-  type L2Token,
-  TurnstileFactory,
-} from '@turnstile-portal/turnstile.js';
+import { type L2Client, type L2Token, TurnstileFactory } from '@turnstile-portal/turnstile.js';
 import { createL2Client, readKeyData } from '@turnstile-portal/turnstile-dev';
 import type { Command } from 'commander';
 
@@ -33,9 +29,7 @@ export function registerUnshieldTokens(program: Command) {
       // Get global and local options together
       const allOptions = command.optsWithGlobals();
       if (!allOptions.configDir) {
-        throw new Error(
-          'Config directory is required. Use -c or --config-dir option.',
-        );
+        throw new Error('Config directory is required. Use -c or --config-dir option.');
       }
 
       // Load configuration from files
@@ -44,30 +38,21 @@ export function registerUnshieldTokens(program: Command) {
       const config = await loadDeployConfig(configPaths.configFile);
 
       // Use the deployment data from config directory
-      const factory = await TurnstileFactory.fromConfig(
-        configPaths.deploymentFile,
-      );
+      const factory = await TurnstileFactory.fromConfig(configPaths.deploymentFile);
 
       // Get token from command option
       const tokenSymbol = options.token;
       const tokenInfo = factory.getTokenInfo(tokenSymbol);
 
       const keyData = await readKeyData(configPaths.keysFile);
-      const l2Client = await createL2Client(
-        { node: config.connection.aztec.node },
-        keyData,
-      );
+      const l2Client = await createL2Client({ node: config.connection.aztec.node }, keyData);
       const amount = BigInt(options.amount);
 
       // Create token & ensure it is registered in the PXE
       const token = await factory.createL2Token(l2Client, tokenInfo);
 
-      const startingBalance = await token.balanceOfPublic(
-        l2Client.getAddress(),
-      );
-      const startingPrivateBalance = await token.balanceOfPrivate(
-        l2Client.getAddress(),
-      );
+      const startingBalance = await token.balanceOfPublic(l2Client.getAddress());
+      const startingPrivateBalance = await token.balanceOfPrivate(l2Client.getAddress());
       // Note: shieldedSupply is not available in the new API
 
       const tx = await doUnshield(l2Client, token, amount);
@@ -81,9 +66,7 @@ export function registerUnshieldTokens(program: Command) {
 
       // Check the balance after the unshield
       const finalBalance = await token.balanceOfPublic(l2Client.getAddress());
-      const finalPrivateBalance = await token.balanceOfPrivate(
-        l2Client.getAddress(),
-      );
+      const finalPrivateBalance = await token.balanceOfPrivate(l2Client.getAddress());
 
       console.log(`Starting public balance: ${startingBalance}`);
       console.log(`Starting private balance: ${startingPrivateBalance}`);

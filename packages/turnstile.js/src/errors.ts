@@ -81,12 +81,7 @@ export class TurnstileError extends Error {
   readonly context: ErrorContext;
   override readonly cause?: unknown;
 
-  constructor(
-    code: ErrorCode,
-    message: string,
-    context: ErrorContext = {},
-    cause?: unknown,
-  ) {
+  constructor(code: ErrorCode, message: string, context: ErrorContext = {}, cause?: unknown) {
     super(message);
     this.code = code;
     this.context = context;
@@ -114,12 +109,9 @@ export class TurnstileError extends Error {
    * Creates a string representation of the error including context
    */
   override toString(): string {
-    const contextStr = Object.keys(this.context).length
-      ? `\nContext: ${JSON.stringify(this.context, null, 2)}`
-      : '';
+    const contextStr = Object.keys(this.context).length ? `\nContext: ${JSON.stringify(this.context, null, 2)}` : '';
 
-    const causeStr =
-      this.cause instanceof Error ? `\nCaused by: ${this.cause.message}` : '';
+    const causeStr = this.cause instanceof Error ? `\nCaused by: ${this.cause.message}` : '';
 
     return `[${this.name}] (${this.code} - ${this.category}): ${this.message}${contextStr}${causeStr}`;
   }
@@ -148,12 +140,7 @@ export const ErrorFactories = {
   /**
    * Creates L2 token operation errors with consistent context
    */
-  l2TokenError: (
-    operation: string,
-    tokenAddress: string,
-    details: ErrorContext = {},
-    cause?: unknown,
-  ) =>
+  l2TokenError: (operation: string, tokenAddress: string, details: ErrorContext = {}, cause?: unknown) =>
     createError(
       ErrorCode.L2_TOKEN_OPERATION,
       `Failed to ${operation} for token ${tokenAddress}`,
@@ -164,12 +151,7 @@ export const ErrorFactories = {
   /**
    * Creates L2 contract interaction errors with consistent context
    */
-  l2ContractError: (
-    operation: string,
-    contractAddress: string,
-    details: ErrorContext = {},
-    cause?: unknown,
-  ) =>
+  l2ContractError: (operation: string, contractAddress: string, details: ErrorContext = {}, cause?: unknown) =>
     createError(
       ErrorCode.L2_CONTRACT_INTERACTION,
       `Failed to ${operation} for contract ${contractAddress}`,
@@ -210,42 +192,20 @@ export const ErrorFactories = {
       message: ErrorCode.BRIDGE_MESSAGE,
     };
 
-    return createError(
-      codeMap[operation],
-      `Failed to ${operation}`,
-      { operation, ...details },
-      cause,
-    );
+    return createError(codeMap[operation], `Failed to ${operation}`, { operation, ...details }, cause);
   },
 
   /**
    * Creates L2 deployment errors with consistent context
    */
-  deploymentError: (
-    contractType: string,
-    details: ErrorContext = {},
-    cause?: unknown,
-  ) =>
-    createError(
-      ErrorCode.L2_DEPLOYMENT,
-      `Failed to deploy ${contractType}`,
-      { contractType, ...details },
-      cause,
-    ),
+  deploymentError: (contractType: string, details: ErrorContext = {}, cause?: unknown) =>
+    createError(ErrorCode.L2_DEPLOYMENT, `Failed to deploy ${contractType}`, { contractType, ...details }, cause),
 
   /**
    * Creates shield/unshield operation errors with consistent context
    */
-  shieldError: (
-    operation: 'shield' | 'unshield',
-    amount: string,
-    tokenAddress: string,
-    cause?: unknown,
-  ) => {
-    const code =
-      operation === 'shield'
-        ? ErrorCode.L2_SHIELD_OPERATION
-        : ErrorCode.L2_UNSHIELD_OPERATION;
+  shieldError: (operation: 'shield' | 'unshield', amount: string, tokenAddress: string, cause?: unknown) => {
+    const code = operation === 'shield' ? ErrorCode.L2_SHIELD_OPERATION : ErrorCode.L2_UNSHIELD_OPERATION;
 
     return createError(
       code,
@@ -258,12 +218,7 @@ export const ErrorFactories = {
   /**
    * Creates burn operation errors with consistent context
    */
-  burnError: (
-    amount: string,
-    fromAddress: string,
-    tokenAddress: string,
-    cause?: unknown,
-  ) =>
+  burnError: (amount: string, fromAddress: string, tokenAddress: string, cause?: unknown) =>
     createError(
       ErrorCode.L2_BURN_OPERATION,
       `Failed to burn ${amount} tokens from ${fromAddress} for token ${tokenAddress}`,

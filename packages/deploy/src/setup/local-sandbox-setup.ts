@@ -14,9 +14,7 @@ export class LocalSandboxSetup implements DeploySetup {
   }
 
   private async getContainerIds(): Promise<string[]> {
-    const { stdout } = await execAsync(
-      'docker ps --filter name=aztec-start -q',
-    );
+    const { stdout } = await execAsync('docker ps --filter name=aztec-start -q');
     const containerIds = stdout
       .trim()
       .split('\n')
@@ -32,9 +30,7 @@ export class LocalSandboxSetup implements DeploySetup {
     console.log('Checking the sandbox...');
     try {
       const containerIds = await this.getContainerIds();
-      console.log(
-        `Found existing sandbox containers: ${containerIds.join(', ')}`,
-      );
+      console.log(`Found existing sandbox containers: ${containerIds.join(', ')}`);
       for (const containerId of containerIds) {
         await execAsync(`docker stop ${containerId}`);
         console.log(`Stopped existing sandbox container ${containerId}`);

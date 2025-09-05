@@ -1,16 +1,11 @@
 import { type AztecAddress, EthAddress, type Fr } from '@aztec/aztec.js';
 import { SerializableContractInstance } from '@aztec/stdlib/contract';
-import type { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
+import type { Hex, L1Client, L2Client } from '@turnstile-portal/turnstile.js';
 import { L2Portal } from '@turnstile-portal/turnstile.js';
-import type { Hex } from 'viem';
 import type { DeploymentResult } from '../config/types.js';
 
 // Import existing deployment functions
-import {
-  deployERC20AllowList,
-  deployERC20TokenPortal,
-  setL2PortalOnL1Portal,
-} from './deploy/l1Portal.js';
+import { deployERC20AllowList, deployERC20TokenPortal, setL2PortalOnL1Portal } from './deploy/l1Portal.js';
 import { registerTurnstileTokenContractClass } from './deploy/l2Portal.js';
 
 export interface DeploymentOptions {
@@ -60,8 +55,7 @@ export async function deployL2Contracts(
 }> {
   // Deploy L2 contracts
   console.log('Deploying L2 Portal...');
-  const tokenContractClassID =
-    await registerTurnstileTokenContractClass(l2Client);
+  const tokenContractClassID = await registerTurnstileTokenContractClass(l2Client);
 
   const { shieldGateway, portal } = await L2Portal.deploy(
     l2Client,
@@ -103,8 +97,7 @@ export async function deployTurnstileContracts(
 
   // Deploy L2 contracts
   console.log('Deploying L2 contracts...');
-  const { tokenContractClassID, portal, shieldGateway } =
-    await deployL2Contracts(l1Client, l2Client, l1Portal);
+  const { tokenContractClassID, portal, shieldGateway } = await deployL2Contracts(l1Client, l2Client, l1Portal);
 
   // Return complete deployment result
   return {

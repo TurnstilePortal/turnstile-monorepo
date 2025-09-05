@@ -4,18 +4,12 @@ import { type L2Token, TurnstileFactory } from '@turnstile-portal/turnstile.js';
 import { createL2Client, readKeyData } from '@turnstile-portal/turnstile-dev';
 import type { Command } from 'commander';
 
-async function doTransfer(
-  token: L2Token,
-  recipient: AztecAddress,
-  amount: bigint,
-) {
+async function doTransfer(token: L2Token, recipient: AztecAddress, amount: bigint) {
   const symbol = await token.getSymbol();
   console.log(`Transferring ${amount} ${symbol} to ${recipient}...`);
 
   const tx = await token.transferPublic(recipient, amount);
-  console.log(
-    `Transaction submitted: ${await tx.getTxHash()}\nWaiting for receipt...`,
-  );
+  console.log(`Transaction submitted: ${await tx.getTxHash()}\nWaiting for receipt...`);
   const receipt = await tx.wait();
   console.log('Transfer status:', receipt.status);
   return receipt;
@@ -32,9 +26,7 @@ export function registerAztecTransferPublic(program: Command) {
       // Get global and local options together
       const allOptions = command.optsWithGlobals();
       if (!allOptions.configDir) {
-        throw new Error(
-          'Config directory is required. Use -c or --config-dir option.',
-        );
+        throw new Error('Config directory is required. Use -c or --config-dir option.');
       }
 
       // Load configuration from files
@@ -43,9 +35,7 @@ export function registerAztecTransferPublic(program: Command) {
       const config = await loadDeployConfig(configPaths.configFile);
 
       // Use the deployment data from config directory
-      const factory = await TurnstileFactory.fromConfig(
-        configPaths.deploymentFile,
-      );
+      const factory = await TurnstileFactory.fromConfig(configPaths.deploymentFile);
 
       // Get token from command option
       const tokenSymbol = options.token;
@@ -53,10 +43,7 @@ export function registerAztecTransferPublic(program: Command) {
       const tokenAddr = AztecAddress.fromString(tokenInfo.l2Address);
 
       const keyData = await readKeyData(configPaths.keysFile);
-      const l2Client = await createL2Client(
-        { node: config.connection.aztec.node },
-        keyData,
-      );
+      const l2Client = await createL2Client({ node: config.connection.aztec.node }, keyData);
       const amount = BigInt(options.amount);
 
       const recipient = AztecAddress.fromString(options.recipient);
@@ -66,16 +53,10 @@ export function registerAztecTransferPublic(program: Command) {
       const l2Token = await factory.createL2Token(l2Client, tokenInfo);
 
       const initialRecipientBalance = await l2Token.balanceOfPrivate(recipient);
-      console.log(
-        `Initial recipient balance (${recipient}): ${initialRecipientBalance}`,
-      );
+      console.log(`Initial recipient balance (${recipient}): ${initialRecipientBalance}`);
 
-      const initialSenderBalance = await l2Token.balanceOfPublic(
-        l2Client.getAddress(),
-      );
-      console.log(
-        `Initial sender balance (${l2Client.getAddress()}): ${initialSenderBalance}`,
-      );
+      const initialSenderBalance = await l2Token.balanceOfPublic(l2Client.getAddress());
+      console.log(`Initial sender balance (${l2Client.getAddress()}): ${initialSenderBalance}`);
 
       if (initialSenderBalance < amount) {
         throw new Error('Insufficient balance');
@@ -83,15 +64,9 @@ export function registerAztecTransferPublic(program: Command) {
       await doTransfer(l2Token, recipient, amount);
 
       const finalRecipientBalance = await l2Token.balanceOfPublic(recipient);
-      console.log(
-        `Final recipient balance (${recipient}): ${finalRecipientBalance}`,
-      );
+      console.log(`Final recipient balance (${recipient}): ${finalRecipientBalance}`);
 
-      const finalSenderBalance = await l2Token.balanceOfPublic(
-        l2Client.getAddress(),
-      );
-      console.log(
-        `Final sender balance (${l2Client.getAddress()}): ${finalSenderBalance}`,
-      );
+      const finalSenderBalance = await l2Token.balanceOfPublic(l2Client.getAddress());
+      console.log(`Final sender balance (${l2Client.getAddress()}): ${finalSenderBalance}`);
     });
 }

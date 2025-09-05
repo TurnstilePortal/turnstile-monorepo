@@ -1,4 +1,4 @@
-import type { Hex } from 'viem';
+import type { Hex } from '../types.js';
 
 export interface TokenInfo {
   name: string;

@@ -102,19 +102,11 @@ describe('Turnstile Dev Utils', () => {
     });
 
     // Mock L1Client and L2Client constructors
-    vi.mocked(L1Client).mockImplementation(
-      () => ({ l1: 'client' }) as unknown as L1Client,
-    );
-    vi.mocked(L2Client).mockImplementation(
-      () => ({ l2: 'client' }) as unknown as L2Client,
-    );
+    vi.mocked(L1Client).mockImplementation(() => ({ l1: 'client' }) as unknown as L1Client);
+    vi.mocked(L2Client).mockImplementation(() => ({ l2: 'client' }) as unknown as L2Client);
 
     // Call the function
-    const result = await getClients(
-      { node: 'node' },
-      mockL1Config,
-      'test-key.json',
-    );
+    const result = await getClients({ node: 'node' }, mockL1Config, 'test-key.json');
 
     // Verify result
     expect(result).toBeDefined();

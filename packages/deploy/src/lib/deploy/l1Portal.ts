@@ -1,20 +1,9 @@
-import {
-  ERC20AllowListABI,
-  ERC20TokenPortalABI,
-} from '@turnstile-portal/l1-artifacts-abi';
-import {
-  ERC20AllowListBytecode,
-  ERC20TokenPortalBytecode,
-} from '@turnstile-portal/l1-artifacts-bytecode';
-import type { L1Client } from '@turnstile-portal/turnstile.js';
+import { ERC20AllowListABI, ERC20TokenPortalABI } from '@turnstile-portal/l1-artifacts-abi';
+import { ERC20AllowListBytecode, ERC20TokenPortalBytecode } from '@turnstile-portal/l1-artifacts-bytecode';
+import type { Hex, L1Client } from '@turnstile-portal/turnstile.js';
 import { L1Portal } from '@turnstile-portal/turnstile.js';
-import type { Hex } from 'viem';
 
-export async function deployERC20AllowList(
-  client: L1Client,
-  adminAddr: Hex,
-  approverAddr: Hex,
-): Promise<Hex> {
+export async function deployERC20AllowList(client: L1Client, adminAddr: Hex, approverAddr: Hex): Promise<Hex> {
   console.log('Deploying AllowList...');
   const walletClient = client.getWalletClient();
   const account = walletClient.account;
@@ -30,9 +19,7 @@ export async function deployERC20AllowList(
     chain: walletClient.chain,
   });
   console.log('AllowList deployed with tx hash:', txHash);
-  const receipt = await client
-    .getPublicClient()
-    .waitForTransactionReceipt({ hash: txHash });
+  const receipt = await client.getPublicClient().waitForTransactionReceipt({ hash: txHash });
   if (receipt.status !== 'success') {
     throw new Error(`Deploy failed: ${receipt}`);
   }
@@ -65,9 +52,7 @@ export async function deployERC20TokenPortal(
     chain: walletClient.chain,
   });
 
-  const receipt = await client
-    .getPublicClient()
-    .waitForTransactionReceipt({ hash: txHash });
+  const receipt = await client.getPublicClient().waitForTransactionReceipt({ hash: txHash });
   if (receipt.status !== 'success') {
     throw new Error(`Deploy failed: ${receipt}`);
   }
@@ -80,11 +65,7 @@ export async function deployERC20TokenPortal(
   return contractAddr;
 }
 
-export async function setL2PortalOnL1Portal(
-  client: L1Client,
-  l1Portal: Hex,
-  l2Portal: Hex,
-) {
+export async function setL2PortalOnL1Portal(client: L1Client, l1Portal: Hex, l2Portal: Hex) {
   // Use the provided L1Client directly
   const portal = new L1Portal(l1Portal, client);
   const receipt = await portal.setL2Portal(l2Portal);

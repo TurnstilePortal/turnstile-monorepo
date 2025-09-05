@@ -21,26 +21,10 @@ async function main() {
     .name('turnstile-repl')
     .description('Turnstile REPL environment')
     .version('0.2.3')
-    .option(
-      '-d, --deployment-data <path>',
-      'Path to deployment data file',
-      'config/sandbox-hosted/deployment.json',
-    )
-    .option(
-      '-k, --key-data <path>',
-      'Path to key data file',
-      'config/sandbox-hosted/keys.json',
-    )
-    .option(
-      '--eth-rpc <url>',
-      'Ethereum RPC URL',
-      'https://sandbox.ethereum.walletmesh.com/api/v1/public',
-    )
-    .option(
-      '--aztec-node <url>',
-      'Aztec Node URL',
-      'https://sandbox.aztec.walletmesh.com/api/v1/public',
-    );
+    .option('-d, --deployment-data <path>', 'Path to deployment data file', 'config/sandbox-hosted/deployment.json')
+    .option('-k, --key-data <path>', 'Path to key data file', 'config/sandbox-hosted/keys.json')
+    .option('--eth-rpc <url>', 'Ethereum RPC URL', 'https://sandbox.ethereum.walletmesh.com/api/v1/public')
+    .option('--aztec-node <url>', 'Aztec Node URL', 'https://sandbox.aztec.walletmesh.com/api/v1/public');
 
   program.parse();
   const options = program.opts();
@@ -58,9 +42,7 @@ async function main() {
 
   // Check if files exist before trying to read them
   if (!existsSync(deploymentDataPath)) {
-    console.error(
-      `Error: Deployment data file not found: ${deploymentDataPath}`,
-    );
+    console.error(`Error: Deployment data file not found: ${deploymentDataPath}`);
     process.exit(1);
   }
 
@@ -70,8 +52,7 @@ async function main() {
   }
 
   // Use the new configuration system
-  const factory =
-    await turnstilejs.TurnstileFactory.fromConfig(deploymentDataPath);
+  const factory = await turnstilejs.TurnstileFactory.fromConfig(deploymentDataPath);
   const deploymentData = factory.getDeploymentData();
   const keyData = await readKeyData(keyDataPath);
 
@@ -96,12 +77,8 @@ async function main() {
   const pxe = l2Client.getPXE();
 
   // Register contract classes with the PXE
-  await l2Client
-    .getWallet()
-    .registerContractClass(turnstileAztecArtifacts.TokenContractArtifact);
-  await l2Client
-    .getWallet()
-    .registerContractClass(turnstileAztecArtifacts.PortalContractArtifact);
+  await l2Client.getWallet().registerContractClass(turnstileAztecArtifacts.TokenContractArtifact);
+  await l2Client.getWallet().registerContractClass(turnstileAztecArtifacts.PortalContractArtifact);
 
   // Register the Shield Gateway & L2 Portal contract instances with the PXE
   const instance = SerializableContractInstance.fromBuffer(
@@ -114,16 +91,11 @@ async function main() {
   console.log(
     `Registered L2 Portal at ${deploymentData.aztecPortal} in PXE for wallet ${l2Client.getWallet().getAddress()}`,
   );
-  const l2Portal = new turnstilejs.L2Portal(
-    aztecjs.AztecAddress.fromString(deploymentData.aztecPortal),
-    l2Client,
-  );
+  const l2Portal = new turnstilejs.L2Portal(aztecjs.AztecAddress.fromString(deploymentData.aztecPortal), l2Client);
 
   const shieldGatewayInstance = SerializableContractInstance.fromBuffer(
     Buffer.from(deploymentData.serializedShieldGatewayInstance.slice(2), 'hex'),
-  ).withAddress(
-    aztecjs.AztecAddress.fromString(deploymentData.aztecShieldGateway),
-  );
+  ).withAddress(aztecjs.AztecAddress.fromString(deploymentData.aztecShieldGateway));
   await pxe.registerContract({
     instance: shieldGatewayInstance,
     artifact: turnstileAztecArtifacts.ShieldGatewayContractArtifact,
@@ -158,10 +130,7 @@ async function main() {
   }
 
   function createREPL() {
-    const historyFile = path.resolve(
-      process.env.HOME || '.',
-      '.turnstile_repl_history',
-    );
+    const historyFile = path.resolve(process.env.HOME || '.', '.turnstile_repl_history');
 
     const r = start({
       prompt: '> ',
@@ -233,9 +202,7 @@ You can use these imported modules and objects directly in your REPL session.
     });
   }
 
-  console.log(
-    'Turnstile REPL environment loaded. Type .help for custom commands.',
-  );
+  console.log('Turnstile REPL environment loaded. Type .help for custom commands.');
   console.log('');
   createREPL();
 }

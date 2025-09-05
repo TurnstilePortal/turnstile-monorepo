@@ -1,20 +1,9 @@
 import { AztecAddress, Fr, retryUntil, TxStatus } from '@aztec/aztec.js';
-import {
-  InsecureMintableTokenABI,
-  InsecureMintableTokenBytecode,
-} from '@turnstile-portal/l1-artifacts-dev';
-import type { L1Client, L2Client } from '@turnstile-portal/turnstile.js';
-import {
-  L1AllowList,
-  L1Portal,
-  L2Portal,
-  L2Token,
-} from '@turnstile-portal/turnstile.js';
-import {
-  InsecureMintableToken,
-  waitForL2Block,
-} from '@turnstile-portal/turnstile-dev';
-import { type Address, getContract, type Hex } from 'viem';
+import { InsecureMintableTokenABI, InsecureMintableTokenBytecode } from '@turnstile-portal/l1-artifacts-dev';
+import type { Hex, L1Client, L2Client } from '@turnstile-portal/turnstile.js';
+import { L1AllowList, L1Portal, L2Portal, L2Token } from '@turnstile-portal/turnstile.js';
+import { InsecureMintableToken, waitForL2Block } from '@turnstile-portal/turnstile-dev';
+import { type Address, getContract } from 'viem';
 
 const ADDITIONAL_L1_ADDRESSES_TO_FUND: `0x${string}`[] = [
   '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
@@ -29,12 +18,7 @@ const ADDITIONAL_L1_ADDRESSES_TO_FUND: `0x${string}`[] = [
   '0xa0Ee7A142d267C1f36714E4a8F75612F20a79720',
 ];
 
-export async function deployL1DevToken(
-  client: L1Client,
-  name: string,
-  symbol: string,
-  decimals: number,
-) {
+export async function deployL1DevToken(client: L1Client, name: string, symbol: string, decimals: number) {
   console.log(`Deploying L1 Token ${name} (${symbol})...`);
   // Deploy the token using the wallet client directly
   const walletClient = client.getWalletClient();
@@ -69,11 +53,7 @@ export async function deployL1DevToken(
   return tokenAddr;
 }
 
-export async function fundL1DevToken(
-  client: L1Client,
-  tokenAddr: Hex,
-  amount: bigint,
-) {
+export async function fundL1DevToken(client: L1Client, tokenAddr: Hex, amount: bigint) {
   const walletClient = client.getWalletClient();
   const publicClient = client.getPublicClient();
   const account = walletClient.account;
@@ -104,9 +84,7 @@ export async function fundL1DevToken(
   if (mintReceipt.status !== 'success') {
     throw new Error(`Mint failed: ${mintReceipt}`);
   }
-  console.log(
-    `InsecureMintableToken(${tokenAddr}) minted ${amount} for ${walletAddress}`,
-  );
+  console.log(`InsecureMintableToken(${tokenAddr}) minted ${amount} for ${walletAddress}`);
 
   // Fund additional addresses
   for (const a of ADDITIONAL_L1_ADDRESSES_TO_FUND) {
@@ -120,9 +98,7 @@ export async function fundL1DevToken(
     if (additionalMintReceipt.status !== 'success') {
       throw new Error(`Additional mint failed: ${additionalMintReceipt}`);
     }
-    console.log(
-      `InsecureMintableToken(${tokenAddr}) minted ${amount} for ${a}`,
-    );
+    console.log(`InsecureMintableToken(${tokenAddr}) minted ${amount} for ${a}`);
   }
 }
 
@@ -130,11 +106,7 @@ function getL1AllowList(client: L1Client, l1AllowList: Address) {
   return new L1AllowList(l1AllowList, client);
 }
 
-export async function proposeL1DevToken(
-  client: L1Client,
-  tokenAddr: Address,
-  l1AllowList: Address,
-) {
+export async function proposeL1DevToken(client: L1Client, tokenAddr: Address, l1AllowList: Address) {
   console.log(`Proposing token ${tokenAddr} to L1 allowlist ${l1AllowList}`);
 
   const allowList = getL1AllowList(client, l1AllowList);
@@ -144,16 +116,10 @@ export async function proposeL1DevToken(
   if (proposeReceipt.status !== 'success') {
     throw new Error(`propose() failed: ${proposeReceipt}`);
   }
-  console.log(
-    `Proposed token to portal in tx ${proposeReceipt.transactionHash}`,
-  );
+  console.log(`Proposed token to portal in tx ${proposeReceipt.transactionHash}`);
 }
 
-export async function acceptL1DevToken(
-  client: L1Client,
-  tokenAddr: Address,
-  l1AllowList: Address,
-) {
+export async function acceptL1DevToken(client: L1Client, tokenAddr: Address, l1AllowList: Address) {
   // In a real scenario, the approver would be a different actor than the proposer and there
   // would be a process to approve the proposal.
   // For testing, we're using the same client as the approver
@@ -166,18 +132,11 @@ export async function acceptL1DevToken(
   console.log(`Accepted proposal in tx ${acceptReceipt.transactionHash}`);
 }
 
-export async function registerL1DevToken(
-  client: L1Client,
-  tokenAddr: Address,
-  l1PortalAddr: Address,
-) {
+export async function registerL1DevToken(client: L1Client, tokenAddr: Address, l1PortalAddr: Address) {
   console.log(`Registering token ${tokenAddr} with L1 Portal ${l1PortalAddr}`);
   const l1Portal = new L1Portal(l1PortalAddr, client);
-  const { txHash, messageHash, messageIndex, l2BlockNumber } =
-    await l1Portal.register(tokenAddr);
-  console.log(
-    `L1 registration tx: ${txHash}, messageHash: ${messageHash}, messageIndex: ${messageIndex}`,
-  );
+  const { txHash, messageHash, messageIndex, l2BlockNumber } = await l1Portal.register(tokenAddr);
+  console.log(`L1 registration tx: ${txHash}, messageHash: ${messageHash}, messageIndex: ${messageIndex}`);
   return { txHash, messageHash, messageIndex, l2BlockNumber };
 }
 
@@ -196,9 +155,9 @@ export async function registerL1DevToken(
  */
 export async function registerL2DevToken(
   l2Client: L2Client,
-  aztecPortalAddr: string,
-  l1TokenAddr: string,
-  l2TokenAddr: string,
+  aztecPortalAddr: Hex,
+  l1TokenAddr: Hex,
+  l2TokenAddr: Hex,
   name: string,
   symbol: string,
   decimals: number,
@@ -206,24 +165,17 @@ export async function registerL2DevToken(
   l2BlockNumber: number,
   msgHash: string,
 ): Promise<void> {
-  console.log(
-    `registerL2DevToken: Registering L2 token ${symbol} (${l2TokenAddr})...`,
-  );
+  console.log(`registerL2DevToken: Registering L2 token ${symbol} (${l2TokenAddr})...`);
   // In sandbox environment, we cheat to get to the desired block number.
   // For non-sandbox environment, we'd want to throw an error
   await waitForL2Block(l2Client, l2BlockNumber);
 
-  const portal = new L2Portal(
-    AztecAddress.fromString(aztecPortalAddr),
-    l2Client,
-  );
+  const portal = new L2Portal(AztecAddress.fromString(aztecPortalAddr), l2Client);
 
   const l1ToL2Message = Fr.fromHexString(msgHash);
 
   // Wait for the L1 to L2 message to be be available
-  console.log(
-    `Waiting for L1 to L2 message ${l1ToL2Message.toString()} to be available...`,
-  );
+  console.log(`Waiting for L1 to L2 message ${l1ToL2Message.toString()} to be available...`);
   await retryUntil(
     async () => {
       console.log('Still waiting...');
@@ -243,27 +195,16 @@ export async function registerL2DevToken(
   */
 
   // Now actually register the token
-  const registerTokenTx = await portal.registerToken(
-    l1TokenAddr,
-    l2TokenAddr,
-    name,
-    symbol,
-    decimals,
-    index,
-  );
+  const registerTokenTx = await portal.registerToken(l1TokenAddr, l2TokenAddr, name, symbol, decimals, index);
 
   console.log(`Transaction submitted: ${await registerTokenTx.getTxHash()}`);
   console.log('Waiting for receipt...');
 
   const aztecRegisterReceipt = await registerTokenTx.wait();
   if (aztecRegisterReceipt.status !== TxStatus.SUCCESS) {
-    throw new Error(
-      `registerToken() failed. status: ${aztecRegisterReceipt.status}`,
-    );
+    throw new Error(`registerToken() failed. status: ${aztecRegisterReceipt.status}`);
   }
-  console.log(
-    `Token ${symbol} registered with the Aztec Portal in tx ${aztecRegisterReceipt.txHash}`,
-  );
+  console.log(`Token ${symbol} registered with the Aztec Portal in tx ${aztecRegisterReceipt.txHash}`);
 }
 
 export async function deployL2DevToken(
@@ -275,13 +216,7 @@ export async function deployL2DevToken(
 ): Promise<L2Token> {
   try {
     console.log(`Deploying L2 Token ${name} (${symbol})...`);
-    const token = await L2Token.deploy(
-      l2Client,
-      aztecPortal,
-      name,
-      symbol,
-      decimals,
-    );
+    const token = await L2Token.deploy(l2Client, aztecPortal, name, symbol, decimals);
 
     console.log(
       `L2 Token ${name} (${symbol}) partial address: ${(await token.getContract().partialAddress).toString()}`,
@@ -317,9 +252,7 @@ export async function bridgeL1ToL2DevToken(
   const l1Portal = new L1Portal(l1PortalAddr, l1Client);
   const depositResult = await l1Portal.deposit(l1TokenAddr, recipient, amount);
 
-  console.log(
-    `L1 deposit tx submitted: ${depositResult.txHash}, messageHash: ${depositResult.messageHash}`,
-  );
+  console.log(`L1 deposit tx submitted: ${depositResult.txHash}, messageHash: ${depositResult.messageHash}`);
   const receipt = await l1Client.getPublicClient().waitForTransactionReceipt({
     hash: depositResult.txHash,
   });
@@ -330,19 +263,12 @@ export async function bridgeL1ToL2DevToken(
   await waitForL2Block(l2Client, Number(depositResult.l2BlockNumber));
   const l2Portal = new L2Portal(l2PortalAddr, l2Client);
 
-  const claimTx = await l2Portal.claimDeposit(
-    l1TokenAddr,
-    recipient,
-    amount,
-    depositResult.messageIndex,
-  );
+  const claimTx = await l2Portal.claimDeposit(l1TokenAddr, recipient, amount, depositResult.messageIndex);
 
   console.log(`L2 claim tx submitted: ${await claimTx.getTxHash()}`);
   const claimReceipt = await claimTx.wait();
   if (claimReceipt.status !== TxStatus.SUCCESS) {
     throw new Error(`L2 claim transaction failed: ${claimReceipt}`);
   }
-  console.log(
-    `L2 claim of ${amount} ${symbol} succeeded in tx ${claimReceipt.txHash}`,
-  );
+  console.log(`L2 claim of ${amount} ${symbol} succeeded in tx ${claimReceipt.txHash}`);
 }

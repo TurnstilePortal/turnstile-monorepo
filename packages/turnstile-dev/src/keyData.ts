@@ -1,4 +1,4 @@
-import type { Hex } from 'viem';
+import type { Hex } from '@turnstile-portal/turnstile.js';
 
 export interface KeyData {
   l1Address: Hex;

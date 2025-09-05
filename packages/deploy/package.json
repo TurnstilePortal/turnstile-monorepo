@@ -39,6 +39,7 @@
     "@aztec/aztec.js": "1.2.1",
     "@aztec/noir-contracts.js": "1.2.1",
     "@aztec/protocol-contracts": "1.2.1",
+    "@aztec/stdlib": "1.2.1",
     "@turnstile-portal/aztec-artifacts": "workspace:^",
     "@turnstile-portal/l1-artifacts-abi": "workspace:^",
     "@turnstile-portal/l1-artifacts-bytecode": "workspace:^",
@@ -46,7 +47,7 @@
     "@turnstile-portal/turnstile-dev": "workspace:^",
     "@turnstile-portal/turnstile.js": "workspace:^",
     "commander": "^14.0.0",
-    "viem": "^2.36.0"
+    "viem": "^2.37.3"
   },
   "publishConfig": {
     "access": "public"

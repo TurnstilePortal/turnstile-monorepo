@@ -33,6 +33,6 @@
     "@turnstile-portal/turnstile-dev": "workspace:^",
     "@turnstile-portal/turnstile.js": "workspace:^",
     "commander": "^14.0.0",
-    "viem": "^2.36.0"
+    "viem": "^2.37.3"
   }
 }

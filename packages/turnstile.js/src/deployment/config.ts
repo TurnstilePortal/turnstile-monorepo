@@ -40,9 +40,7 @@ async function loadFileConfig(filePath: string): Promise<DeploymentData> {
   try {
     if (typeof window !== 'undefined') {
       // Browser environment - can't access local files directly
-      throw new Error(
-        'Local file access is not supported in browser environment',
-      );
+      throw new Error('Local file access is not supported in browser environment');
     }
 
     // Node.js environment
@@ -72,9 +70,7 @@ async function loadUrlConfig(url: string): Promise<DeploymentData> {
   try {
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(
-        `Failed to fetch config from ${url}: ${response.statusText}`,
-      );
+      throw new Error(`Failed to fetch config from ${url}: ${response.statusText}`);
     }
     const data = await response.json();
     return data as DeploymentData;
@@ -94,9 +90,7 @@ async function loadUrlConfig(url: string): Promise<DeploymentData> {
  */
 async function loadSandboxConfig(): Promise<NetworkConfig> {
   try {
-    const response = await fetch(
-      'https://sandbox.aztec.walletmesh.com/api/v1/turnstile/deployment.json',
-    );
+    const response = await fetch('https://sandbox.aztec.walletmesh.com/api/v1/turnstile/deployment.json');
     if (!response.ok) {
       throw new Error(`Failed to fetch sandbox config: ${response.statusText}`);
     }
@@ -131,9 +125,7 @@ async function loadSandboxConfig(): Promise<NetworkConfig> {
  * @param networkName The network name to load
  * @returns The network configuration
  */
-async function loadNetworkConfig(
-  networkName: NetworkName,
-): Promise<NetworkConfig> {
+async function loadNetworkConfig(networkName: NetworkName): Promise<NetworkConfig> {
   switch (networkName) {
     case 'sandbox':
       return loadSandboxConfig();

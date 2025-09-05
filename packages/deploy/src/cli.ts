@@ -9,10 +9,7 @@ import './setup/index.js';
 async function main() {
   const program = new Command();
 
-  program
-    .name('turnstile-deployer')
-    .description('CLI tool for deploying turnstile contracts')
-    .version('0.0.1');
+  program.name('turnstile-deployer').description('CLI tool for deploying turnstile contracts').version('0.0.1');
 
   registerDeployCommand(program);
 

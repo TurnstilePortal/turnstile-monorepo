@@ -4,31 +4,20 @@ import {
   Contract,
   ContractFunctionInteraction,
   computeAuthWitMessageHash,
+  computeInnerAuthWitHashFromAction,
   type DeployOptions,
   Fr,
   getContractInstanceFromDeployParams,
-  type IntentAction,
+  type IntentInnerHash,
   ProtocolContractAddress,
   readFieldCompressedString,
   type SendMethodOptions,
   type SentTx,
 } from '@aztec/aztec.js';
-import {
-  type ABIParameterVisibility,
-  type FunctionAbi,
-  FunctionType,
-} from '@aztec/stdlib/abi';
+import { type ABIParameterVisibility, type FunctionAbi, FunctionType } from '@aztec/stdlib/abi';
 import { PublicKeys } from '@aztec/stdlib/keys';
-import {
-  TokenContract,
-  TokenContractArtifact,
-} from '@turnstile-portal/aztec-artifacts';
-import {
-  createError,
-  ErrorCode,
-  ErrorFactories,
-  isTurnstileError,
-} from '../errors.js';
+import { TokenContract, TokenContractArtifact } from '@turnstile-portal/aztec-artifacts';
+import { createError, ErrorCode, ErrorFactories, isTurnstileError } from '../errors.js';
 import type { IL2Client } from './client.js';
 import { L2_CONTRACT_DEPLOYMENT_SALT, VP_SLOT } from './constants.js';
 
@@ -89,11 +78,7 @@ export interface IL2Token {
    * @param verifiedID The verified ID of the recipient
    * @returns The transaction
    */
-  transferPrivate(
-    to: AztecAddress,
-    amount: bigint,
-    verifiedID: Fr[] & { length: 5 },
-  ): Promise<SentTx>;
+  transferPrivate(to: AztecAddress, amount: bigint, verifiedID: Fr[] & { length: 5 }): Promise<SentTx>;
 
   /**
    * Shields tokens (converts public to private)
@@ -115,10 +100,7 @@ export interface IL2Token {
    * @param amount The amount to burn
    * @returns The burn action and nonce
    */
-  createBurnAction(
-    from: AztecAddress,
-    amount: bigint,
-  ): Promise<{ action: ContractFunctionInteraction; nonce: Fr }>;
+  createBurnAction(from: AztecAddress, amount: bigint): Promise<{ action: ContractFunctionInteraction; nonce: Fr }>;
 
   /**
    * Creates a public authwit action for burning tokens (used for withdrawals)
@@ -177,9 +159,12 @@ export class L2Token implements IL2Token {
    */
   async getPortal(): Promise<AztecAddress> {
     if (!this.portal) {
-      this.portal = (await this.token.methods
-        .get_portal()
-        .simulate()) as AztecAddress;
+      const simulationResult = await this.token.methods.get_portal().simulate();
+      if (typeof simulationResult === 'bigint') {
+        this.portal = AztecAddress.fromBigInt(simulationResult);
+      } else {
+        this.portal = AztecAddress.fromString(simulationResult.toString());
+      }
     }
     return this.portal;
   }
@@ -288,11 +273,7 @@ export class L2Token implements IL2Token {
    * @param options Transaction options
    * @returns The transaction
    */
-  async transferPublic(
-    to: AztecAddress,
-    amount: bigint,
-    options?: SendMethodOptions,
-  ): Promise<SentTx> {
+  async transferPublic(to: AztecAddress, amount: bigint, options?: SendMethodOptions): Promise<SentTx> {
     try {
       const from = this.client.getAddress();
       return this.token.methods
@@ -346,16 +327,12 @@ export class L2Token implements IL2Token {
       );
 
       if (verifiedID) {
-        console.debug(
-          `Adding verified ID capsule for gateway ${shieldGatewayAddr.toString()}`,
-        );
+        console.debug(`Adding verified ID capsule for gateway ${shieldGatewayAddr.toString()}`);
         interaction.with({
           capsules: [new Capsule(shieldGatewayAddr, VP_SLOT, verifiedID)],
         });
       } else {
-        console.warn(
-          'No verified ID provided for private transfer. This might cause the transaction to fail.',
-        );
+        console.warn('No verified ID provided for private transfer. This might cause the transaction to fail.');
       }
       return interaction.send(options);
     } catch (error) {
@@ -389,12 +366,7 @@ export class L2Token implements IL2Token {
       const address = this.client.getAddress();
       return this.token.methods.shield(address, amount, Fr.ZERO).send(options);
     } catch (error) {
-      throw ErrorFactories.shieldError(
-        'shield',
-        amount.toString(),
-        this.token.address.toString(),
-        error,
-      );
+      throw ErrorFactories.shieldError('shield', amount.toString(), this.token.address.toString(), error);
     }
   }
 
@@ -407,9 +379,7 @@ export class L2Token implements IL2Token {
   async unshield(amount: bigint, options?: SendMethodOptions): Promise<SentTx> {
     try {
       const address = this.client.getAddress();
-      return this.token.methods
-        .unshield(address, amount, Fr.ZERO)
-        .send(options);
+      return this.token.methods.unshield(address, amount, Fr.ZERO).send(options);
     } catch (error) {
       throw createError(
         ErrorCode.L2_UNSHIELD_OPERATION,
@@ -462,25 +432,24 @@ export class L2Token implements IL2Token {
     amount: bigint,
   ): Promise<{
     action: ContractFunctionInteraction;
-    intent: IntentAction;
+    intent: IntentInnerHash;
     nonce: Fr;
   }> {
     try {
       const { action, nonce } = await this.createBurnAction(from, amount);
-
-      const intent: IntentAction = {
-        caller: await this.getPortal(),
-        action,
+      const caller = await this.getPortal();
+      const innerHash = await computeInnerAuthWitHashFromAction(caller, action);
+      const intent: IntentInnerHash = {
+        consumer: this.token.address,
+        innerHash,
       };
 
       const intentMetadata = {
         chainId: this.client.getWallet().getChainId(),
         version: this.client.getWallet().getVersion(),
       };
-      const messageHash = await computeAuthWitMessageHash(
-        intent,
-        intentMetadata,
-      );
+
+      const messageHash = await computeAuthWitMessageHash(intent, intentMetadata);
 
       const authWitAction = new ContractFunctionInteraction(
         this.client.getWallet(),
@@ -537,10 +506,7 @@ export class L2Token implements IL2Token {
    * @param client The L2 client
    * @returns The token
    */
-  static async fromAddress(
-    address: AztecAddress,
-    client: IL2Client,
-  ): Promise<L2Token> {
+  static async fromAddress(address: AztecAddress, client: IL2Client): Promise<L2Token> {
     try {
       const token = await TokenContract.at(address, client.getWallet());
       return new L2Token(token, client);
@@ -585,13 +551,7 @@ export class L2Token implements IL2Token {
       const tokenContract = await Contract.deploy(
         wallet,
         TokenContractArtifact,
-        [
-          name,
-          symbol,
-          decimals,
-          portalAddr /* minter */,
-          AztecAddress.ZERO /* upgrade_authority */,
-        ],
+        [name, symbol, decimals, portalAddr /* minter */, AztecAddress.ZERO /* upgrade_authority */],
         'constructor_with_minter',
       )
         .send(options)
@@ -622,22 +582,13 @@ export class L2Token implements IL2Token {
     symbol: string,
     decimals: number,
   ): Promise<L2Token> {
-    const instance = await getContractInstanceFromDeployParams(
-      TokenContractArtifact,
-      {
-        constructorArtifact: 'constructor_with_minter',
-        constructorArgs: [
-          name,
-          symbol,
-          decimals,
-          portalAddress,
-          AztecAddress.ZERO /* upgrade_authority */,
-        ],
-        salt: L2_CONTRACT_DEPLOYMENT_SALT,
-        deployer: AztecAddress.ZERO,
-        publicKeys: PublicKeys.default(),
-      },
-    );
+    const instance = await getContractInstanceFromDeployParams(TokenContractArtifact, {
+      constructorArtifact: 'constructor_with_minter',
+      constructorArgs: [name, symbol, decimals, portalAddress, AztecAddress.ZERO /* upgrade_authority */],
+      salt: L2_CONTRACT_DEPLOYMENT_SALT,
+      deployer: AztecAddress.ZERO,
+      publicKeys: PublicKeys.default(),
+    });
 
     if (!instance.address.equals(tokenAddress)) {
       throw createError(
@@ -650,9 +601,7 @@ export class L2Token implements IL2Token {
       );
     }
     console.debug(`Registering Token in PXE: ${tokenAddress.toString()}`);
-    await client
-      .getWallet()
-      .registerContract({ instance, artifact: TokenContractArtifact });
+    await client.getWallet().registerContract({ instance, artifact: TokenContractArtifact });
 
     return L2Token.fromAddress(tokenAddress, client);
   }

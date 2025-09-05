@@ -38,12 +38,7 @@ export async function deployToken(
   console.log(`Deploying ${config.name} (${config.symbol})...`);
 
   // Deploy L1 token
-  const l1TokenAddress = await deployL1DevToken(
-    l1Client,
-    config.name,
-    config.symbol,
-    config.decimals,
-  );
+  const l1TokenAddress = await deployL1DevToken(l1Client, config.name, config.symbol, config.decimals);
 
   // Deploy L2 token
   const l2Token = await deployL2DevToken(
@@ -54,9 +49,7 @@ export async function deployToken(
     config.decimals,
   );
 
-  const serializableL2TokenInstance = new SerializableContractInstance(
-    l2Token.getContract().instance,
-  );
+  const serializableL2TokenInstance = new SerializableContractInstance(l2Token.getContract().instance);
 
   return {
     name: config.name,
@@ -80,12 +73,7 @@ export async function deployTokens(
   const result: Record<string, TokenDeploymentResult> = {};
 
   for (const [symbol, config] of Object.entries(tokens)) {
-    result[symbol] = await deployToken(
-      l1Client,
-      l2Client,
-      aztecPortalAddress,
-      config,
-    );
+    result[symbol] = await deployToken(l1Client, l2Client, aztecPortalAddress, config);
   }
 
   return result;
