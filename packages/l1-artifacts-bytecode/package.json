@@ -1,6 +1,6 @@
 {
   "name": "@turnstile-portal/l1-artifacts-bytecode",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "description": "L1 bytecode artifacts for Turnstile Portal",
   "repository": {
     "type": "git",
