@@ -4,6 +4,8 @@ import {
   EthAddress,
   Fr,
   getContractInstanceFromDeployParams,
+  type LogFilter,
+  type LogId,
   PublicKeys,
   type SendMethodOptions,
   type SentTx,
@@ -11,6 +13,7 @@ import {
 import { sha256ToField } from '@aztec/foundation/crypto';
 import { serializeToBuffer } from '@aztec/foundation/serialize';
 import { OutboxAbi } from '@aztec/l1-artifacts/OutboxAbi';
+import type { GetPublicLogsResponse } from '@aztec/stdlib/interfaces/client';
 import {
   computeL2ToL1MembershipWitness,
   getNonNullifiedL1ToL2MessageWitness,
@@ -435,7 +438,11 @@ export class L2Portal implements IL2Portal {
         .get_l2_token_unconstrained(EthAddress.fromString(l1TokenAddr))
         .simulate();
 
-      const l2TokenAddr = AztecAddress.fromString(simulationResult.toString());
+      const l2TokenAddr =
+        typeof simulationResult === 'bigint'
+          ? AztecAddress.fromBigInt(simulationResult)
+          : AztecAddress.fromString(simulationResult.toString());
+
       if (registerInPXE) {
         if (this.l1Client) {
           const l1Token = new L1Token(l1TokenAddr, this.l1Client);
@@ -812,5 +819,28 @@ export class L2Portal implements IL2Portal {
         error,
       );
     }
+  }
+
+  async fetchLogs(filter: LogFilter): Promise<GetPublicLogsResponse> {
+    filter.contractAddress = this.portalAddr;
+    return this.client.getNode().getPublicLogs(filter);
+  }
+
+  async fetchLogsInRange(fromBlock: number, toBlock: number): Promise<GetPublicLogsResponse> {
+    const filter: LogFilter = {
+      contractAddress: this.portalAddr,
+      fromBlock,
+      toBlock,
+    };
+
+    return this.client.getNode().getPublicLogs(filter);
+  }
+
+  async fetchLogsAfterLogId(afterLog: LogId): Promise<GetPublicLogsResponse> {
+    const filter: LogFilter = {
+      contractAddress: this.portalAddr,
+      afterLog,
+    };
+    return this.client.getNode().getPublicLogs(filter);
   }
 }
