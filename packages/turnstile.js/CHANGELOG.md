@@ -1,5 +1,13 @@
 # @turnstile-portal/turnstile.js
 
+## 0.4.7
+
+### Patch Changes
+
+- 9f3ee8f: fix l1->l2 fetching from l2 portal & add log fetching helpers
+  - @turnstile-portal/aztec-artifacts@0.4.7
+  - @turnstile-portal/l1-artifacts-abi@0.4.7
+
 ## 0.4.6
 
 ### Patch Changes
