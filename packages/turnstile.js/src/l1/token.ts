@@ -1,12 +1,11 @@
 import type {
   Address,
   TransactionReceipt,
-  TransactionRequest,
 } from 'viem';
+import { erc20Abi } from 'viem';
 import { ErrorCode, createError } from '../errors.js';
 import { validateWallet, validatePositiveAmount } from '../validator.js';
 import { IL1Client } from './client.js';
-import { TOKEN_ABIS } from './abi.js';
 
 /**
  * Interface for L1 token operations
@@ -119,7 +118,7 @@ export class L1Token implements IL1Token {
     try {
       return await this.client.getPublicClient().readContract({
         address: this.address,
-        abi: TOKEN_ABIS.symbol,
+        abi: erc20Abi,
         functionName: 'symbol',
       }) as string;
     } catch (error) {
@@ -141,7 +140,7 @@ export class L1Token implements IL1Token {
     try {
       return await this.client.getPublicClient().readContract({
         address: this.address,
-        abi: TOKEN_ABIS.name,
+        abi: erc20Abi,
         functionName: 'name',
       }) as string;
     } catch (error) {
@@ -163,7 +162,7 @@ export class L1Token implements IL1Token {
     try {
       return Number(await this.client.getPublicClient().readContract({
         address: this.address,
-        abi: TOKEN_ABIS.decimals,
+        abi: erc20Abi,
         functionName: 'decimals',
       }));
     } catch (error) {
@@ -186,7 +185,7 @@ export class L1Token implements IL1Token {
     try {
       return await this.client.getPublicClient().readContract({
         address: this.address,
-        abi: TOKEN_ABIS.balanceOf,
+        abi: erc20Abi,
         functionName: 'balanceOf',
         args: [address],
       }) as bigint;
@@ -211,7 +210,7 @@ export class L1Token implements IL1Token {
     try {
       return await this.client.getPublicClient().readContract({
         address: this.address,
-        abi: TOKEN_ABIS.allowance,
+        abi: erc20Abi,
         functionName: 'allowance',
         args: [owner, spender],
       }) as bigint;
@@ -244,13 +243,10 @@ export class L1Token implements IL1Token {
       validateWallet(walletClient, 'Cannot approve: No account connected to wallet');
       validatePositiveAmount(amount, `Cannot approve amount ${amount}: amount must be positive`);
 
-      // Use the ABI for the approve function from constants
-      const abi = TOKEN_ABIS.approve;
-
       // Execute the transaction
       const hash = await walletClient.writeContract({
         address: this.address,
-        abi,
+        abi: erc20Abi,
         functionName: 'approve',
         args: [spender, amount],
         account: walletClient.account!,
@@ -287,13 +283,10 @@ export class L1Token implements IL1Token {
       validateWallet(walletClient, 'Cannot transfer: No account connected to wallet');
       validatePositiveAmount(amount, `Cannot transfer amount ${amount}: amount must be positive`);
 
-      // Use the ABI for the transfer function from constants
-      const abi = TOKEN_ABIS.transfer;
-
       // Execute the transaction
       const hash = await walletClient.writeContract({
         address: this.address,
-        abi,
+        abi: erc20Abi,
         functionName: 'transfer',
         args: [to, amount],
         account: walletClient.account!,
