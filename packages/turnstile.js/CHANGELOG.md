@@ -1,5 +1,13 @@
 # @turnstile-portal/turnstile.js
 
+## 0.4.8
+
+### Patch Changes
+
+- 5e8c5ad: Add helpers to fetch token info from the turnstile API
+  - @turnstile-portal/aztec-artifacts@0.4.8
+  - @turnstile-portal/l1-artifacts-abi@0.4.8
+
 ## 0.4.7
 
 ### Patch Changes
