@@ -1,7 +1,3 @@
-// @ts-nocheck
-// ^ This directive disables TypeScript checking for this file, which is appropriate for test files
-// with complex mocks where TypeScript can't fully understand the runtime behavior of vitest mocks.
-
 import { AztecAddress, type AztecNode, EthAddress, FeeJuicePaymentMethod, Fr, type Wallet } from '@aztec/aztec.js';
 import { PortalContract } from '@turnstile-portal/aztec-artifacts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -267,55 +263,6 @@ describe('L2Portal', () => {
     });
   });
 
-  describe('isClaimed', () => {
-    const l2BlockNumber = 5;
-    const hash = '0x1234567890123456789012345678901234567890123456789012345678901234';
-
-    it('should return false when block number is higher than current', async () => {
-      // Mock getBlockNumber to return a lower number
-      mockAztecNode.getBlockNumber.mockResolvedValueOnce(3);
-
-      const result = await portal.isClaimed(l2BlockNumber, hash);
-
-      expect(result).toBe(false);
-    });
-
-    it('should return false when message witness is found', async () => {
-      // Mock getBlockNumber to return a higher number
-      mockAztecNode.getBlockNumber.mockResolvedValueOnce(10);
-
-      // Mock getL1ToL2MessageMembershipWitness to return a witness
-      mockAztecNode.getL1ToL2MessageMembershipWitness.mockResolvedValueOnce([
-        BigInt(1),
-        [BigInt(1), BigInt(2), BigInt(3)],
-      ]);
-
-      const result = await portal.isClaimed(l2BlockNumber, hash);
-
-      expect(result).toBe(false);
-    });
-
-    it('should return true when message witness is not found', async () => {
-      // Mock getBlockNumber to return a higher number
-      mockAztecNode.getBlockNumber.mockResolvedValueOnce(10);
-
-      // Mock getL1ToL2MessageMembershipWitness to return null
-      mockAztecNode.getL1ToL2MessageMembershipWitness.mockResolvedValueOnce(null);
-
-      const result = await portal.isClaimed(l2BlockNumber, hash);
-
-      expect(result).toBe(true);
-    });
-
-    it('should throw an error when check fails', async () => {
-      // Mock getBlockNumber to throw an error
-      mockAztecNode.getBlockNumber.mockRejectedValueOnce(new Error('Block number check failed'));
-
-      // Verify error is thrown
-      await expect(portal.isClaimed(l2BlockNumber, hash)).rejects.toThrow();
-    });
-  });
-
   describe('registerToken', () => {
     const l1TokenAddr = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
     const l2TokenAddr = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
@@ -457,12 +404,12 @@ describe('L2Portal', () => {
     });
   });
 
-  describe('getL2Token and getL1Token', () => {
+  describe('getL2TokenFromL1Address and getL1TokenFromL2Address', () => {
     const l1TokenAddr = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
     const l2TokenAddr = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 
     it('should return L2 token for L1 token', async () => {
-      const result = await portal.getL2Token(l1TokenAddr);
+      const result = await portal.getL2TokenFromL1Address(l1TokenAddr);
 
       // Check the portal contract was retrieved
       expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
@@ -485,11 +432,11 @@ describe('L2Portal', () => {
         .simulate.mockRejectedValueOnce(new Error('Get L2 token failed'));
 
       // Verify error is thrown
-      await expect(portal.getL2Token(l1TokenAddr)).rejects.toThrow();
+      await expect(portal.getL2TokenFromL1Address(l1TokenAddr)).rejects.toThrow();
     });
 
     it('should return L1 token for L2 token', async () => {
-      const result = await portal.getL1Token(l2TokenAddr);
+      const result = await portal.getL1TokenFromL2Address(l2TokenAddr);
 
       // Check the portal contract was retrieved
       expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
@@ -512,7 +459,7 @@ describe('L2Portal', () => {
         .simulate.mockRejectedValueOnce(new Error('Get L1 token failed'));
 
       // Verify error is thrown
-      await expect(portal.getL1Token(l2TokenAddr)).rejects.toThrow();
+      await expect(portal.getL1TokenFromL2Address(l2TokenAddr)).rejects.toThrow();
     });
   });
 
