@@ -1,6 +1,6 @@
 {
   "name": "@turnstile-portal/aztec-artifacts",
-  "version": "0.4.9",
+  "version": "0.4.10",
   "description": "Aztec artifacts for Turnstile Portal",
   "repository": {
     "type": "git",

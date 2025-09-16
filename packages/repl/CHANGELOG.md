@@ -1,5 +1,16 @@
 # @turnstile-portal/repl
 
+## 0.4.10
+
+### Patch Changes
+
+- 50d318a: repo rename turnstile-contracts -> turnstile-monorepo
+- Updated dependencies [50d318a]
+- Updated dependencies [50d318a]
+  - @turnstile-portal/turnstile.js@0.4.10
+  - @turnstile-portal/aztec-artifacts@0.4.10
+  - @turnstile-portal/turnstile-dev@0.4.10
+
 ## 0.4.9
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @turnstile-portal/aztec-artifacts
 
+## 0.4.10
+
+### Patch Changes
+
+- 50d318a: repo rename turnstile-contracts -> turnstile-monorepo
+
 ## 0.4.9
 
 ## 0.4.8
