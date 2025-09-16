@@ -1,5 +1,15 @@
 # @turnstile-portal/repl
 
+## 0.4.9
+
+### Patch Changes
+
+- 19b74b1: Add turnstile-api support to turnstile.js
+- Updated dependencies [19b74b1]
+  - @turnstile-portal/turnstile-dev@0.4.9
+  - @turnstile-portal/turnstile.js@0.4.9
+  - @turnstile-portal/aztec-artifacts@0.4.9
+
 ## 0.4.8
 
 ### Patch Changes
