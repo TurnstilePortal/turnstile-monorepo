@@ -70,6 +70,13 @@ export interface IL1Portal {
   }>;
 
   /**
+   * Checks if a token is registered with the L1 portal
+   * @param tokenAddr The token address
+   * @returns True if the token is registered
+   */
+  isRegistered(tokenAddr: Address): Promise<boolean>;
+
+  /**
    * Registers a token with the portal
    * @param tokenAddr The token address
    * @returns The registration result
@@ -262,6 +269,25 @@ export class L1Portal implements IL1Portal {
           l2RecipientAddress: l2RecipientAddr,
           amount: amount.toString()
         },
+        error
+      );
+    }
+  }
+
+  /**
+   * Checks if a token is registered with the L1 portal
+   * @param tokenAddr The token address
+   * @returns True if the token is registered
+   */
+  async isRegistered(tokenAddr: Address): Promise<boolean> {
+    try {
+      const tokenPortal = await this.tokenPortal();
+      return tokenPortal.read.registered([tokenAddr]);
+    } catch (error) {
+      throw createError(
+        ErrorCode.L1_CONTRACT_INTERACTION,
+        `Failed to check registration status for token ${tokenAddr}`,
+        { portalAddress: this.address, tokenAddress: tokenAddr },
         error
       );
     }

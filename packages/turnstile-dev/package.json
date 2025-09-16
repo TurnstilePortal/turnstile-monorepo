@@ -36,7 +36,7 @@
     "@turnstile-portal/l1-artifacts-bytecode": "workspace:^",
     "@turnstile-portal/l1-artifacts-dev": "workspace:^",
     "@turnstile-portal/turnstile.js": "workspace:^",
-    "viem": "^2.37.3"
+    "viem": "^2.37.5"
   },
   "publishConfig": {
     "access": "public"

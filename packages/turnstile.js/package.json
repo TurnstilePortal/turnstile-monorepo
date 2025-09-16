@@ -32,10 +32,10 @@
     "@aztec/noir-contracts.js": "1.2.1",
     "@aztec/protocol-contracts": "1.2.1",
     "@aztec/stdlib": "1.2.1",
-    "@turnstile-portal/api-client": "^0.0.9",
+    "@turnstile-portal/api-client": "^0.0.12",
     "@turnstile-portal/aztec-artifacts": "workspace:^",
     "@turnstile-portal/l1-artifacts-abi": "workspace:^",
-    "viem": "^2.37.3"
+    "viem": "^2.37.5"
   },
   "devDependencies": {
     "typedoc": "^0.28.11"
