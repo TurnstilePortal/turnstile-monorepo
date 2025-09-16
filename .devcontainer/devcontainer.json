@@ -11,7 +11,22 @@
     {
       "target": "${containerWorkspaceFolder}/node_modules",
       "type": "volume"
-    }
+    },
+    {
+      "source": "${localEnv:HOME}/.claude/",
+      "target": "/home/vscode/.claude",
+      "type": "bind"
+    },
+    {
+      "source": "${localEnv:HOME}/.claude.json",
+      "target": "/home/vscode/.claude.json",
+      "type": "bind"
+    },
+    {
+			"source": "${localEnv:HOME}/codex/auth.json",
+			"target": "/etc/codex/auth.json",
+			"type": "bind"
+		}
   ],
   "features": {
     "ghcr.io/ClarifiedLabs/devcontainer-features/aztec-sandbox:2": {
@@ -39,7 +54,9 @@
   },
   "postCreateCommand": {
     "vscode_shell_integration": "echo 'source `code --locate-shell-integration-path bash`' >> ~/.bashrc",
-    "setup": "make init && pnpm run build"
+    "setup": "make init && pnpm run build",
+    "codex": "npm i -g @openai/codex",
+    "claude": "npm i -g @anthropic-ai/claude-code"
   },
   "customizations": {
     "vscode": {
@@ -50,7 +67,9 @@
         "bierner.markdown-mermaid",
         "ms-azuretools.vscode-docker",
         "ms-vscode.makefile-tools",
-        "saoudrizwan.claude-dev"
+        "saoudrizwan.claude-dev",
+	"anthropic.claude-code",
+	"openai.chatgpt"
       ],
       "dev.containers.mountWaylandSocket": false
     }
