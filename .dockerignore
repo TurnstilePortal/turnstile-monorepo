@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Development files
+.env*
+!.env.example
+.gitignore
+README.md
+
+# Test files
+src/test/
+coverage/
+coverage_output.txt
+*.test.ts
+vitest.config.ts
+
+# Build artifacts
+dist/
+**/dist/
+tsconfig.tsbuildinfo
+**/tsconfig.tsbuildinfo
+*.log
+*.tmp
+*.swp
+*.swo
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# CI/CD
+.github/
+
+
+# Biome config (not needed in runtime)
+biome.json

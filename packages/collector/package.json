@@ -14,7 +14,9 @@
     "cli": "tsx src/cli.ts",
     "lint": "biome lint --fix",
     "format": "biome format --fix",
-    "check": "biome check --fix"
+    "check": "biome check --fix",
+    "clean": "rm -rf ./dist ./node_modules",
+    "prepare": "pnpm build"
   },
   "author": "",
   "license": "Apache-2.0",

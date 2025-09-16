@@ -15,6 +15,7 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist node_modules",
+    "prepare": "pnpm build",
     "test": "vitest run --coverage"
   },
   "keywords": [],

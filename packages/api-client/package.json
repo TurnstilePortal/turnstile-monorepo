@@ -26,13 +26,14 @@
     "generate:api": "cd ../api-service && pnpm generate:openapi",
     "generate:types": "openapi-typescript ../api-service/openapi.generated.json -o ./src/types.ts",
     "generate": "pnpm generate:api && pnpm generate:types",
-    "prepack": "pnpm build",
+    "prepare": "pnpm build",
     "test": "vitest --run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "lint": "biome lint --write",
     "format": "biome format --write",
-    "check": "biome check --write"
+    "check": "biome check --write",
+    "clean": "rm -rf ./dist ./node_modules"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.4",

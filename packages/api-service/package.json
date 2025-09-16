@@ -13,7 +13,9 @@
     "coverage": "vitest --run --coverage",
     "lint": "biome lint --fix",
     "format": "biome format --fix",
-    "check": "biome check --fix"
+    "check": "biome check --fix",
+    "clean": "rm -rf ./dist ./node_modules",
+    "prepare": "pnpm build"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",

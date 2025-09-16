@@ -16,13 +16,16 @@
     "coverage": "vitest --run --coverage",
     "check": "biome check --fix",
     "format": "biome format --fix",
-    "lint": "biome lint --fix"
+    "lint": "biome lint --fix",
+    "clean": "rm -rf ./dist ./node_modules",
+    "prepare": "pnpm build"
   },
   "files": [
     "dist",
     "migrations",
     "drizzle.config.ts",
-    "src"
+    "src",
+    "tsconfig.json"
   ],
   "dependencies": {
     "@electric-sql/pglite": "^0.3.8",
