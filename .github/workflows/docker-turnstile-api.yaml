@@ -84,8 +84,7 @@ jobs:
         run: |
           TAGS="${{ env.REGISTRY }}/${{ env.ORG }}/migrations:${{ steps.versions.outputs.api_common_version }}${{ steps.versions.outputs.tag_suffix }}"
           if [ "${{ inputs.tag_latest }}" == "true" ]; then
-            TAGS="$TAGS
-${{ env.REGISTRY }}/${{ env.ORG }}/migrations:latest"
+            TAGS="$TAGS ${{ env.REGISTRY }}/${{ env.ORG }}/migrations:latest"
           fi
           echo "tags<<EOF" >> $GITHUB_OUTPUT
           echo "$TAGS" >> $GITHUB_OUTPUT
@@ -108,8 +107,7 @@ ${{ env.REGISTRY }}/${{ env.ORG }}/migrations:latest"
         run: |
           TAGS="${{ env.REGISTRY }}/${{ env.ORG }}/collector:${{ steps.versions.outputs.collector_version }}${{ steps.versions.outputs.tag_suffix }}"
           if [ "${{ inputs.tag_latest }}" == "true" ]; then
-            TAGS="$TAGS
-${{ env.REGISTRY }}/${{ env.ORG }}/collector:latest"
+            TAGS="$TAGS ${{ env.REGISTRY }}/${{ env.ORG }}/collector:latest"
           fi
           echo "tags<<EOF" >> $GITHUB_OUTPUT
           echo "$TAGS" >> $GITHUB_OUTPUT
@@ -132,8 +130,7 @@ ${{ env.REGISTRY }}/${{ env.ORG }}/collector:latest"
         run: |
           TAGS="${{ env.REGISTRY }}/${{ env.ORG }}/api-service:${{ steps.versions.outputs.api_service_version }}${{ steps.versions.outputs.tag_suffix }}"
           if [ "${{ inputs.tag_latest }}" == "true" ]; then
-            TAGS="$TAGS
-${{ env.REGISTRY }}/${{ env.ORG }}/api-service:latest"
+            TAGS="$TAGS ${{ env.REGISTRY }}/${{ env.ORG }}/api-service:latest"
           fi
           echo "tags<<EOF" >> $GITHUB_OUTPUT
           echo "$TAGS" >> $GITHUB_OUTPUT

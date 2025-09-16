@@ -4,15 +4,9 @@ This directory contains examples of how to use the Turnstile Portal.
 
 ## Running the Examples
 
-### Prerequisites
-
-To run the examples, you will need to have the Turnstile Sandbox running.
-You can do this by running `just sandbox` in the root of the Turnstile repository,
-or by using the pre-built [Turnstile Sandbox Docker setup](https://github.com/TurnstilePortal/turnstile-contracts/tree/main/docker/turnstile-sandbox#readme).
-
 ### Configuration Setup
 
-The examples now use a config-based approach similar to the deploy package. You'll need a configuration directory containing:
+The examples use a config-based approach similar to the deploy package. You'll need a configuration directory containing:
 
 - `config.json` - Connection settings (RPC URLs, node endpoints)
 - `keys.json` - Private keys and addresses

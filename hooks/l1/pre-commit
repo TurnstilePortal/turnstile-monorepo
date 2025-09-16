@@ -4,7 +4,7 @@ set -e
 set -x
 
 
-just l1/test fmt
+make l1/test fmt
 
 # Check for changes
 if ! git diff --quiet; then

@@ -4,7 +4,7 @@
   "description": "Turnstile Portal DEV Library",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TurnstilePortal/turnstile-contracts.git"
+    "url": "https://github.com/TurnstilePortal/turnstile-monorepo.git"
   },
   "type": "module",
   "files": [

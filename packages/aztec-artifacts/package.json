@@ -4,7 +4,7 @@
   "description": "Aztec artifacts for Turnstile Portal",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TurnstilePortal/turnstile-contracts.git"
+    "url": "https://github.com/TurnstilePortal/turnstile-monorepo.git"
   },
   "type": "module",
   "files": [

@@ -1,8 +1,8 @@
 {
   "name": "Turnstile Contracts",
-  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/turnstile-contracts,type=bind",
-  "workspaceFolder": "/home/vscode/turnstile-contracts",
+  "image": "mcr.microsoft.com/devcontainers/base:debian",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/turnstile-monorepo,type=bind",
+  "workspaceFolder": "/home/vscode/turnstile-monorepo",
   "mounts": [
     {
       "target": "/home/vscode/.pnpm-store",
@@ -43,7 +43,7 @@
   "containerEnv": {
     "npm_config_store_dir": "/home/vscode/.pnpm-store",
     "COMPOSE_PROJECT_NAME": "aztec-sandbox",
-    "COMPOSE_FILE": "/home/vscode/turnstile-contracts/docker/docker-compose.yaml",
+    "COMPOSE_FILE": "/home/vscode/turnstile-monorepo/docker/docker-compose.yaml",
     "TURNSTILE_DEV_CONTAINER": "1",
     "FOUNDRY_DISABLE_NIGHTLY_WARNING": "1",
     "NODE_NO_WARNINGS": "1",

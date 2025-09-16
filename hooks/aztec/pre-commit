@@ -4,7 +4,7 @@ set -e
 set -x
 
 export NON_INTERACTIVE=1
-just aztec/test fmt
+make aztec/test fmt
 
 if ! git diff --quiet; then
   echo "Changes detected. Please commit the changes before proceeding."

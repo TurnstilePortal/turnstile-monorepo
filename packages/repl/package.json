@@ -4,7 +4,7 @@
   "version": "0.4.9",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TurnstilePortal/turnstile-contracts.git"
+    "url": "https://github.com/TurnstilePortal/turnstile-monorepo.git"
   },
   "type": "module",
   "bin": {
