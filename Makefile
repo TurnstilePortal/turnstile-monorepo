@@ -86,3 +86,34 @@ turnstile-deploy-docker-image:
 	docker build -t turnstile-deploy:$(VERSION) \
 		--build-arg VERSION=$(VERSION) \
 		-f packages/deploy/Dockerfile .
+
+.PHONY: docker-api-migrations-image
+docker-api-migrations-image:
+	@echo "Building @turnstile-portal/api-common Docker image..."
+	$(eval VERSION := $(shell grep -m1 '"version":' packages/api-common/package.json | cut -d '"' -f 4))
+	@echo "Using version: $(VERSION)"
+	docker build -t turnstile-api-migrations:$(VERSION) \
+		--build-arg SERVICE=@turnstile-portal/api-common \
+		-f docker/turnstile-api/Dockerfile .
+
+.PHONY: docker-api-collector-image
+docker-api-collector-image:
+	@echo "Building @turnstile-portal/collector Docker image..."
+	$(eval VERSION := $(shell grep -m1 '"version":' packages/collector/package.json | cut -d '"' -f 4))
+	@echo "Using version: $(VERSION)"
+	docker build -t turnstile-api-collector:$(VERSION) \
+		--build-arg SERVICE=@turnstile-portal/collector \
+		-f docker/turnstile-api/Dockerfile .
+
+.PHONY: docker-api-service-image
+docker-api-service-image:
+	@echo "Building @turnstile-portal/api-service Docker image..."
+	$(eval VERSION := $(shell grep -m1 '"version":' packages/api-service/package.json | cut -d '"' -f 4))
+	@echo "Using version: $(VERSION)"
+	docker build -t turnstile-api-service:$(VERSION) \
+		--build-arg SERVICE=@turnstile-portal/api-service \
+		-f docker/turnstile-api/Dockerfile .
+
+.PHONY: docker-api-images
+docker-api-images: docker-api-migrations-image docker-api-collector-image docker-api-service-image
+	@echo "Built all API Docker images"

@@ -1,0 +1,55 @@
+# @turnstile-portal/api-client
+
+## 0.0.12
+
+### Patch Changes
+
+- a705645: Standardize how options are passed to the client
+
+## 0.0.11
+
+### Patch Changes
+
+- 17b67a4: add optional startCursor parameter to the api-client getAll methods to enable incremental fetches
+
+## 0.0.10
+
+### Patch Changes
+
+- 6b628c4: add more getAll helper methods
+
+## 0.0.9
+
+### Patch Changes
+
+- 62f74a3: esm only build
+
+## 0.0.8
+
+### Patch Changes
+
+- 749a525: fix exports
+
+## 0.0.7
+
+### Patch Changes
+
+- baecd52: unbundle api-client
+
+## 0.0.6
+
+### Patch Changes
+
+- c650d46: fix: exports
+
+## 0.0.5
+
+### Patch Changes
+
+- 21d716d: Add expected api client URLs to the api-client package for convenience
+
+## 0.0.4
+
+### Patch Changes
+
+- 4f746ed: initial release

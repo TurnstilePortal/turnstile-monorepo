@@ -59,3 +59,17 @@ jobs:
     needs: release # Wait for publish to complete
     if: needs.release.outputs.published == 'true' # Only run if packages were published
     uses: ./.github/workflows/docker.yaml  # Call docker workflow
+
+  turnstile-api-images:
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    uses: ./.github/workflows/docker-turnstile-api.yaml
+    with:
+      push_images: true
+      tag_latest: true
+

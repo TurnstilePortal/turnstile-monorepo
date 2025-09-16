@@ -1,0 +1,1238 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Turnstile API",
+    "description": "Token bridge system for Ethereum L1 and Aztec L2 networks",
+    "version": "1.0.0"
+  },
+  "components": {
+    "securitySchemes": {},
+    "schemas": {}
+  },
+  "paths": {
+    "/tokens": {
+      "get": {
+        "summary": "List all tokens",
+        "tags": [
+          "Tokens"
+        ],
+        "description": "Get a paginated list of all tokens",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "description": "Maximum number of items to return (1-1000)"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "description": "Cursor for pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "number"
+                          },
+                          "symbol": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "name": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "decimals": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l1_address": {
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l2_address": {
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_allow_list_status": {
+                            "nullable": true,
+                            "type": "string",
+                            "enum": [
+                              "PROPOSED",
+                              "ACCEPTED",
+                              "REJECTED"
+                            ]
+                          },
+                          "l1_allow_list_proposal_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_allow_list_proposer": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_allow_list_approver": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_allow_list_resolution_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_registration_submitter": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_registration_block": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_available_block": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_block": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_submitter": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l2_registration_fee_payer": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_registration_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l2_registration_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l2_registration_tx_index": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_log_index": {
+                            "nullable": true,
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "symbol",
+                          "name",
+                          "decimals"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "limit": {
+                          "type": "number"
+                        },
+                        "cursor": {
+                          "type": "number"
+                        },
+                        "nextCursor": {
+                          "type": "number"
+                        },
+                        "hasMore": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "limit",
+                        "hasMore"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tokens/{address}": {
+      "get": {
+        "summary": "Get token by address",
+        "tags": [
+          "Tokens"
+        ],
+        "description": "Get a token by its L1 or L2 address",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "address",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "number"
+                    },
+                    "symbol": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "name": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "decimals": {
+                      "nullable": true,
+                      "type": "number"
+                    },
+                    "l1_address": {
+                      "type": "string",
+                      "pattern": "^0x[a-fA-F0-9]{40}$"
+                    },
+                    "l2_address": {
+                      "type": "string",
+                      "pattern": "^0x[a-fA-F0-9]{40}$"
+                    },
+                    "l1_allow_list_status": {
+                      "nullable": true,
+                      "type": "string",
+                      "enum": [
+                        "PROPOSED",
+                        "ACCEPTED",
+                        "REJECTED"
+                      ]
+                    },
+                    "l1_allow_list_proposal_tx": {
+                      "nullable": true,
+                      "type": "string",
+                      "pattern": "^0x[a-fA-F0-9]{64}$"
+                    },
+                    "l1_allow_list_proposer": {
+                      "nullable": true,
+                      "type": "string",
+                      "pattern": "^0x[a-fA-F0-9]{40}$"
+                    },
+                    "l1_allow_list_approver": {
+                      "nullable": true,
+                      "type": "string",
+                      "pattern": "^0x[a-fA-F0-9]{40}$"
+                    },
+                    "l1_allow_list_resolution_tx": {
+                      "nullable": true,
+                      "type": "string",
+                      "pattern": "^0x[a-fA-F0-9]{64}$"
+                    },
+                    "l1_registration_submitter": {
+                      "nullable": true,
+                      "type": "string",
+                      "pattern": "^0x[a-fA-F0-9]{40}$"
+                    },
+                    "l1_registration_block": {
+                      "nullable": true,
+                      "type": "number"
+                    },
+                    "l2_registration_available_block": {
+                      "nullable": true,
+                      "type": "number"
+                    },
+                    "l2_registration_block": {
+                      "nullable": true,
+                      "type": "number"
+                    },
+                    "l2_registration_submitter": {
+                      "nullable": true,
+                      "type": "string",
+                      "pattern": "^0x[a-fA-F0-9]{64}$"
+                    },
+                    "l2_registration_fee_payer": {
+                      "nullable": true,
+                      "type": "string",
+                      "pattern": "^0x[a-fA-F0-9]{64}$"
+                    },
+                    "l1_registration_tx": {
+                      "nullable": true,
+                      "type": "string",
+                      "pattern": "^0x[a-fA-F0-9]{64}$"
+                    },
+                    "l2_registration_tx": {
+                      "nullable": true,
+                      "type": "string",
+                      "pattern": "^0x[a-fA-F0-9]{64}$"
+                    },
+                    "l2_registration_tx_index": {
+                      "nullable": true,
+                      "type": "number"
+                    },
+                    "l2_registration_log_index": {
+                      "nullable": true,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "symbol",
+                    "name",
+                    "decimals"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tokens/proposed": {
+      "get": {
+        "summary": "List proposed tokens",
+        "tags": [
+          "Tokens"
+        ],
+        "description": "Get a paginated list of tokens with PROPOSED status",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "description": "Maximum number of items to return (1-1000)"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "description": "Cursor for pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "number"
+                          },
+                          "symbol": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "name": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "decimals": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l1_address": {
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l2_address": {
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_allow_list_status": {
+                            "nullable": true,
+                            "type": "string",
+                            "enum": [
+                              "PROPOSED",
+                              "ACCEPTED",
+                              "REJECTED"
+                            ]
+                          },
+                          "l1_allow_list_proposal_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_allow_list_proposer": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_allow_list_approver": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_allow_list_resolution_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_registration_submitter": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_registration_block": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_available_block": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_block": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_submitter": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l2_registration_fee_payer": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_registration_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l2_registration_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l2_registration_tx_index": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_log_index": {
+                            "nullable": true,
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "symbol",
+                          "name",
+                          "decimals"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "limit": {
+                          "type": "number"
+                        },
+                        "cursor": {
+                          "type": "number"
+                        },
+                        "nextCursor": {
+                          "type": "number"
+                        },
+                        "hasMore": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "limit",
+                        "hasMore"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tokens/rejected": {
+      "get": {
+        "summary": "List rejected tokens",
+        "tags": [
+          "Tokens"
+        ],
+        "description": "Get a paginated list of tokens with REJECTED status",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "description": "Maximum number of items to return (1-1000)"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "description": "Cursor for pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "number"
+                          },
+                          "symbol": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "name": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "decimals": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l1_address": {
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l2_address": {
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_allow_list_status": {
+                            "nullable": true,
+                            "type": "string",
+                            "enum": [
+                              "PROPOSED",
+                              "ACCEPTED",
+                              "REJECTED"
+                            ]
+                          },
+                          "l1_allow_list_proposal_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_allow_list_proposer": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_allow_list_approver": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_allow_list_resolution_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_registration_submitter": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_registration_block": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_available_block": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_block": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_submitter": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l2_registration_fee_payer": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_registration_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l2_registration_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l2_registration_tx_index": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_log_index": {
+                            "nullable": true,
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "symbol",
+                          "name",
+                          "decimals"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "limit": {
+                          "type": "number"
+                        },
+                        "cursor": {
+                          "type": "number"
+                        },
+                        "nextCursor": {
+                          "type": "number"
+                        },
+                        "hasMore": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "limit",
+                        "hasMore"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tokens/accepted": {
+      "get": {
+        "summary": "List accepted tokens",
+        "tags": [
+          "Tokens"
+        ],
+        "description": "Get a paginated list of tokens with ACCEPTED status that are not yet fully bridged",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "description": "Maximum number of items to return (1-1000)"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "description": "Cursor for pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "number"
+                          },
+                          "symbol": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "name": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "decimals": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l1_address": {
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l2_address": {
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_allow_list_status": {
+                            "nullable": true,
+                            "type": "string",
+                            "enum": [
+                              "PROPOSED",
+                              "ACCEPTED",
+                              "REJECTED"
+                            ]
+                          },
+                          "l1_allow_list_proposal_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_allow_list_proposer": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_allow_list_approver": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_allow_list_resolution_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_registration_submitter": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_registration_block": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_available_block": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_block": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_submitter": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l2_registration_fee_payer": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_registration_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l2_registration_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l2_registration_tx_index": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_log_index": {
+                            "nullable": true,
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "symbol",
+                          "name",
+                          "decimals"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "limit": {
+                          "type": "number"
+                        },
+                        "cursor": {
+                          "type": "number"
+                        },
+                        "nextCursor": {
+                          "type": "number"
+                        },
+                        "hasMore": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "limit",
+                        "hasMore"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tokens/bridged": {
+      "get": {
+        "summary": "List bridged tokens",
+        "tags": [
+          "Tokens"
+        ],
+        "description": "Get a paginated list of fully bridged tokens (with both L1 and L2 addresses)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "description": "Maximum number of items to return (1-1000)"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "description": "Cursor for pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "number"
+                          },
+                          "symbol": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "name": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "decimals": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l1_address": {
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l2_address": {
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_allow_list_status": {
+                            "nullable": true,
+                            "type": "string",
+                            "enum": [
+                              "PROPOSED",
+                              "ACCEPTED",
+                              "REJECTED"
+                            ]
+                          },
+                          "l1_allow_list_proposal_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_allow_list_proposer": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_allow_list_approver": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_allow_list_resolution_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_registration_submitter": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{40}$"
+                          },
+                          "l1_registration_block": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_available_block": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_block": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_submitter": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l2_registration_fee_payer": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_registration_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l2_registration_tx": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l2_registration_tx_index": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l2_registration_log_index": {
+                            "nullable": true,
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "symbol",
+                          "name",
+                          "decimals"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "limit": {
+                          "type": "number"
+                        },
+                        "cursor": {
+                          "type": "number"
+                        },
+                        "nextCursor": {
+                          "type": "number"
+                        },
+                        "hasMore": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "limit",
+                        "hasMore"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Tokens",
+      "description": "Token operations"
+    }
+  ]
+}

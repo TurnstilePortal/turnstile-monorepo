@@ -1,0 +1,58 @@
+{
+  "name": "@turnstile-portal/api-common",
+  "version": "0.0.12",
+  "private": true,
+  "description": "Shared database schema and types for Turnstile API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate",
+    "start": "drizzle-kit migrate",
+    "studio": "drizzle-kit studio",
+    "test": "vitest --run",
+    "coverage": "vitest --run --coverage",
+    "check": "biome check --fix",
+    "format": "biome format --fix",
+    "lint": "biome lint --fix"
+  },
+  "files": [
+    "dist",
+    "migrations",
+    "drizzle.config.ts",
+    "src"
+  ],
+  "dependencies": {
+    "@electric-sql/pglite": "^0.3.8",
+    "drizzle-kit": "^0.31.4",
+    "drizzle-orm": "^0.44.5",
+    "pg": "^8.16.3",
+    "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.3",
+    "@types/pg": "^8.15.5",
+    "vitest": "^3.2.4"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "default": "./dist/schema.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    }
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TurnstilePortal/turnstile-monorepo"
+  }
+}

@@ -11,7 +11,7 @@ npm install @turnstile-portal/repl
 
 Prerequisites:
 
-- A running [Turnstile Sandbox](https://github.com/TurnstilePortal/turnstile-contracts/tree/main/docker/turnstile-sandbox) environment
+- A running [Turnstile Sandbox](https://github.com/TurnstilePortal/turnstile-monorepo/tree/main/docker/turnstile-sandbox) environment
 - Deployment data JSON file from the Turnstile Sandbox
 - Key data JSON file from the Turnstile Sandbox
 

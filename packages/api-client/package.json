@@ -1,0 +1,53 @@
+{
+  "name": "@turnstile-portal/api-client",
+  "version": "0.0.12",
+  "description": "Type-safe API client for Turnstile API",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TurnstilePortal/turnstile-monorepo"
+  },
+  "private": false,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "generate:api": "cd ../api-service && pnpm generate:openapi",
+    "generate:types": "openapi-typescript ../api-service/openapi.generated.json -o ./src/types.ts",
+    "generate": "pnpm generate:api && pnpm generate:types",
+    "prepack": "pnpm build",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "lint": "biome lint --write",
+    "format": "biome format --write",
+    "check": "biome check --write"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.2.4",
+    "@types/node": "^24.3.3",
+    "@vitest/coverage-v8": "^3.2.4",
+    "openapi-typescript": "^7.9.1",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "client",
+    "turnstile"
+  ],
+  "license": "Apache-2.0"
+}

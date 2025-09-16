@@ -1,8 +1,8 @@
 {
   "name": "Turnstile Contracts",
-  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/turnstile-contracts,type=bind",
-  "workspaceFolder": "/home/vscode/turnstile-contracts",
+  "image": "mcr.microsoft.com/devcontainers/base:debian",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/turnstile-monorepo,type=bind",
+  "workspaceFolder": "/home/vscode/turnstile-monorepo",
   "mounts": [
     {
       "target": "/home/vscode/.pnpm-store",
@@ -11,6 +11,21 @@
     {
       "target": "${containerWorkspaceFolder}/node_modules",
       "type": "volume"
+    },
+    {
+      "source": "${localEnv:HOME}/.claude/",
+      "target": "/home/vscode/.claude",
+      "type": "bind"
+    },
+    {
+      "source": "${localEnv:HOME}/.claude.json",
+      "target": "/home/vscode/.claude.json",
+      "type": "bind"
+    },
+    {
+      "source": "${localEnv:HOME}/.codex",
+      "target": "/home/vscode/.codex",
+      "type": "bind"
     }
   ],
   "features": {
@@ -28,7 +43,7 @@
   "containerEnv": {
     "npm_config_store_dir": "/home/vscode/.pnpm-store",
     "COMPOSE_PROJECT_NAME": "aztec-sandbox",
-    "COMPOSE_FILE": "/home/vscode/turnstile-contracts/docker/docker-compose.yaml",
+    "COMPOSE_FILE": "/home/vscode/turnstile-monorepo/docker/docker-compose.yaml",
     "TURNSTILE_DEV_CONTAINER": "1",
     "FOUNDRY_DISABLE_NIGHTLY_WARNING": "1",
     "NODE_NO_WARNINGS": "1",
@@ -37,9 +52,14 @@
   "onCreateCommand": {
     "mount_permissions": "mount | egrep '.pnpm-store|node_modules' | awk '{print $3}' | sudo xargs chown `id -u`:`id -g`"
   },
+  "initializeCommand": {
+    "ensure_claude_mounts": "mkdir -p ${localEnv:HOME}/.claude && touch ${localEnv:HOME}/.claude.json",
+    "ensure_codex_mounts": "mkdir -p ${localEnv:HOME}/.codex"
+  },
   "postCreateCommand": {
     "vscode_shell_integration": "echo 'source `code --locate-shell-integration-path bash`' >> ~/.bashrc",
-    "setup": "make init && pnpm run build"
+    "setup": "make init && pnpm run build",
+    "agents": "npm i -g @openai/codex @anthropic-ai/claude-code"
   },
   "customizations": {
     "vscode": {
@@ -50,7 +70,9 @@
         "bierner.markdown-mermaid",
         "ms-azuretools.vscode-docker",
         "ms-vscode.makefile-tools",
-        "saoudrizwan.claude-dev"
+        "saoudrizwan.claude-dev",
+        "anthropic.claude-code",
+        "openai.chatgpt"
       ],
       "dev.containers.mountWaylandSocket": false
     }
