@@ -1,0 +1,259 @@
+{
+  "id": "337dfd24-3c84-4db4-935d-50dfc3c373cc",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.block_progress": {
+      "name": "block_progress",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "chain": {
+          "name": "chain",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_scanned_block": {
+          "name": "last_scanned_block",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_scan_timestamp": {
+          "name": "last_scan_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "block_progress_chain_unique": {
+          "name": "block_progress_chain_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "chain"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tokens": {
+      "name": "tokens",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "symbol": {
+          "name": "symbol",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decimals": {
+          "name": "decimals",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l1_address": {
+          "name": "l1_address",
+          "type": "char(42)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l2_address": {
+          "name": "l2_address",
+          "type": "char(66)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l1_allow_list_status": {
+          "name": "l1_allow_list_status",
+          "type": "l1_allow_list_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l1_allow_list_proposal_tx": {
+          "name": "l1_allow_list_proposal_tx",
+          "type": "varchar(66)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l1_allow_list_proposer": {
+          "name": "l1_allow_list_proposer",
+          "type": "varchar(42)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l1_allow_list_approver": {
+          "name": "l1_allow_list_approver",
+          "type": "varchar(42)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l1_allow_list_resolution_tx": {
+          "name": "l1_allow_list_resolution_tx",
+          "type": "varchar(66)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l1_portal_registration_submitter": {
+          "name": "l1_portal_registration_submitter",
+          "type": "varchar(42)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l1_registration_block": {
+          "name": "l1_registration_block",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l2_registration_available_block": {
+          "name": "l2_registration_available_block",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l2_registration_block": {
+          "name": "l2_registration_block",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l2_portal_registration_submitter": {
+          "name": "l2_portal_registration_submitter",
+          "type": "varchar(66)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l2_portal_registration_fee_payer": {
+          "name": "l2_portal_registration_fee_payer",
+          "type": "varchar(66)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l1_registration_tx": {
+          "name": "l1_registration_tx",
+          "type": "varchar(66)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l2_registration_tx": {
+          "name": "l2_registration_tx",
+          "type": "varchar(66)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l2_registration_tx_index": {
+          "name": "l2_registration_tx_index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l2_registration_log_index": {
+          "name": "l2_registration_log_index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "tokens_l1_address_unique": {
+          "name": "tokens_l1_address_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "l1_address"
+          ]
+        },
+        "tokens_l2_address_unique": {
+          "name": "tokens_l2_address_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "l2_address"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.l1_allow_list_status": {
+      "name": "l1_allow_list_status",
+      "schema": "public",
+      "values": [
+        "UNKNOWN",
+        "PROPOSED",
+        "ACCEPTED",
+        "REJECTED"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

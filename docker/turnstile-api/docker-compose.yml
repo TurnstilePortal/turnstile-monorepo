@@ -1,0 +1,76 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: turnstile
+      POSTGRES_PASSWORD: turnstile
+      POSTGRES_DB: turnstile_sandbox
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U turnstile -d turnstile_sandbox']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrations:
+    build:
+      context: ../..
+      dockerfile: docker/turnstile-api/Dockerfile
+      args:
+        SERVICE: '@turnstile-portal/api-common'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://turnstile:turnstile@postgres:5432/turnstile_sandbox
+    command: ['pnpm', 'migrate']
+    restart: 'no'
+
+  collector:
+    build:
+      context: ../..
+      dockerfile: docker/turnstile-api/Dockerfile
+      args:
+        SERVICE: '@turnstile-portal/collector'
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://turnstile:turnstile@postgres:5432/turnstile_sandbox
+      WORKER_ID: sandbox-collector-1
+      NETWORK: sandbox
+      L1_RPC_URL: https://sandbox.ethereum.walletmesh.com/api/v1/public
+      L2_NODE_URL: https://sandbox.aztec.walletmesh.com/api/v1/public
+      L1_START_BLOCK: 0
+      L2_START_BLOCK: 0
+      L1_CHUNK_SIZE: 500
+      L2_CHUNK_SIZE: 250
+      POLLING_INTERVAL_MS: 5000
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ../..
+      dockerfile: docker/turnstile-api/Dockerfile
+      args:
+        SERVICE: '@turnstile-portal/api-service'
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    ports:
+      - '8080:8080'
+    environment:
+      DATABASE_URL: postgres://turnstile:turnstile@postgres:5432/turnstile_sandbox
+      PORT: 8080
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/health']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  postgres_data:

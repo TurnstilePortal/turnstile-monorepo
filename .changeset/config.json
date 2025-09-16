@@ -12,6 +12,12 @@
       "@turnstile-portal/repl",
       "@turnstile-portal/turnstile-dev",
       "@turnstile-portal/turnstile.js"
+    ],
+    [
+      "@turnstile-portal/api-common",
+      "@turnstile-portal/api-service",
+      "@turnstile-portal/api-client",
+      "@turnstile-portal/collector"
     ]
   ],
   "linked": [],

@@ -6,11 +6,16 @@ This is the Turnstile contract monorepo containing L1 and L2 contracts for the T
 
 - [l1/](l1): L1 contracts
 - [aztec/](aztec): Aztec/L2 contracts
-- [packages/](packages): Typescript packages containing contract artifacts and utilities
-- [examples/](examples): Example scripts for interacting with Turnsile and using `@turnstile-portal/turnstile.js`
+- [packages/](packages): Typescript packages containing contract artifacts, utilities, and the API stack
+  - [packages/api-service](packages/api-service): Fastify REST API service
+  - [packages/collector](packages/collector): L1/L2 blockchain data collectors
+  - [packages/api-common](packages/api-common): Shared database schema, migrations, and helpers
+  - [packages/api-client](packages/api-client): Type-safe API client bindings
+- [examples/](examples): Example scripts for interacting with Turnstile (API samples live under [examples/turnstile-api](examples/turnstile-api))
 - [scripts/](scripts): Scripts for deploying and interacting with the contracts
 - [hooks/](hooks): Git hooks for the repository
 - [docker/turnstile-sandbox](docker/turnstile-sandbox): Docker config for the Turnstile Sandbox
+- [docker/turnstile-api](docker/turnstile-api): Dockerfile and Compose setup for the API service and collector
 
 ## Development Environment
 
