@@ -1,4 +1,4 @@
-name: Publish Docker Images
+name: Docker Build (turnstile-sandbox-deployer)
 on:
   workflow_call: # Allow this workflow to be called by others
   workflow_dispatch: # Allow manual trigger
