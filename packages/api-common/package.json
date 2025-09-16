@@ -1,6 +1,6 @@
 {
   "name": "@turnstile-portal/api-common",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "private": true,
   "description": "Shared database schema and types for Turnstile API",
   "main": "dist/index.js",
@@ -17,8 +17,7 @@
     "check": "biome check --fix",
     "format": "biome format --fix",
     "lint": "biome lint --fix",
-    "clean": "rm -rf ./dist ./node_modules",
-    "prepare": "pnpm build"
+    "clean": "rm -rf ./dist ./node_modules"
   },
   "files": [
     "dist",

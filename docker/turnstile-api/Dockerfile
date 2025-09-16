@@ -9,7 +9,7 @@ COPY packages ./packages
 
 RUN pnpm install --filter ${SERVICE}... --frozen-lockfile
 RUN pnpm --filter ${SERVICE}... build
-RUN pnpm deploy --filter ${SERVICE} --prod /out
+RUN pnpm deploy --legacy --filter ${SERVICE} --prod /out
 
 FROM node:trixie-slim AS runtime
 

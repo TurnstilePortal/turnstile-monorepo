@@ -1,6 +1,6 @@
 {
   "name": "@turnstile-portal/deploy",
-  "version": "0.4.9",
+  "version": "0.4.10",
   "description": "Turnstile Deployment Tools",
   "type": "module",
   "bin": {
@@ -29,8 +29,7 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist node_modules",
-    "test": "vitest run",
-    "prepare": "pnpm build"
+    "test": "vitest run"
   },
   "keywords": [],
   "author": "",

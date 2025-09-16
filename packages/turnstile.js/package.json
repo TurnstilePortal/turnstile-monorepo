@@ -1,6 +1,6 @@
 {
   "name": "@turnstile-portal/turnstile.js",
-  "version": "0.4.9",
+  "version": "0.4.10",
   "description": "Turnstile Portal Library",
   "repository": {
     "type": "git",
@@ -15,7 +15,6 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -fr dist node_modules",
-    "prepare": "pnpm build",
     "test": "vitest run --coverage"
   },
   "keywords": [],

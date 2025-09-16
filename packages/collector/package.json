@@ -1,6 +1,6 @@
 {
   "name": "@turnstile-portal/collector",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Blockchain data collector for Ethereum L1 and Aztec L2",
   "private": true,
   "type": "module",
@@ -15,8 +15,7 @@
     "lint": "biome lint --fix",
     "format": "biome format --fix",
     "check": "biome check --fix",
-    "clean": "rm -rf ./dist ./node_modules",
-    "prepare": "pnpm build"
+    "clean": "rm -rf ./dist ./node_modules"
   },
   "author": "",
   "license": "Apache-2.0",

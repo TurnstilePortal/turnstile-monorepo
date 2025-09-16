@@ -3,7 +3,6 @@ lockfileVersion: '9.0'
 settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
-  injectWorkspacePackages: true
 
 overrides:
   '@aztec/**': 1.2.1
@@ -60,10 +59,10 @@ importers:
         version: 1.2.1(encoding@0.1.13)(typescript@5.9.2)
       '@turnstile-portal/aztec-artifacts':
         specifier: workspace:^
-        version: file:packages/aztec-artifacts(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
+        version: link:../packages/aztec-artifacts
       '@turnstile-portal/deploy':
         specifier: workspace:^
-        version: file:packages/deploy(@aztec/bb-prover@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/noir-protocol-circuits-types@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/noir-test-contracts.js@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
+        version: link:../packages/deploy
       '@turnstile-portal/l1-artifacts-abi':
         specifier: workspace:^
         version: link:../packages/l1-artifacts-abi
@@ -72,10 +71,10 @@ importers:
         version: link:../packages/l1-artifacts-dev
       '@turnstile-portal/turnstile-dev':
         specifier: workspace:^
-        version: file:packages/turnstile-dev(@aztec/bb-prover@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/noir-protocol-circuits-types@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/protocol-contracts@1.2.1(encoding@0.1.13)(typescript@5.9.2))(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
+        version: link:../packages/turnstile-dev
       '@turnstile-portal/turnstile.js':
         specifier: workspace:^
-        version: file:packages/turnstile.js(@aztec/bb-prover@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/noir-protocol-circuits-types@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/noir-test-contracts.js@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@jest/globals@30.1.2)(encoding@0.1.13)(jest@30.1.3(@types/node@24.4.0)(esbuild-register@3.6.0(esbuild@0.25.9)))(typescript@5.9.2)(zod@3.25.76)
+        version: link:../packages/turnstile.js
       commander:
         specifier: ^14.0.0
         version: 14.0.0
@@ -149,6 +148,9 @@ importers:
       '@turnstile-portal/api-common':
         specifier: workspace:^
         version: link:../api-common
+      '@turnstile-portal/aztec-artifacts':
+        specifier: workspace:^
+        version: link:../aztec-artifacts
       drizzle-orm:
         specifier: ^0.44.5
         version: 0.44.5(@electric-sql/pglite@0.3.8)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(pg@8.16.3)
@@ -194,13 +196,13 @@ importers:
         version: link:../api-common
       '@turnstile-portal/aztec-artifacts':
         specifier: workspace:^
-        version: file:packages/aztec-artifacts(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
+        version: link:../aztec-artifacts
       '@turnstile-portal/l1-artifacts-abi':
         specifier: workspace:^
         version: link:../l1-artifacts-abi
       '@turnstile-portal/turnstile.js':
         specifier: workspace:^
-        version: file:packages/turnstile.js(@aztec/bb-prover@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/noir-protocol-circuits-types@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/noir-test-contracts.js@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@jest/globals@30.1.2)(encoding@0.1.13)(jest@30.1.3(@types/node@24.4.0)(esbuild-register@3.6.0(esbuild@0.25.9)))(typescript@5.9.2)(zod@3.25.76)
+        version: link:../turnstile.js
       commander:
         specifier: ^14.0.1
         version: 14.0.1
@@ -252,7 +254,7 @@ importers:
         version: 1.2.1(encoding@0.1.13)(typescript@5.9.2)
       '@turnstile-portal/aztec-artifacts':
         specifier: workspace:^
-        version: file:packages/aztec-artifacts(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
+        version: link:../aztec-artifacts
       '@turnstile-portal/l1-artifacts-abi':
         specifier: workspace:^
         version: link:../l1-artifacts-abi
@@ -264,10 +266,10 @@ importers:
         version: link:../l1-artifacts-dev
       '@turnstile-portal/turnstile-dev':
         specifier: workspace:^
-        version: file:packages/turnstile-dev(@aztec/bb-prover@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/noir-protocol-circuits-types@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/protocol-contracts@1.2.1(encoding@0.1.13)(typescript@5.9.2))(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
+        version: link:../turnstile-dev
       '@turnstile-portal/turnstile.js':
         specifier: workspace:^
-        version: file:packages/turnstile.js(@aztec/bb-prover@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/noir-protocol-circuits-types@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/noir-test-contracts.js@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@jest/globals@30.1.2)(encoding@0.1.13)(jest@30.1.3(@types/node@24.4.0)(esbuild-register@3.6.0(esbuild@0.25.9)))(typescript@5.9.2)(zod@3.25.76)
+        version: link:../turnstile.js
       commander:
         specifier: ^14.0.0
         version: 14.0.0
@@ -294,13 +296,13 @@ importers:
         version: 1.2.1(encoding@0.1.13)(typescript@5.9.2)
       '@turnstile-portal/aztec-artifacts':
         specifier: workspace:^
-        version: file:packages/aztec-artifacts(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
+        version: link:../aztec-artifacts
       '@turnstile-portal/turnstile-dev':
         specifier: workspace:^
-        version: file:packages/turnstile-dev(@aztec/bb-prover@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/noir-protocol-circuits-types@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/protocol-contracts@1.2.1(encoding@0.1.13)(typescript@5.9.2))(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
+        version: link:../turnstile-dev
       '@turnstile-portal/turnstile.js':
         specifier: workspace:^
-        version: file:packages/turnstile.js(@aztec/bb-prover@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/noir-protocol-circuits-types@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/noir-test-contracts.js@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@jest/globals@30.1.2)(encoding@0.1.13)(jest@30.1.3(@types/node@24.4.0)(esbuild-register@3.6.0(esbuild@0.25.9)))(typescript@5.9.2)(zod@3.25.76)
+        version: link:../turnstile.js
       commander:
         specifier: ^14.0.0
         version: 14.0.0
@@ -345,7 +347,7 @@ importers:
         version: 1.2.1(encoding@0.1.13)(typescript@5.9.2)
       '@turnstile-portal/aztec-artifacts':
         specifier: workspace:^
-        version: file:packages/aztec-artifacts(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
+        version: link:../aztec-artifacts
       '@turnstile-portal/l1-artifacts-abi':
         specifier: workspace:^
         version: link:../l1-artifacts-abi
@@ -402,7 +404,7 @@ importers:
         version: link:../api-client
       '@turnstile-portal/aztec-artifacts':
         specifier: workspace:^
-        version: file:packages/aztec-artifacts(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
+        version: link:../aztec-artifacts
       '@turnstile-portal/l1-artifacts-abi':
         specifier: workspace:^
         version: link:../l1-artifacts-abi
@@ -2137,32 +2139,6 @@ packages:
   '@tootallnate/once@2.0.0':
     resolution: {integrity: sha512-XCuKFP5PS55gnMVu3dty8KPatLqUoy/ZYzDzAGCQ8JNFCkLXzmI7vNHCR+XpbZaMWQK/vQubr7PkYq8g470J/A==}
     engines: {node: '>= 10'}
-
-  '@turnstile-portal/api-client@file:packages/api-client':
-    resolution: {directory: packages/api-client, type: directory}
-    engines: {node: '>=18'}
-
-  '@turnstile-portal/aztec-artifacts@file:packages/aztec-artifacts':
-    resolution: {directory: packages/aztec-artifacts, type: directory}
-
-  '@turnstile-portal/deploy@file:packages/deploy':
-    resolution: {directory: packages/deploy, type: directory}
-    hasBin: true
-
-  '@turnstile-portal/l1-artifacts-abi@file:packages/l1-artifacts-abi':
-    resolution: {directory: packages/l1-artifacts-abi, type: directory}
-
-  '@turnstile-portal/l1-artifacts-bytecode@file:packages/l1-artifacts-bytecode':
-    resolution: {directory: packages/l1-artifacts-bytecode, type: directory}
-
-  '@turnstile-portal/l1-artifacts-dev@file:packages/l1-artifacts-dev':
-    resolution: {directory: packages/l1-artifacts-dev, type: directory}
-
-  '@turnstile-portal/turnstile-dev@file:packages/turnstile-dev':
-    resolution: {directory: packages/turnstile-dev, type: directory}
-
-  '@turnstile-portal/turnstile.js@file:packages/turnstile.js':
-    resolution: {directory: packages/turnstile.js, type: directory}
 
   '@tybys/wasm-util@0.10.0':
     resolution: {integrity: sha512-VyyPYFlOMNylG45GoAe0xDoLwWuowvf92F9kySqzYh8vmYm7D2u4iUJKa1tOUpS70Ku13ASrOkS4ScXFsTaCNQ==}
@@ -8010,118 +7986,6 @@ snapshots:
       '@sinonjs/commons': 3.0.1
 
   '@tootallnate/once@2.0.0': {}
-
-  '@turnstile-portal/api-client@file:packages/api-client': {}
-
-  '@turnstile-portal/aztec-artifacts@file:packages/aztec-artifacts(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)':
-    dependencies:
-      '@aztec/aztec.js': 1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - encoding
-      - supports-color
-      - typescript
-      - utf-8-validate
-      - zod
-
-  '@turnstile-portal/deploy@file:packages/deploy(@aztec/bb-prover@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/noir-protocol-circuits-types@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/noir-test-contracts.js@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)':
-    dependencies:
-      '@aztec/accounts': 1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
-      '@aztec/aztec.js': 1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
-      '@aztec/noir-contracts.js': 1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
-      '@aztec/protocol-contracts': 1.2.1(encoding@0.1.13)(typescript@5.9.2)
-      '@aztec/stdlib': 1.2.1(encoding@0.1.13)(typescript@5.9.2)
-      '@turnstile-portal/aztec-artifacts': file:packages/aztec-artifacts(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
-      '@turnstile-portal/l1-artifacts-abi': file:packages/l1-artifacts-abi
-      '@turnstile-portal/l1-artifacts-bytecode': file:packages/l1-artifacts-bytecode
-      '@turnstile-portal/l1-artifacts-dev': file:packages/l1-artifacts-dev
-      '@turnstile-portal/turnstile-dev': file:packages/turnstile-dev(@aztec/bb-prover@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/noir-protocol-circuits-types@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/protocol-contracts@1.2.1(encoding@0.1.13)(typescript@5.9.2))(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
-      '@turnstile-portal/turnstile.js': file:packages/turnstile.js(@aztec/bb-prover@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/noir-protocol-circuits-types@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/noir-test-contracts.js@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@jest/globals@30.1.2)(encoding@0.1.13)(jest@30.1.3(@types/node@24.4.0)(esbuild-register@3.6.0(esbuild@0.25.9)))(typescript@5.9.2)(zod@3.25.76)
-      commander: 14.0.1
-      viem: 2.37.5(typescript@5.9.2)(zod@3.25.76)
-    transitivePeerDependencies:
-      - '@aztec/bb-prover'
-      - '@aztec/noir-protocol-circuits-types'
-      - '@aztec/noir-test-contracts.js'
-      - '@jest/globals'
-      - bufferutil
-      - debug
-      - encoding
-      - jest
-      - supports-color
-      - typescript
-      - utf-8-validate
-      - zod
-
-  '@turnstile-portal/l1-artifacts-abi@file:packages/l1-artifacts-abi': {}
-
-  '@turnstile-portal/l1-artifacts-bytecode@file:packages/l1-artifacts-bytecode': {}
-
-  '@turnstile-portal/l1-artifacts-dev@file:packages/l1-artifacts-dev': {}
-
-  '@turnstile-portal/turnstile-dev@file:packages/turnstile-dev(@aztec/bb-prover@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/noir-protocol-circuits-types@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/protocol-contracts@1.2.1(encoding@0.1.13)(typescript@5.9.2))(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)':
-    dependencies:
-      '@aztec/accounts': 1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
-      '@aztec/aztec.js': 1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
-      '@aztec/cli': 1.2.1(@aztec/accounts@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/bb-prover@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/ethereum@1.2.1(typescript@5.9.2))(@aztec/l1-artifacts@1.2.1)(@aztec/noir-contracts.js@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/noir-protocol-circuits-types@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/noir-test-contracts.js@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/protocol-contracts@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/stdlib@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@jest/globals@30.1.2)(encoding@0.1.13)(jest@30.1.3(@types/node@24.4.0)(esbuild-register@3.6.0(esbuild@0.25.9)))(typescript@5.9.2)(zod@3.25.76)
-      '@aztec/ethereum': 1.2.1(typescript@5.9.2)
-      '@aztec/kv-store': 1.2.1(encoding@0.1.13)(typescript@5.9.2)
-      '@aztec/l1-artifacts': 1.2.1
-      '@aztec/noir-contracts.js': 1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
-      '@aztec/noir-test-contracts.js': 1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
-      '@aztec/pxe': 1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
-      '@aztec/stdlib': 1.2.1(encoding@0.1.13)(typescript@5.9.2)
-      '@turnstile-portal/aztec-artifacts': file:packages/aztec-artifacts(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
-      '@turnstile-portal/l1-artifacts-abi': file:packages/l1-artifacts-abi
-      '@turnstile-portal/l1-artifacts-bytecode': file:packages/l1-artifacts-bytecode
-      '@turnstile-portal/l1-artifacts-dev': file:packages/l1-artifacts-dev
-      '@turnstile-portal/turnstile.js': file:packages/turnstile.js(@aztec/bb-prover@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/noir-protocol-circuits-types@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/noir-test-contracts.js@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@jest/globals@30.1.2)(encoding@0.1.13)(jest@30.1.3(@types/node@24.4.0)(esbuild-register@3.6.0(esbuild@0.25.9)))(typescript@5.9.2)(zod@3.25.76)
-      viem: 2.37.5(typescript@5.9.2)(zod@3.25.76)
-    transitivePeerDependencies:
-      - '@aztec/bb-prover'
-      - '@aztec/noir-protocol-circuits-types'
-      - '@aztec/protocol-contracts'
-      - '@jest/globals'
-      - bufferutil
-      - debug
-      - encoding
-      - jest
-      - supports-color
-      - typescript
-      - utf-8-validate
-      - zod
-
-  '@turnstile-portal/turnstile.js@file:packages/turnstile.js(@aztec/bb-prover@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/noir-protocol-circuits-types@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/noir-test-contracts.js@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@jest/globals@30.1.2)(encoding@0.1.13)(jest@30.1.3(@types/node@24.4.0)(esbuild-register@3.6.0(esbuild@0.25.9)))(typescript@5.9.2)(zod@3.25.76)':
-    dependencies:
-      '@aztec/accounts': 1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
-      '@aztec/aztec.js': 1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
-      '@aztec/cli': 1.2.1(@aztec/accounts@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/bb-prover@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/ethereum@1.2.1(typescript@5.9.2))(@aztec/l1-artifacts@1.2.1)(@aztec/noir-contracts.js@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/noir-protocol-circuits-types@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/noir-test-contracts.js@1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76))(@aztec/protocol-contracts@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@aztec/stdlib@1.2.1(encoding@0.1.13)(typescript@5.9.2))(@jest/globals@30.1.2)(encoding@0.1.13)(jest@30.1.3(@types/node@24.4.0)(esbuild-register@3.6.0(esbuild@0.25.9)))(typescript@5.9.2)(zod@3.25.76)
-      '@aztec/constants': 1.2.1
-      '@aztec/entrypoints': 1.2.1(encoding@0.1.13)(typescript@5.9.2)
-      '@aztec/ethereum': 1.2.1(typescript@5.9.2)
-      '@aztec/foundation': 1.2.1
-      '@aztec/l1-artifacts': 1.2.1
-      '@aztec/noir-contracts.js': 1.2.1(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
-      '@aztec/protocol-contracts': 1.2.1(encoding@0.1.13)(typescript@5.9.2)
-      '@aztec/stdlib': 1.2.1(encoding@0.1.13)(typescript@5.9.2)
-      '@turnstile-portal/api-client': file:packages/api-client
-      '@turnstile-portal/aztec-artifacts': file:packages/aztec-artifacts(encoding@0.1.13)(typescript@5.9.2)(zod@3.25.76)
-      '@turnstile-portal/l1-artifacts-abi': file:packages/l1-artifacts-abi
-      viem: 2.37.5(typescript@5.9.2)(zod@3.25.76)
-    transitivePeerDependencies:
-      - '@aztec/bb-prover'
-      - '@aztec/noir-protocol-circuits-types'
-      - '@aztec/noir-test-contracts.js'
-      - '@jest/globals'
-      - bufferutil
-      - debug
-      - encoding
-      - jest
-      - supports-color
-      - typescript
-      - utf-8-validate
-      - zod
 
   '@tybys/wasm-util@0.10.0':
     dependencies:
