@@ -1,5 +1,13 @@
 # @turnstile-portal/turnstile.js
 
+## 0.4.9
+
+### Patch Changes
+
+- 19b74b1: Add turnstile-api support to turnstile.js
+  - @turnstile-portal/aztec-artifacts@0.4.9
+  - @turnstile-portal/l1-artifacts-abi@0.4.9
+
 ## 0.4.8
 
 ### Patch Changes
