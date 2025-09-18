@@ -1,5 +1,7 @@
 # @turnstile-portal/aztec-artifacts
 
+## 0.4.13
+
 ## 0.4.12
 
 ### Patch Changes
