@@ -1,5 +1,15 @@
 # @turnstile-portal/repl
 
+## 0.4.12
+
+### Patch Changes
+
+- b355b72: bump
+- Updated dependencies [b355b72]
+  - @turnstile-portal/aztec-artifacts@0.4.12
+  - @turnstile-portal/turnstile-dev@0.4.12
+  - @turnstile-portal/turnstile.js@0.4.12
+
 ## 0.4.11
 
 ### Patch Changes

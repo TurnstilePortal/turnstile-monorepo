@@ -1,5 +1,16 @@
 # @turnstile-portal/turnstile.js
 
+## 0.4.12
+
+### Patch Changes
+
+- b355b72: bump
+- Updated dependencies [b355b72]
+- Updated dependencies [1bd5e57]
+  - @turnstile-portal/l1-artifacts-abi@0.4.12
+  - @turnstile-portal/aztec-artifacts@0.4.12
+  - @turnstile-portal/api-client@0.0.15
+
 ## 0.4.11
 
 ### Patch Changes

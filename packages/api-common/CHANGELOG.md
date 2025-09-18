@@ -1,5 +1,12 @@
 # @turnstile-portal/api-common
 
+## 0.0.15
+
+### Patch Changes
+
+- b355b72: bump
+- 1bd5e57: Contract artifacts for api service
+
 ## 0.0.14
 
 ### Patch Changes
