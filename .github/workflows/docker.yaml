@@ -51,6 +51,7 @@ jobs:
         id: versions
         run: |
           echo "version=v$(jq -r '.version' packages/api-common/package.json)" >> "$GITHUB_OUTPUT"
+          echo "deploy_version=v$(jq -r '.version' packages/deploy/package.json)" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GitHub Container Registry
         if: env.PUSH_IMAGES == 'true'
@@ -134,6 +135,6 @@ jobs:
             SERVICE=@turnstile-portal/deploy
           tags: |
             ${{ env.REGISTRY }}/${{ env.ORG }}/turnstile-sandbox-deployer:latest
-            ${{ env.REGISTRY }}/${{ env.ORG }}/turnstile-sandbox-deployer:${{ steps.versions.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.ORG }}/turnstile-sandbox-deployer:${{ steps.versions.outputs.deploy_version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
