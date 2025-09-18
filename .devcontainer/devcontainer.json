@@ -1,6 +1,9 @@
 {
   "name": "Turnstile Contracts",
-  "image": "mcr.microsoft.com/devcontainers/base:debian",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
   "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/turnstile-monorepo,type=bind",
   "workspaceFolder": "/home/vscode/turnstile-monorepo",
   "mounts": [
@@ -29,8 +32,8 @@
     }
   ],
   "features": {
-    "ghcr.io/ClarifiedLabs/devcontainer-features/aztec-sandbox:2": {
-      "version": "1.2.1"
+    "ghcr.io/ClarifiedLabs/devcontainer-features/aztec-sandbox:3": {
+      "aztec_version": "1.2.1"
     },
     "ghcr.io/ClarifiedLabs/devcontainer-features/foundry:1": {
       "version": "nightly"
@@ -42,9 +45,6 @@
   },
   "containerEnv": {
     "npm_config_store_dir": "/home/vscode/.pnpm-store",
-    "COMPOSE_PROJECT_NAME": "aztec-sandbox",
-    "COMPOSE_FILE": "/home/vscode/turnstile-monorepo/docker/docker-compose.yaml",
-    "TURNSTILE_DEV_CONTAINER": "1",
     "FOUNDRY_DISABLE_NIGHTLY_WARNING": "1",
     "NODE_NO_WARNINGS": "1",
     "LOG_LEVEL": "info; verbose: aztec:simulator"

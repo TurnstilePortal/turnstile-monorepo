@@ -1,5 +1,8 @@
 export type {
   ClientConfig,
+  ContractArtifact,
+  ContractInstance,
+  ContractInstancesResponse,
   ErrorResponse,
   PaginationParams,
   Token,

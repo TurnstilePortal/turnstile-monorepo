@@ -1,26 +1,21 @@
-FROM node:20-alpine
+FROM node:trixie-slim AS builder
 
-# Set metadata and use ARG for dynamic version
-ARG VERSION=0.0.0
-LABEL maintainer="Turnstile Portal Team"
-LABEL description="Turnstile Deployment CLI Tool"
-LABEL version="${VERSION}"
+WORKDIR /repo
 
-ENV NODE_NO_WARNINGS=1
+# packages needed for node-gyp dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  build-essential \
+  python3-pip \
+  python-is-python3 \
+  && rm -rf /var/lib/apt/lists/*
 
-# Install pnpm
-RUN npm install -g pnpm
+RUN corepack enable
 
-# Create app directory and set permissions
-WORKDIR /app
-
-# Copy only the necessary files
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY packages ./packages
 
-# Install all dependencies and build all packages
-RUN pnpm install && \
-  pnpm -r build
+RUN pnpm install --frozen-lockfile --filter @turnstile-portal/deploy...
+RUN pnpm --filter @turnstile-portal/deploy... build
 
 # Set the working directory to the deploy package
 WORKDIR /app/packages/deploy

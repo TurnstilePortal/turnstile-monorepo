@@ -1,6 +1,6 @@
 import { createDbClient, type DbClient } from '@turnstile-portal/api-common';
-import type { NewToken } from '@turnstile-portal/api-common/schema';
-import { tokens } from '@turnstile-portal/api-common/schema';
+import type { NewContractArtifact, NewContractInstance, NewToken } from '@turnstile-portal/api-common/schema';
+import { contractArtifacts, contractInstances, tokens } from '@turnstile-portal/api-common/schema';
 import { eq } from 'drizzle-orm';
 import { logger } from './utils/logger.js';
 
@@ -126,4 +126,68 @@ export async function storeL2TokenRegistrations(registrations: Partial<NewToken>
       .where(eq(tokens.l1Address, registration.l1Address));
   }
   logger.info(`Stored ${registrations.length} L2 token registrations.`);
+}
+
+export async function getOrCreateTokenContractArtifact(
+  artifactHash: string,
+  contractClassId: string,
+  artifact: unknown,
+): Promise<void> {
+  const db = getDatabase();
+
+  const existing = await db
+    .select()
+    .from(contractArtifacts)
+    .where(eq(contractArtifacts.artifactHash, artifactHash))
+    .limit(1);
+
+  if (existing[0]) {
+    return;
+  }
+
+  const newArtifact: NewContractArtifact = {
+    artifactHash,
+    artifact,
+    contractClassId,
+  };
+
+  await db
+    .insert(contractArtifacts)
+    .values(newArtifact)
+    .onConflictDoUpdate({
+      target: contractArtifacts.artifactHash,
+      set: {
+        artifact: newArtifact.artifact,
+        contractClassId: newArtifact.contractClassId,
+        updatedAt: new Date(),
+      },
+    });
+
+  logger.info(`Stored contract artifact with hash: ${artifactHash}`);
+}
+
+export async function storeContractInstance(instance: NewContractInstance): Promise<void> {
+  const db = getDatabase();
+
+  await db
+    .insert(contractInstances)
+    .values(instance)
+    .onConflictDoUpdate({
+      target: contractInstances.address,
+      set: {
+        currentContractClassId: instance.currentContractClassId,
+        deploymentParams: instance.deploymentParams,
+        version: instance.version,
+        updatedAt: new Date(),
+      },
+    });
+
+  logger.info(`Stored contract instance at address: ${instance.address}`);
+}
+
+export async function getContractInstanceByAddress(address: string) {
+  const db = getDatabase();
+  const result = await db.select().from(contractInstances).where(eq(contractInstances.address, address)).limit(1);
+
+  return result[0] ?? null;
 }
