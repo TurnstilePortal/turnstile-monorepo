@@ -2,7 +2,18 @@ name: Docker Build (API)
 
 on:
   workflow_call: # Allow this workflow to be called by others
+    inputs:
+      push_images:
+        description: Push built images to GHCR
+        required: false
+        type: boolean
+        default: false
   workflow_dispatch: # Allow manual trigger
+    inputs:
+      push_images:
+        description: Push built images to GHCR
+        required: false
+        default: 'false'
 
 jobs:
   build:
@@ -17,6 +28,7 @@ jobs:
     env:
       REGISTRY: ghcr.io
       ORG: turnstileportal
+      PUSH_IMAGES: ${{ fromJSON(format('{0}', inputs.push_images)) && 'true' || 'false' }}
 
     steps:
       - name: Checkout
@@ -28,10 +40,10 @@ jobs:
       - name: Get Version
         id: versions
         run: |
-          echo "version=v$(jq -r .version packages/api-common/package.json)" >> $GITHUB_OUTPUT"
+          echo "version=v$(jq -r '.version' packages/api-common/package.json)" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GitHub Container Registry
-        if: inputs.push_images
+        if: env.PUSH_IMAGES == 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -46,12 +58,12 @@ jobs:
         with:
           context: .
           file: docker/common/Dockerfile
-          push: ${{ inputs.push_images }}
+          push: ${{ env.PUSH_IMAGES == 'true' }}
           build-args: |
             SERVICE=@turnstile-portal/api-common
           tags: |
             ${{ env.REGISTRY }}/${{ env.ORG }}/migrations:latest
-            ${{ env.REGISTRY }}/${{ env.ORG }}/migrations:${{ steps.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.ORG }}/migrations:${{ steps.versions.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -60,12 +72,12 @@ jobs:
         with:
           context: .
           file: docker/common/Dockerfile
-          push: ${{ inputs.push_images }}
+          push: ${{ env.PUSH_IMAGES == 'true' }}
           build-args: |
             SERVICE=@turnstile-portal/collector
           tags: |
             ${{ env.REGISTRY }}/${{ env.ORG }}/collector:latest
-            ${{ env.REGISTRY }}/${{ env.ORG }}/collector:${{ steps.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.ORG }}/collector:${{ steps.versions.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -74,12 +86,12 @@ jobs:
         with:
           context: .
           file: docker/common/Dockerfile
-          push: ${{ inputs.push_images }}
+          push: ${{ env.PUSH_IMAGES == 'true' }}
           build-args: |
             SERVICE=@turnstile-portal/api-service
           tags: |
             ${{ env.REGISTRY }}/${{ env.ORG }}/api-service:latest
-            ${{ env.REGISTRY }}/${{ env.ORG }}/api-service:${{ steps.versions.outputs.version}}
+            ${{ env.REGISTRY }}/${{ env.ORG }}/api-service:${{ steps.versions.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -88,12 +100,12 @@ jobs:
         with:
           context: .
           file: docker/common/Dockerfile
-          push: ${{ inputs.push_images }}
+          push: ${{ env.PUSH_IMAGES == 'true' }}
           build-args: |
             SERVICE=@turnstile-portal/api-init-contracts
           tags: |
             ${{ env.REGISTRY }}/${{ env.ORG }}/api-init-contracts:latest
-            ${{ env.REGISTRY }}/${{ env.ORG }}/api-service:${{ steps.versions.outputs.version}}
+            ${{ env.REGISTRY }}/${{ env.ORG }}/api-init-contracts:${{ steps.versions.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -102,11 +114,11 @@ jobs:
         with:
           context: .
           file: docker/common/Dockerfile
-          push: ${{ inputs.push_images }}
+          push: ${{ env.PUSH_IMAGES == 'true' }}
           build-args: |
             SERVICE=@turnstile-portal/deployer
           tags: |
-            ${{ env.REGISTRY }}/${{ env.ORG_NAME }}/turnstile-sandbox-deployer:latest
-            ${{ env.REGISTRY }}/${{ env.ORG_NAME }}/turnstile-sandbox-deployer:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.ORG }}/turnstile-sandbox-deployer:latest
+            ${{ env.REGISTRY }}/${{ env.ORG }}/turnstile-sandbox-deployer:${{ steps.versions.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

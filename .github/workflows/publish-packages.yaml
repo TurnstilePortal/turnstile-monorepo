@@ -56,6 +56,10 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
     needs: release # Wait for publish to complete
     if: needs.release.outputs.published == 'true' # Only run if packages were published
     uses: ./.github/workflows/docker.yaml  # Call docker workflow
+    with:
+      push_images: true
