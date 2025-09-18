@@ -1,5 +1,14 @@
 # @turnstile-portal/turnstile.js
 
+## 0.4.11
+
+### Patch Changes
+
+- Updated dependencies [04d4f1b]
+  - @turnstile-portal/api-client@0.0.14
+  - @turnstile-portal/aztec-artifacts@0.4.11
+  - @turnstile-portal/l1-artifacts-abi@0.4.11
+
 ## 0.4.10
 
 ### Patch Changes
