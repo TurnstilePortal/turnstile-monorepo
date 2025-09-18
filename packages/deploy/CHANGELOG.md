@@ -1,5 +1,17 @@
 # @turnstile-portal/deploy
 
+## 0.4.13
+
+### Patch Changes
+
+- 596af01: Fix deployer setup to work with new docker build method
+  - @turnstile-portal/aztec-artifacts@0.4.13
+  - @turnstile-portal/l1-artifacts-abi@0.4.13
+  - @turnstile-portal/l1-artifacts-bytecode@0.4.13
+  - @turnstile-portal/l1-artifacts-dev@0.4.13
+  - @turnstile-portal/turnstile-dev@0.4.13
+  - @turnstile-portal/turnstile.js@0.4.13
+
 ## 0.4.12
 
 ### Patch Changes
