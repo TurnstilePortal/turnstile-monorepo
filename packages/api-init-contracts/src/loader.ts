@@ -1,16 +1,11 @@
 import type { NewContractArtifact, NewContractInstance } from '@turnstile-portal/api-common/schema';
-import {
-  PortalContractArtifact,
-  ShieldGatewayContractArtifact,
-  TokenContractArtifact,
-} from '@turnstile-portal/aztec-artifacts';
+import { portalHelper, shieldGatewayHelper, tokenHelper } from './contracts/index.js';
 import {
   getContractArtifactByHash,
   getContractInstanceByAddress,
   storeContractArtifact,
   storeContractInstance,
 } from './db.js';
-import { getContractClasses, getContractInstances } from './util.js';
 
 export async function loadTurnstileContracts(): Promise<{
   artifactsStored: number;
@@ -18,71 +13,57 @@ export async function loadTurnstileContracts(): Promise<{
 }> {
   console.log('Loading Turnstile contract data...');
 
-  const { portalContractClass, shieldGatewayContractClass, tokenContractClass } = await getContractClasses();
-
-  const contractClasses = [
-    { name: 'Portal', class: portalContractClass, artifact: PortalContractArtifact },
-    { name: 'ShieldGateway', class: shieldGatewayContractClass, artifact: ShieldGatewayContractArtifact },
-    { name: 'Token', class: tokenContractClass, artifact: TokenContractArtifact },
-  ];
+  const helpers = [portalHelper, shieldGatewayHelper, tokenHelper];
 
   let artifactsStored = 0;
+  let instancesStored = 0;
 
-  for (const { name, class: contractClass, artifact } of contractClasses) {
+  for (const helper of helpers) {
+    // Load artifact
+    const contractClass = await helper.getContractClass();
     const artifactHash = contractClass.artifactHash.toString();
     const contractClassId = contractClass.id.toString();
 
     const existingArtifact = await getContractArtifactByHash(artifactHash);
     if (existingArtifact) {
-      console.log(`${name} artifact already exists with hash: ${artifactHash}`);
-      continue;
+      console.log(`${helper.name} artifact already exists with hash: ${artifactHash}`);
+    } else {
+      const newArtifact: NewContractArtifact = {
+        artifactHash,
+        artifact: helper.getArtifact(),
+        contractClassId,
+      };
+
+      await storeContractArtifact(newArtifact);
+      console.log(`Stored ${helper.name} artifact with hash: ${artifactHash}`);
+      artifactsStored++;
     }
 
-    const newArtifact: NewContractArtifact = {
-      artifactHash,
-      artifact,
-      contractClassId,
-    };
+    // Load instance if available
+    if (helper.getContractInstance && helper.getDeploymentParams) {
+      const instance = await helper.getContractInstance();
+      const address = instance.address.toString();
 
-    await storeContractArtifact(newArtifact);
-    console.log(`Stored ${name} artifact with hash: ${artifactHash}`);
-    artifactsStored++;
-  }
+      const existingInstance = await getContractInstanceByAddress(address);
+      if (existingInstance) {
+        console.log(`${helper.name} instance already exists at address: ${address}`);
+      } else {
+        const deploymentParams = await helper.getDeploymentParams();
 
-  const { portalInstance, shieldGatewayInstance } = await getContractInstances();
+        const newInstance: NewContractInstance = {
+          address,
+          originalContractClassId: instance.originalContractClassId.toString(),
+          currentContractClassId: instance.currentContractClassId.toString(),
+          initializationHash: instance.initializationHash?.toString() ?? null,
+          deploymentParams,
+          version: instance.version,
+        };
 
-  const instances = [
-    { name: 'Portal', instance: portalInstance },
-    { name: 'ShieldGateway', instance: shieldGatewayInstance },
-  ];
-
-  let instancesStored = 0;
-
-  for (const { name, instance } of instances) {
-    const address = instance.address.toString();
-
-    const existingInstance = await getContractInstanceByAddress(address);
-    if (existingInstance) {
-      console.log(`${name} instance already exists at address: ${address}`);
-      continue;
+        await storeContractInstance(newInstance);
+        console.log(`Stored ${helper.name} instance at address: ${address}`);
+        instancesStored++;
+      }
     }
-
-    const deploymentParams = {
-      publicKeys: instance.publicKeys,
-    };
-
-    const newInstance: NewContractInstance = {
-      address,
-      originalContractClassId: instance.originalContractClassId.toString(),
-      currentContractClassId: instance.currentContractClassId.toString(),
-      initializationHash: instance.initializationHash?.toString() ?? null,
-      deploymentParams,
-      version: instance.version,
-    };
-
-    await storeContractInstance(newInstance);
-    console.log(`Stored ${name} instance at address: ${address}`);
-    instancesStored++;
   }
 
   console.log(`Contract data loading complete. Artifacts: ${artifactsStored}, Instances: ${instancesStored}`);

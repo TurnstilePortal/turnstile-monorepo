@@ -1,6 +1,7 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: tests */
 import { AztecAddress } from '@aztec/aztec.js';
 import type { NewContractInstance } from '@turnstile-portal/api-common/schema';
+import { L2_CONTRACT_DEPLOYMENT_SALT } from '@turnstile-portal/turnstile.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DbClient } from '../db.js';
 import {
@@ -27,7 +28,10 @@ vi.mock('@aztec/aztec.js', async (importOriginal) => {
 
 vi.mock('@aztec/stdlib/keys', () => ({
   PublicKeys: {
-    default: vi.fn(() => ({ mockPublicKeys: true })),
+    default: vi.fn(() => ({
+      mockPublicKeys: true,
+      toString: () => '0x1234567890123456789012345678901234567890123456789012345678901234',
+    })),
   },
 }));
 
@@ -94,7 +98,13 @@ describe('ContractRegistryService', () => {
         originalContractClassId: 'mock-class-id',
         currentContractClassId: 'mock-class-id',
         initializationHash: 'mock-init-hash',
-        deploymentParams: {},
+        deploymentParams: {
+          constructorArtifact: 'constructor_with_minter',
+          constructorArgs: [],
+          salt: '0x1234567890123456789012345678901234567890123456789012345678901234' as `0x${string}`,
+          publicKeys: '0x1234567890123456789012345678901234567890123456789012345678901234' as `0x${string}`,
+          deployer: '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`,
+        },
         version: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -125,11 +135,11 @@ describe('ContractRegistryService', () => {
         currentContractClassId: 'mock-contract-class-id',
         initializationHash: 'mock-init-hash',
         deploymentParams: {
-          name: 'Test Token',
-          symbol: 'TEST',
-          decimals: 18,
-          portalAddress: mockPortalAddress.toString(),
-          publicKeys: { mockPublicKeys: true },
+          constructorArtifact: 'constructor_with_minter',
+          constructorArgs: ['Test Token', 'TEST', 18, mockPortalAddress.toString(), AztecAddress.ZERO.toString()],
+          salt: L2_CONTRACT_DEPLOYMENT_SALT.toString() as `0x${string}`,
+          deployer: AztecAddress.ZERO.toString() as `0x${string}`,
+          publicKeys: expect.any(String) as `0x${string}`,
         },
         version: 1,
       } as NewContractInstance);

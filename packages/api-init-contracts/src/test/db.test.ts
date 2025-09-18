@@ -133,7 +133,13 @@ describe('db', () => {
         originalContractClassId: artifact.contractClassId,
         currentContractClassId: artifact.contractClassId,
         initializationHash: '0x1111111111111111111111111111111111111111111111111111111111111111',
-        deploymentParams: { key: 'value' },
+        deploymentParams: {
+          constructorArtifact: 'constructor',
+          constructorArgs: [],
+          salt: '0x1234567890123456789012345678901234567890123456789012345678901234' as `0x${string}`,
+          publicKeys: '0x1234567890123456789012345678901234567890123456789012345678901234' as `0x${string}`,
+          deployer: '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`,
+        },
         version: 1,
       };
 
@@ -161,7 +167,13 @@ describe('db', () => {
         originalContractClassId: artifact.contractClassId,
         currentContractClassId: artifact.contractClassId,
         initializationHash: '0x1111111111111111111111111111111111111111111111111111111111111111',
-        deploymentParams: { key: 'value' },
+        deploymentParams: {
+          constructorArtifact: 'constructor',
+          constructorArgs: [],
+          salt: '0x1234567890123456789012345678901234567890123456789012345678901234' as `0x${string}`,
+          publicKeys: '0x1234567890123456789012345678901234567890123456789012345678901234' as `0x${string}`,
+          deployer: '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`,
+        },
         version: 1,
       };
 
@@ -189,6 +201,40 @@ describe('db', () => {
       expectDefined(storedInstance);
       expect(storedInstance.currentContractClassId).toBe(updatedInstance.currentContractClassId);
       expect(storedInstance.version).toBe(2);
+    });
+
+    it('should store contract instance without constructor fields', async () => {
+      const artifact: NewContractArtifact = {
+        artifactHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+        artifact: { name: 'TestContract', functions: [], outputs: {} },
+        contractClassId: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+      };
+
+      await storeContractArtifact(artifact);
+
+      const instance: NewContractInstance = {
+        address: '0x0001020304050607080900010203040506070809000102030405060708090002',
+        originalContractClassId: artifact.contractClassId,
+        currentContractClassId: artifact.contractClassId,
+        initializationHash: '0x1111111111111111111111111111111111111111111111111111111111111111',
+        deploymentParams: {
+          // No constructor fields for contracts that don't need them
+          salt: '0x1234567890123456789012345678901234567890123456789012345678901234' as `0x${string}`,
+          publicKeys: '0x1234567890123456789012345678901234567890123456789012345678901234' as `0x${string}`,
+          deployer: '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`,
+        },
+        version: 1,
+      };
+
+      await storeContractInstance(instance);
+
+      const stored = await testDb.db.select().from(contractInstances);
+      expect(stored).toHaveLength(1);
+      const storedInstance = stored[0];
+      expectDefined(storedInstance);
+      expect(storedInstance.address).toBe(instance.address);
+      expect(storedInstance.deploymentParams).toEqual(instance.deploymentParams);
+      expect(storedInstance.version).toBe(1);
     });
   });
 
@@ -228,7 +274,13 @@ describe('db', () => {
         originalContractClassId: artifact.contractClassId,
         currentContractClassId: artifact.contractClassId,
         initializationHash: '0x1111111111111111111111111111111111111111111111111111111111111111',
-        deploymentParams: { key: 'value' },
+        deploymentParams: {
+          constructorArtifact: 'constructor',
+          constructorArgs: [],
+          salt: '0x1234567890123456789012345678901234567890123456789012345678901234' as `0x${string}`,
+          publicKeys: '0x1234567890123456789012345678901234567890123456789012345678901234' as `0x${string}`,
+          deployer: '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`,
+        },
         version: 1,
       };
 
