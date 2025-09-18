@@ -72,6 +72,26 @@ const accepted = await client.getAcceptedTokens({ limit: 50 });
 const bridged = await client.getBridgedTokens({ limit: 50 });
 ```
 
+### Contract Operations
+
+```typescript
+// Get a contract instance by address
+const contract = await client.getContract('0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef');
+
+// Get a contract instance with artifact data included
+const contractWithArtifact = await client.getContract(
+  '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+  true // includeArtifact
+);
+
+// Get a contract artifact by contract class ID or artifact hash
+const artifact = await client.getArtifact('0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890');
+
+// Get all contract instance addresses for a specific contract class
+const instances = await client.getContractInstancesByClassId('0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890');
+console.log(instances.data); // Array of contract addresses
+```
+
 ### Custom Headers and Fetch
 
 ```typescript
@@ -102,8 +122,11 @@ new TurnstileApiClient(config: ClientConfig)
 
 #### Methods
 
+**Health & Status:**
 - `getHealth()` - Check service health
 - `getReady()` - Check service readiness (including database)
+
+**Token Operations:**
 - `getTokens(params?)` - Get paginated list of all tokens
 - `getTokenByAddress(address)` - Get token by L1 or L2 address
 - `getProposedTokens(params?)` - Get proposed tokens
@@ -112,6 +135,13 @@ new TurnstileApiClient(config: ClientConfig)
 - `getBridgedTokens(params?)` - Get fully bridged tokens
 - `getAllTokens(limit?)` - Get all tokens (auto-paginated)
 - `getAllBridgedTokens(limit?)` - Get all bridged tokens (auto-paginated)
+
+**Contract Operations:**
+- `getContract(address, includeArtifact?)` - Get contract instance by address
+- `getArtifact(identifier)` - Get contract artifact by contract class ID or artifact hash
+- `getContractInstancesByClassId(contractClassId)` - Get all instance addresses for a contract class
+
+**Utilities:**
 - `getAllPages(fetcher, limit?)` - Async iterator for pagination
 
 ## Types
@@ -122,6 +152,9 @@ The client exports all necessary types:
 import type {
   Token,
   TokensResponse,
+  ContractInstance,
+  ContractArtifact,
+  ContractInstancesResponse,
   HealthResponse,
   ReadyResponse,
   ErrorResponse,

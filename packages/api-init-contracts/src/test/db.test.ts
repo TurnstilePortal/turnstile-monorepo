@@ -11,6 +11,10 @@ import {
 } from '../db.js';
 import { setupTestDatabase } from './setup.js';
 
+function expectDefined<T>(value: T | null | undefined): asserts value is T {
+  expect(value).toBeDefined();
+}
+
 describe('db', () => {
   let testDb: Awaited<ReturnType<typeof setupTestDatabase>>;
 
@@ -48,8 +52,44 @@ describe('db', () => {
 
       const stored = await testDb.db.select().from(contractArtifacts);
       expect(stored).toHaveLength(1);
-      expect(stored[0].artifactHash).toBe(artifact.artifactHash);
-      expect(stored[0].contractClassId).toBe(artifact.contractClassId);
+      const storedArtifact = stored[0];
+      expectDefined(storedArtifact);
+      expect(storedArtifact.artifactHash).toBe(artifact.artifactHash);
+      expect(storedArtifact.contractClassId).toBe(artifact.contractClassId);
+    });
+
+    it('should strip debug symbols before persisting artifacts', async () => {
+      const artifact: NewContractArtifact = {
+        artifactHash: '0x1111111111111111111111111111111111111111111111111111111111111111',
+        artifact: {
+          name: 'DebuggyContract',
+          functions: [
+            {
+              name: 'main',
+              debug_symbols: 'opaque-data',
+              selector: '0x1234',
+            },
+            {
+              name: 'helper',
+              selector: '0x5678',
+            },
+          ],
+        },
+        contractClassId: '0x2222222222222222222222222222222222222222222222222222222222222222',
+      };
+
+      const originalArtifact = JSON.parse(JSON.stringify(artifact.artifact));
+
+      await storeContractArtifact(artifact);
+
+      const stored = await testDb.db.select().from(contractArtifacts);
+      expect(stored).toHaveLength(1);
+      const storedArtifact = stored[0];
+      expectDefined(storedArtifact);
+      const storedArtifactData = storedArtifact.artifact as { functions?: Array<Record<string, unknown>> };
+      expect(storedArtifactData.functions?.[0]).not.toHaveProperty('debug_symbols');
+      expect(storedArtifactData.functions?.[1]).not.toHaveProperty('debug_symbols');
+      expect(artifact.artifact).toEqual(originalArtifact);
     });
 
     it('should update existing artifact on conflict', async () => {
@@ -71,8 +111,10 @@ describe('db', () => {
 
       const stored = await testDb.db.select().from(contractArtifacts);
       expect(stored).toHaveLength(1);
-      expect(stored[0].artifact).toEqual(updatedArtifact.artifact);
-      expect(stored[0].contractClassId).toBe(updatedArtifact.contractClassId);
+      const storedArtifact = stored[0];
+      expectDefined(storedArtifact);
+      expect(storedArtifact.artifact).toEqual(updatedArtifact.artifact);
+      expect(storedArtifact.contractClassId).toBe(updatedArtifact.contractClassId);
     });
   });
 
@@ -88,8 +130,8 @@ describe('db', () => {
 
       const instance: NewContractInstance = {
         address: '0x0001020304050607080900010203040506070809000102030405060708090001',
-        originalContractClassId: artifact.artifactHash,
-        currentContractClassId: artifact.artifactHash,
+        originalContractClassId: artifact.contractClassId,
+        currentContractClassId: artifact.contractClassId,
         initializationHash: '0x1111111111111111111111111111111111111111111111111111111111111111',
         deploymentParams: { key: 'value' },
         version: 1,
@@ -99,8 +141,10 @@ describe('db', () => {
 
       const stored = await testDb.db.select().from(contractInstances);
       expect(stored).toHaveLength(1);
-      expect(stored[0].address).toBe(instance.address);
-      expect(stored[0].version).toBe(1);
+      const storedInstance = stored[0];
+      expectDefined(storedInstance);
+      expect(storedInstance.address).toBe(instance.address);
+      expect(storedInstance.version).toBe(1);
     });
 
     it('should update existing instance on conflict', async () => {
@@ -114,14 +158,22 @@ describe('db', () => {
 
       const instance: NewContractInstance = {
         address: '0x0001020304050607080900010203040506070809000102030405060708090001',
-        originalContractClassId: artifact.artifactHash,
-        currentContractClassId: artifact.artifactHash,
+        originalContractClassId: artifact.contractClassId,
+        currentContractClassId: artifact.contractClassId,
         initializationHash: '0x1111111111111111111111111111111111111111111111111111111111111111',
         deploymentParams: { key: 'value' },
         version: 1,
       };
 
       await storeContractInstance(instance);
+
+      const newArtifact: NewContractArtifact = {
+        artifactHash: '0xfffdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+        artifact: { name: 'UpdatedContract', functions: [], outputs: {} },
+        contractClassId: '0xfffdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+      };
+
+      await storeContractArtifact(newArtifact);
 
       const updatedInstance: NewContractInstance = {
         ...instance,
@@ -133,8 +185,10 @@ describe('db', () => {
 
       const stored = await testDb.db.select().from(contractInstances);
       expect(stored).toHaveLength(1);
-      expect(stored[0].currentContractClassId).toBe(updatedInstance.currentContractClassId);
-      expect(stored[0].version).toBe(2);
+      const storedInstance = stored[0];
+      expectDefined(storedInstance);
+      expect(storedInstance.currentContractClassId).toBe(updatedInstance.currentContractClassId);
+      expect(storedInstance.version).toBe(2);
     });
   });
 
@@ -171,8 +225,8 @@ describe('db', () => {
 
       const instance: NewContractInstance = {
         address: '0x0001020304050607080900010203040506070809000102030405060708090001',
-        originalContractClassId: artifact.artifactHash,
-        currentContractClassId: artifact.artifactHash,
+        originalContractClassId: artifact.contractClassId,
+        currentContractClassId: artifact.contractClassId,
         initializationHash: '0x1111111111111111111111111111111111111111111111111111111111111111',
         deploymentParams: { key: 'value' },
         version: 1,

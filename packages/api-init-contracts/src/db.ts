@@ -33,16 +33,57 @@ export function setDatabase(database: DbClient | null): void {
   db = database;
 }
 
+function stripDebugSymbols(artifact: NewContractArtifact['artifact']): NewContractArtifact['artifact'] {
+  if (!artifact || typeof artifact !== 'object') {
+    return artifact;
+  }
+
+  const artifactObject = artifact as Record<string, unknown> & { functions?: unknown };
+  const functions = artifactObject.functions;
+
+  if (!Array.isArray(functions)) {
+    return artifact;
+  }
+
+  let removed = false;
+  const sanitizedFunctions = functions.map((fn) => {
+    if (!fn || typeof fn !== 'object' || Array.isArray(fn)) {
+      return fn;
+    }
+
+    const functionObject = fn as Record<string, unknown>;
+    if (!Object.hasOwn(functionObject, 'debug_symbols')) {
+      return fn;
+    }
+
+    removed = true;
+    const { debug_symbols: _debugSymbols, ...rest } = functionObject;
+    return rest;
+  });
+
+  if (!removed) {
+    return artifact;
+  }
+
+  return {
+    ...artifactObject,
+    functions: sanitizedFunctions,
+  } as typeof artifact;
+}
+
 export async function storeContractArtifact(artifact: NewContractArtifact): Promise<void> {
   const db = getDatabase();
 
+  const sanitizedArtifact = stripDebugSymbols(artifact.artifact);
+  const values = { ...artifact, artifact: sanitizedArtifact } satisfies NewContractArtifact;
+
   await db
     .insert(contractArtifacts)
-    .values(artifact)
+    .values(values)
     .onConflictDoUpdate({
       target: contractArtifacts.artifactHash,
       set: {
-        artifact: artifact.artifact,
+        artifact: sanitizedArtifact,
         contractClassId: artifact.contractClassId,
         updatedAt: new Date(),
       },

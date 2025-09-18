@@ -1,5 +1,10 @@
 import type { NewContractArtifact, NewContractInstance } from '@turnstile-portal/api-common/schema';
 import {
+  PortalContractArtifact,
+  ShieldGatewayContractArtifact,
+  TokenContractArtifact,
+} from '@turnstile-portal/aztec-artifacts';
+import {
   getContractArtifactByHash,
   getContractInstanceByAddress,
   storeContractArtifact,
@@ -16,14 +21,14 @@ export async function loadTurnstileContracts(): Promise<{
   const { portalContractClass, shieldGatewayContractClass, tokenContractClass } = await getContractClasses();
 
   const contractClasses = [
-    { name: 'Portal', class: portalContractClass },
-    { name: 'ShieldGateway', class: shieldGatewayContractClass },
-    { name: 'Token', class: tokenContractClass },
+    { name: 'Portal', class: portalContractClass, artifact: PortalContractArtifact },
+    { name: 'ShieldGateway', class: shieldGatewayContractClass, artifact: ShieldGatewayContractArtifact },
+    { name: 'Token', class: tokenContractClass, artifact: TokenContractArtifact },
   ];
 
   let artifactsStored = 0;
 
-  for (const { name, class: contractClass } of contractClasses) {
+  for (const { name, class: contractClass, artifact } of contractClasses) {
     const artifactHash = contractClass.artifactHash.toString();
     const contractClassId = contractClass.id.toString();
 
@@ -35,7 +40,7 @@ export async function loadTurnstileContracts(): Promise<{
 
     const newArtifact: NewContractArtifact = {
       artifactHash,
-      artifact: contractClass.artifact,
+      artifact,
       contractClassId,
     };
 

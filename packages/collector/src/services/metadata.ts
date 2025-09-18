@@ -88,4 +88,33 @@ export class MetadataService {
       return 'failed';
     }
   }
+
+  /**
+   * Gets token metadata from the database after ensuring it exists
+   * Returns null if metadata is not available or failed to fetch
+   */
+  async getTokenMetadata(l1Address: `0x${string}`): Promise<{ name: string; symbol: string; decimals: number } | null> {
+    const result = await this.ensureTokenMetadata(l1Address);
+
+    if (result === 'failed') {
+      return null;
+    }
+
+    try {
+      const metadata = await getTokenMetadataByL1Address(normalizeL1Address(l1Address));
+
+      if (metadata?.name && metadata.symbol && metadata.decimals !== null) {
+        return {
+          name: metadata.name,
+          symbol: metadata.symbol,
+          decimals: metadata.decimals,
+        };
+      }
+
+      return null;
+    } catch (error) {
+      logger.warn(`Failed to get token metadata for ${l1Address}: ${(error as Error).message}`);
+      return null;
+    }
+  }
 }

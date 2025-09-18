@@ -1,23 +1,23 @@
 import { join } from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
+import type { DbClient } from '@turnstile-portal/api-common';
 import * as schema from '@turnstile-portal/api-common/schema';
 import { contractArtifacts, contractInstances } from '@turnstile-portal/api-common/schema';
-import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 
 export class TestDatabase {
   private pglite: PGlite;
-  public db: PgliteDatabase<typeof schema>;
+  public db: DbClient;
 
-  private constructor(pglite: PGlite, db: PgliteDatabase<typeof schema>) {
+  private constructor(pglite: PGlite, db: DbClient) {
     this.pglite = pglite;
     this.db = db;
   }
 
   static async create(): Promise<TestDatabase> {
     const pglite = new PGlite();
-    const db = drizzle(pglite, { schema });
+    const db = drizzle(pglite, { schema }) as DbClient;
 
     const migrationsFolder = join(__dirname, '..', '..', '..', 'api-common', 'migrations');
     await migrate(db, { migrationsFolder });

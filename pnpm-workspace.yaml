@@ -3,3 +3,13 @@ packages:
   - l1
   - aztec
   - examples
+
+preferWorkspacePackages: true
+linkWorkspacePackages: true
+
+onlyBuiltDependencies:
+  - c-kzg
+
+overrides:
+  glob: "^11.0.0"
+  "@aztec/**": "1.2.1"

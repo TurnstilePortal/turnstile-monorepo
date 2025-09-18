@@ -59,8 +59,6 @@ describe('contract schema', () => {
       expect(contractInstances.initializationHash).toBeDefined();
       expect(contractInstances.deploymentParams).toBeDefined();
       expect(contractInstances.version).toBeDefined();
-      expect(contractInstances.deploymentTx).toBeDefined();
-      expect(contractInstances.deploymentBlock).toBeDefined();
       expect(contractInstances.createdAt).toBeDefined();
       expect(contractInstances.updatedAt).toBeDefined();
     });
@@ -92,8 +90,6 @@ describe('contract schema', () => {
           },
         },
         version: 1,
-        deploymentTx: hex('b'),
-        deploymentBlock: 123,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

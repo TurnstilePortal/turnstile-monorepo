@@ -13,10 +13,10 @@ export const contractInstances = pgTable('contract_instances', {
   id: serial('id').primaryKey(),
   address: char('address', { length: 66 }).notNull().unique(),
   originalContractClassId: char('original_contract_class_id', { length: 66 }).references(
-    () => contractArtifacts.artifactHash,
+    () => contractArtifacts.contractClassId,
   ),
   currentContractClassId: char('current_contract_class_id', { length: 66 }).references(
-    () => contractArtifacts.artifactHash,
+    () => contractArtifacts.contractClassId,
   ),
   initializationHash: char('initialization_hash', { length: 66 }),
   // JSON payload capturing constructor args and public keys used to derive the initialization hash
