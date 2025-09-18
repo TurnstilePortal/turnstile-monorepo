@@ -126,6 +126,25 @@ export const tokenAddressParamsSchema = z.object({
   address: z.string(),
 });
 
+// Contract schemas exports
+export {
+  type ContractAddressParams,
+  type ContractArtifact,
+  type ContractArtifactParams,
+  type ContractClassIdParams,
+  type ContractInstance,
+  type ContractInstancesResponse,
+  type ContractQueryParams,
+  contractAddressParamsSchema,
+  contractArtifactParamsSchema,
+  contractArtifactSchema,
+  contractClassIdParamsSchema,
+  contractInstanceSchema,
+  contractInstancesResponseSchema,
+  contractQueryParamsJsonSchema,
+  contractQueryParamsSchema,
+} from './contracts.js';
+
 // Export types
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
 export type ReadyResponse = z.infer<typeof readyResponseSchema>;

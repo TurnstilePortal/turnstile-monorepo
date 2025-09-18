@@ -1,8 +1,9 @@
-import { type AztecNode, createAztecNodeClient } from '@aztec/aztec.js';
+import { AztecAddress, type AztecNode, createAztecNodeClient } from '@aztec/aztec.js';
 import type { NewToken } from '@turnstile-portal/api-common/schema';
 import { createPublicClient, http } from 'viem';
 import { anvil, mainnet, sepolia } from 'viem/chains';
 import { getDatabase } from '../db.js';
+import { ContractRegistryService } from '../services/contract-registry.js';
 import { MetadataService } from '../services/metadata.js';
 import { normalizeL1Address, normalizeL2Address } from '../utils/address.js';
 import { logger } from '../utils/logger.js';
@@ -37,6 +38,7 @@ export class L2Collector {
   private aztecNode: AztecNode;
   private config: Required<L2CollectorConfig>;
   private metadataService: MetadataService;
+  private contractRegistryService: ContractRegistryService;
 
   constructor(config: L2CollectorConfig) {
     this.config = {
@@ -55,6 +57,7 @@ export class L2Collector {
     });
 
     this.metadataService = new MetadataService(l1Client, getDatabase());
+    this.contractRegistryService = new ContractRegistryService();
   }
 
   async getL2TokenRegistrations(fromBlock: number, toBlock: number): Promise<Partial<NewToken>[]> {
@@ -108,6 +111,25 @@ export class L2Collector {
 
       // Ensure token metadata exists before storing L2 registration
       await this.metadataService.ensureTokenMetadata(l1Address);
+
+      // Get token metadata for contract instance creation
+      const metadata = await this.metadataService.getTokenMetadata(l1Address);
+
+      if (metadata) {
+        // Store contract instance for this token
+        try {
+          await this.contractRegistryService.storeTokenInstance(
+            AztecAddress.fromString(l2Address),
+            AztecAddress.fromString(this.config.portalAddress),
+            metadata,
+          );
+        } catch (error) {
+          logger.warn({ error, l1Address, l2Address }, 'Failed to store contract instance for token registration');
+          // Continue processing even if contract instance storage fails
+        }
+      } else {
+        logger.warn({ l1Address, l2Address }, 'Token metadata not available, skipping contract instance creation');
+      }
 
       registrations.push({
         l1Address,

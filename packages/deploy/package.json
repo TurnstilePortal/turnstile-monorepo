@@ -29,7 +29,8 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist node_modules",
-    "test": "vitest run"
+    "test": "vitest run",
+    "start": "node dist/cli.js"
   },
   "keywords": [],
   "author": "",

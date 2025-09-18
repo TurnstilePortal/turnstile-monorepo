@@ -1,69 +1,9 @@
 {
-  "id": "337dfd24-3c84-4db4-935d-50dfc3c373cc",
+  "id": "08cad93a-899b-45db-8908-3be1be3bf900",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.block_progress": {
-      "name": "block_progress",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "chain": {
-          "name": "chain",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "last_scanned_block": {
-          "name": "last_scanned_block",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "last_scan_timestamp": {
-          "name": "last_scan_timestamp",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "block_progress_chain_unique": {
-          "name": "block_progress_chain_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "chain"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.tokens": {
       "name": "tokens",
       "schema": "",
@@ -226,6 +166,237 @@
           "nullsNotDistinct": false,
           "columns": [
             "l2_address"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.block_progress": {
+      "name": "block_progress",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "chain": {
+          "name": "chain",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_scanned_block": {
+          "name": "last_scanned_block",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_scan_timestamp": {
+          "name": "last_scan_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "block_progress_chain_unique": {
+          "name": "block_progress_chain_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "chain"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.contract_artifacts": {
+      "name": "contract_artifacts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "artifact_hash": {
+          "name": "artifact_hash",
+          "type": "char(66)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "artifact": {
+          "name": "artifact",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contract_class_id": {
+          "name": "contract_class_id",
+          "type": "char(66)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "contract_artifacts_artifact_hash_unique": {
+          "name": "contract_artifacts_artifact_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "artifact_hash"
+          ]
+        },
+        "contract_artifacts_contract_class_id_unique": {
+          "name": "contract_artifacts_contract_class_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "contract_class_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.contract_instances": {
+      "name": "contract_instances",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "address": {
+          "name": "address",
+          "type": "char(66)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "original_contract_class_id": {
+          "name": "original_contract_class_id",
+          "type": "char(66)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_contract_class_id": {
+          "name": "current_contract_class_id",
+          "type": "char(66)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "initialization_hash": {
+          "name": "initialization_hash",
+          "type": "char(66)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deployment_params": {
+          "name": "deployment_params",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "contract_instances_original_contract_class_id_contract_artifacts_contract_class_id_fk": {
+          "name": "contract_instances_original_contract_class_id_contract_artifacts_contract_class_id_fk",
+          "tableFrom": "contract_instances",
+          "tableTo": "contract_artifacts",
+          "columnsFrom": [
+            "original_contract_class_id"
+          ],
+          "columnsTo": [
+            "contract_class_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "contract_instances_current_contract_class_id_contract_artifacts_contract_class_id_fk": {
+          "name": "contract_instances_current_contract_class_id_contract_artifacts_contract_class_id_fk",
+          "tableFrom": "contract_instances",
+          "tableTo": "contract_artifacts",
+          "columnsFrom": [
+            "current_contract_class_id"
+          ],
+          "columnsTo": [
+            "contract_class_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "contract_instances_address_unique": {
+          "name": "contract_instances_address_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "address"
           ]
         }
       },

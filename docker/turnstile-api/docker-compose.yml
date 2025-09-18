@@ -10,7 +10,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U turnstile -d turnstile_sandbox']
+      test: [ 'CMD-SHELL', 'pg_isready -U turnstile -d turnstile_sandbox' ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -18,7 +18,7 @@ services:
   migrations:
     build:
       context: ../..
-      dockerfile: docker/turnstile-api/Dockerfile
+      dockerfile: docker/common/Dockerfile
       args:
         SERVICE: '@turnstile-portal/api-common'
     depends_on:
@@ -26,13 +26,13 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://turnstile:turnstile@postgres:5432/turnstile_sandbox
-    command: ['pnpm', 'migrate']
+    command: [ 'pnpm', 'migrate' ]
     restart: 'no'
 
   collector:
     build:
       context: ../..
-      dockerfile: docker/turnstile-api/Dockerfile
+      dockerfile: docker/common/Dockerfile
       args:
         SERVICE: '@turnstile-portal/collector'
     depends_on:
@@ -49,12 +49,29 @@ services:
       L1_CHUNK_SIZE: 500
       L2_CHUNK_SIZE: 250
       POLLING_INTERVAL_MS: 5000
+      LOG_LEVEL: debug
     restart: unless-stopped
+
+  init-contracts:
+    build:
+      context: ../..
+      dockerfile: docker/common/Dockerfile
+      args:
+        SERVICE: '@turnstile-portal/api-init-contracts'
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://turnstile:turnstile@postgres:5432/turnstile_sandbox
+      NETWORK: sandbox
+      L1_RPC_URL: https://sandbox.ethereum.walletmesh.com/api/v1/public
+      L2_NODE_URL: https://sandbox.aztec.walletmesh.com/api/v1/public
+    restart: no
 
   api:
     build:
       context: ../..
-      dockerfile: docker/turnstile-api/Dockerfile
+      dockerfile: docker/common/Dockerfile
       args:
         SERVICE: '@turnstile-portal/api-service'
     depends_on:
@@ -67,7 +84,7 @@ services:
       PORT: 8080
     restart: unless-stopped
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:8080/health']
+      test: [ 'CMD', 'curl', '-f', 'http://localhost:8080/health' ]
       interval: 10s
       timeout: 5s
       retries: 3

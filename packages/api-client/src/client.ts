@@ -3,6 +3,11 @@ import type { paths } from './types.js';
 
 export type TokensResponse = paths['/tokens']['get']['responses']['200']['content']['application/json'];
 export type Token = paths['/tokens/{address}']['get']['responses']['200']['content']['application/json'];
+export type ContractInstance = paths['/contract/{address}']['get']['responses']['200']['content']['application/json'];
+export type ContractArtifact =
+  paths['/artifact/{identifier}']['get']['responses']['200']['content']['application/json'];
+export type ContractInstancesResponse =
+  paths['/contracts/instances/{contractClassId}']['get']['responses']['200']['content']['application/json'];
 export type ErrorResponse = { error: string };
 
 export interface ClientConfig {
@@ -131,6 +136,35 @@ export class TurnstileApiClient {
   async getBridgedTokens(params?: PaginationParams, options?: { cache?: RequestCache }): Promise<TokensResponse> {
     const queryString = this.buildQueryString(params || {});
     return this.request<TokensResponse>(`/tokens/bridged${queryString}`, options);
+  }
+
+  /**
+   * Get a contract instance by its address, optionally including artifact data
+   */
+  async getContract(
+    address: string,
+    includeArtifact?: boolean,
+    options?: { cache?: RequestCache },
+  ): Promise<ContractInstance> {
+    const queryString = this.buildQueryString(includeArtifact ? { includeArtifact: 'true' } : {});
+    return this.request<ContractInstance>(`/contract/${address}${queryString}`, options);
+  }
+
+  /**
+   * Get a contract artifact by contract class ID or artifact hash
+   */
+  async getArtifact(identifier: string, options?: { cache?: RequestCache }): Promise<ContractArtifact> {
+    return this.request<ContractArtifact>(`/artifact/${identifier}`, options);
+  }
+
+  /**
+   * Get all contract instance addresses that match the given contract class ID
+   */
+  async getContractInstancesByClassId(
+    contractClassId: string,
+    options?: { cache?: RequestCache },
+  ): Promise<ContractInstancesResponse> {
+    return this.request<ContractInstancesResponse>(`/contracts/instances/${contractClassId}`, options);
   }
 
   /**
