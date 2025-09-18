@@ -330,7 +330,7 @@ describe('Contract API', () => {
         })),
       });
 
-      const result = await mockDb.select().from({}).where({});
+      const result = await mockDb.select().from({}).where({}).limit();
       expect(result).toEqual(mockInstances);
     });
 

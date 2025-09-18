@@ -1,6 +1,6 @@
 import { contractArtifacts, contractInstances, type DbClient } from '@turnstile-portal/api-common';
 import { eq, or } from 'drizzle-orm';
-import type { ContractArtifact, ContractInstance } from '../schemas/contracts.js';
+import type { ContractArtifact, ContractClassInstanceMatch, ContractInstance } from '../schemas/contracts.js';
 
 type ContractInstanceRow = typeof contractInstances.$inferSelect;
 type ContractArtifactRow = typeof contractArtifacts.$inferSelect;
@@ -75,16 +75,24 @@ export class ContractService {
     return result[0] || null;
   }
 
-  async getContractInstancesByClassId(contractClassId: string): Promise<string[]> {
+  async getContractInstancesByClassId(
+    contractClassId: string,
+    matchScope: ContractClassInstanceMatch,
+  ): Promise<string[]> {
+    const whereCondition =
+      matchScope === 'any'
+        ? or(
+            eq(contractInstances.currentContractClassId, contractClassId),
+            eq(contractInstances.originalContractClassId, contractClassId),
+          )
+        : matchScope === 'current'
+          ? eq(contractInstances.currentContractClassId, contractClassId)
+          : eq(contractInstances.originalContractClassId, contractClassId);
+
     const result = await this.db
       .select({ address: contractInstances.address })
       .from(contractInstances)
-      .where(
-        or(
-          eq(contractInstances.originalContractClassId, contractClassId),
-          eq(contractInstances.currentContractClassId, contractClassId),
-        ),
-      );
+      .where(whereCondition);
 
     return result.map((row) => row.address);
   }

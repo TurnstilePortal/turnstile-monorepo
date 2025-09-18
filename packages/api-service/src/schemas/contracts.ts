@@ -1,5 +1,14 @@
 import { z } from 'zod';
 
+// Contract Instantiation Data Schema - matches ContractInstantiationData from api-common
+export const contractInstantiationDataSchema = z.object({
+  constructorArtifact: z.string().nullable().optional(),
+  constructorArgs: z.array(z.unknown()).nullable().optional(),
+  salt: z.string().regex(/^0x[a-fA-F0-9]+$/),
+  publicKeys: z.string().regex(/^0x[a-fA-F0-9]+$/),
+  deployer: z.string().regex(/^0x[a-fA-F0-9]+$/),
+});
+
 // Contract Instance Schema
 export const contractInstanceSchema = z.object({
   id: z.number().optional(),
@@ -16,7 +25,7 @@ export const contractInstanceSchema = z.object({
     .string()
     .regex(/^0x[a-fA-F0-9]{64}$/)
     .nullable(),
-  deployment_params: z.any().nullable(),
+  deployment_params: contractInstantiationDataSchema.nullable(),
   version: z.number(),
   artifact_hash: z
     .string()
@@ -55,6 +64,18 @@ export const contractInstancesResponseSchema = z.object({
   data: z.array(z.string().regex(/^0x[a-fA-F0-9]{64}$/)),
 });
 
+export const contractClassInstanceMatchSchema = z.enum(['current', 'original', 'any']);
+
+export const contractClassInstancesQueryParamsSchema = z.object({
+  match: contractClassInstanceMatchSchema.optional(),
+});
+
+export const contractClassInstancesQueryParamsJsonSchema = z.object({
+  match: contractClassInstanceMatchSchema
+    .optional()
+    .describe('Match scope for contract instances: current (default), original, or any'),
+});
+
 // Path Parameters
 export const contractAddressParamsSchema = z.object({
   address: z.string(),
@@ -76,3 +97,5 @@ export type ContractInstancesResponse = z.infer<typeof contractInstancesResponse
 export type ContractAddressParams = z.infer<typeof contractAddressParamsSchema>;
 export type ContractArtifactParams = z.infer<typeof contractArtifactParamsSchema>;
 export type ContractClassIdParams = z.infer<typeof contractClassIdParamsSchema>;
+export type ContractClassInstanceMatch = z.infer<typeof contractClassInstanceMatchSchema>;
+export type ContractClassInstancesQueryParams = z.infer<typeof contractClassInstancesQueryParamsSchema>;

@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: tests */
+/** biome-ignore-all lint/style/noNonNullAssertion: tests */
 import { AztecAddress } from '@aztec/aztec.js';
 import type { NewContractInstance } from '@turnstile-portal/api-common/schema';
 import { L2_CONTRACT_DEPLOYMENT_SALT } from '@turnstile-portal/turnstile.js';
@@ -200,21 +201,38 @@ describe('ContractRegistryService', () => {
 
       await service.storeTokenInstance(mockTokenAddress, mockPortalAddress, mockTokenMetadata);
 
-      expect(getContractInstanceFromDeployParams).toHaveBeenCalledWith(
-        { mockArtifact: true },
-        expect.objectContaining({
-          constructorArtifact: 'constructor_with_minter',
-          constructorArgs: [
-            'Test Token',
-            'TEST',
-            18,
-            mockPortalAddress,
-            expect.objectContaining({ toString: expect.any(Function) }), // AztecAddress.ZERO
-          ],
-          deployer: expect.objectContaining({ toString: expect.any(Function) }), // AztecAddress.ZERO
-          publicKeys: { mockPublicKeys: true },
-        }),
-      );
+      expect(getContractInstanceFromDeployParams).toHaveBeenCalledTimes(1);
+
+      const callArgs = vi.mocked(getContractInstanceFromDeployParams).mock.calls[0];
+      expect(callArgs).toBeDefined();
+
+      const [artifactArg, params] = callArgs!;
+      expect(artifactArg).toEqual({ mockArtifact: true });
+
+      expect(params).toBeDefined();
+      const deploymentParams = params!;
+
+      expect(deploymentParams.constructorArtifact).toBe('constructor_with_minter');
+
+      expect(deploymentParams.constructorArgs).toBeDefined();
+      const constructorArgs = deploymentParams.constructorArgs!;
+      expect(constructorArgs).toHaveLength(5);
+      expect(constructorArgs[0]).toBe('Test Token');
+      expect(constructorArgs[1]).toBe('TEST');
+      expect(constructorArgs[2]).toBe(18);
+      expect(constructorArgs[3]).toBe(mockPortalAddress);
+      expect(typeof constructorArgs[4]?.toString).toBe('function');
+      expect(constructorArgs[4]?.toString()).toBe(AztecAddress.ZERO.toString());
+
+      expect(typeof deploymentParams.deployer?.toString).toBe('function');
+      expect(deploymentParams.deployer?.toString()).toBe(AztecAddress.ZERO.toString());
+
+      expect(deploymentParams.publicKeys).toBeDefined();
+      const publicKeys = deploymentParams.publicKeys!;
+      expect(publicKeys).toMatchObject({ mockPublicKeys: true });
+      expect(typeof publicKeys.toString).toBe('function');
+
+      expect(deploymentParams.salt?.toString()).toBe(L2_CONTRACT_DEPLOYMENT_SALT.toString());
     });
   });
 });

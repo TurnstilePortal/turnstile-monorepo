@@ -17,12 +17,9 @@
     "publish-packages": "changeset publish",
     "clean": "pnpm recursive run clean ; rm -rf node_modules/*",
     "repl": "tsx packages/repl/src/repl.ts",
-    "lint": "biome lint",
-    "lint:fix": "biome lint --write",
-    "format": "biome format",
-    "format:fix": "biome format --write",
-    "check": "biome check",
-    "check:fix": "biome check --write",
+    "lint": "biome lint --fix",
+    "format": "biome format --fix",
+    "check": "biome check --fix",
     "update-aztec-version": "tsx scripts/update-aztec-deps.ts"
   },
   "resolutions": {

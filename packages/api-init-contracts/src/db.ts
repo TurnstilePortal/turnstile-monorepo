@@ -33,48 +33,34 @@ export function setDatabase(database: DbClient | null): void {
   db = database;
 }
 
-function stripDebugSymbols(artifact: NewContractArtifact['artifact']): NewContractArtifact['artifact'] {
-  if (!artifact || typeof artifact !== 'object') {
+function stripArtifact(artifact: NewContractArtifact['artifact']): NewContractArtifact['artifact'] {
+  if (artifact === null || artifact === undefined || typeof artifact !== 'object') {
     return artifact;
   }
 
-  const artifactObject = artifact as Record<string, unknown> & { functions?: unknown };
-  const functions = artifactObject.functions;
+  const sanitizedArtifact: Record<string, unknown> = { ...artifact };
 
-  if (!Array.isArray(functions)) {
-    return artifact;
+  delete sanitizedArtifact.file_map;
+
+  if (Array.isArray(sanitizedArtifact.functions)) {
+    sanitizedArtifact.functions = sanitizedArtifact.functions.map((func) => {
+      if (func === null || typeof func !== 'object') {
+        return func;
+      }
+
+      // biome-ignore lint/correctness/noUnusedVariables: purposefully stripping out debug_symbols
+      const { debug_symbols, ...rest } = func as Record<string, unknown>;
+      return { ...rest };
+    });
   }
 
-  let removed = false;
-  const sanitizedFunctions = functions.map((fn) => {
-    if (!fn || typeof fn !== 'object' || Array.isArray(fn)) {
-      return fn;
-    }
-
-    const functionObject = fn as Record<string, unknown>;
-    if (!Object.hasOwn(functionObject, 'debug_symbols')) {
-      return fn;
-    }
-
-    removed = true;
-    const { debug_symbols: _debugSymbols, ...rest } = functionObject;
-    return rest;
-  });
-
-  if (!removed) {
-    return artifact;
-  }
-
-  return {
-    ...artifactObject,
-    functions: sanitizedFunctions,
-  } as typeof artifact;
+  return sanitizedArtifact as NewContractArtifact['artifact'];
 }
 
 export async function storeContractArtifact(artifact: NewContractArtifact): Promise<void> {
   const db = getDatabase();
 
-  const sanitizedArtifact = stripDebugSymbols(artifact.artifact);
+  const sanitizedArtifact = stripArtifact(artifact.artifact);
   const values = { ...artifact, artifact: sanitizedArtifact } satisfies NewContractArtifact;
 
   await db

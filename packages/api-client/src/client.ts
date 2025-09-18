@@ -7,7 +7,7 @@ export type ContractInstance = paths['/contract/{address}']['get']['responses'][
 export type ContractArtifact =
   paths['/artifact/{identifier}']['get']['responses']['200']['content']['application/json'];
 export type ContractInstancesResponse =
-  paths['/contracts/instances/{contractClassId}']['get']['responses']['200']['content']['application/json'];
+  paths['/contracts/by-class/{contractClassId}/addresses']['get']['responses']['200']['content']['application/json'];
 export type ErrorResponse = { error: string };
 
 export interface ClientConfig {
@@ -162,9 +162,14 @@ export class TurnstileApiClient {
    */
   async getContractInstancesByClassId(
     contractClassId: string,
+    query?: { match?: 'current' | 'original' | 'any' },
     options?: { cache?: RequestCache },
   ): Promise<ContractInstancesResponse> {
-    return this.request<ContractInstancesResponse>(`/contracts/instances/${contractClassId}`, options);
+    const queryString = this.buildQueryString(query ?? {});
+    return this.request<ContractInstancesResponse>(
+      `/contracts/by-class/${contractClassId}/addresses${queryString}`,
+      options,
+    );
   }
 
   /**

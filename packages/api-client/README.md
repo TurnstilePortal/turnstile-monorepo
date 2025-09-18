@@ -88,7 +88,10 @@ const contractWithArtifact = await client.getContract(
 const artifact = await client.getArtifact('0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890');
 
 // Get all contract instance addresses for a specific contract class
-const instances = await client.getContractInstancesByClassId('0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890');
+const instances = await client.getContractInstancesByClassId(
+  '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+  { match: 'any' },
+);
 console.log(instances.data); // Array of contract addresses
 ```
 
@@ -139,7 +142,7 @@ new TurnstileApiClient(config: ClientConfig)
 **Contract Operations:**
 - `getContract(address, includeArtifact?)` - Get contract instance by address
 - `getArtifact(identifier)` - Get contract artifact by contract class ID or artifact hash
-- `getContractInstancesByClassId(contractClassId)` - Get all instance addresses for a contract class
+- `getContractInstancesByClassId(contractClassId, query?)` - Get contract instance addresses with optional match scope (`current`, `original`, `any`)
 
 **Utilities:**
 - `getAllPages(fetcher, limit?)` - Async iterator for pagination

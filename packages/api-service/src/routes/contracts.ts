@@ -1,9 +1,12 @@
 import type { FastifyInstance } from 'fastify';
 import {
+  type ContractClassInstanceMatch,
   contractAddressParamsSchema,
   contractArtifactParamsSchema,
   contractArtifactSchema,
   contractClassIdParamsSchema,
+  contractClassInstancesQueryParamsJsonSchema,
+  contractClassInstancesQueryParamsSchema,
   contractInstanceSchema,
   contractInstancesResponseSchema,
   contractQueryParamsJsonSchema,
@@ -117,14 +120,17 @@ export async function registerContractRoutes(fastify: FastifyInstance, contractS
 
   fastify.get<{
     Params: { contractClassId: string };
+    Querystring: { match?: 'current' | 'original' | 'any' };
   }>(
-    '/contracts/instances/:contractClassId',
+    '/contracts/by-class/:contractClassId/addresses',
     {
       schema: {
         tags: ['Contracts'],
-        summary: 'Get contract instances by class ID',
-        description: 'Get all contract instance addresses that match the given contract class ID',
+        summary: 'Get contract addresses for a class',
+        description:
+          'Get all contract instance addresses that match the given contract class ID with configurable match scope',
         params: zodToJsonSchema(contractClassIdParamsSchema),
+        querystring: zodToJsonSchema(contractClassInstancesQueryParamsJsonSchema),
         response: {
           200: zodToJsonSchema(contractInstancesResponseSchema),
           400: zodToJsonSchema(errorResponseSchema),
@@ -134,6 +140,8 @@ export async function registerContractRoutes(fastify: FastifyInstance, contractS
     },
     async (request, reply) => {
       const { contractClassId } = contractClassIdParamsSchema.parse(request.params);
+      const { match } = contractClassInstancesQueryParamsSchema.parse(request.query);
+      const matchScope: ContractClassInstanceMatch = match ?? 'current';
 
       try {
         // Validate contractClassId format
@@ -141,7 +149,7 @@ export async function registerContractRoutes(fastify: FastifyInstance, contractS
           return sendError(reply, 400, 'Invalid contract class ID format - must be a 66 character hex string');
         }
 
-        const addresses = await contractService.getContractInstancesByClassId(contractClassId);
+        const addresses = await contractService.getContractInstancesByClassId(contractClassId, matchScope);
 
         const response = {
           data: addresses,

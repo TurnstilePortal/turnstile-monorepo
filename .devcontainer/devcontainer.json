@@ -32,7 +32,7 @@
     }
   ],
   "features": {
-    "ghcr.io/ClarifiedLabs/devcontainer-features/aztec-sandbox:3": {
+    "ghcr.io/ClarifiedLabs/devcontainer-features/aztec-sandbox:4": {
       "aztec_version": "1.2.1"
     },
     "ghcr.io/ClarifiedLabs/devcontainer-features/foundry:1": {
@@ -41,7 +41,9 @@
     "ghcr.io/devcontainers/features/node:1": {
       "version": "22"
     },
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "moby": false
+    }
   },
   "containerEnv": {
     "npm_config_store_dir": "/home/vscode/.pnpm-store",
