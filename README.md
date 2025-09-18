@@ -6,16 +6,25 @@ This is the Turnstile monorepo containing L1 and L2 contracts for the Turnstile 
 
 - [l1/](l1): L1 contracts
 - [aztec/](aztec): Aztec/L2 contracts
-- [packages/](packages): Typescript packages containing contract artifacts, utilities, and the API stack
-  - [packages/api-service](packages/api-service): Fastify REST API service
-  - [packages/collector](packages/collector): L1/L2 blockchain data collectors
-  - [packages/api-common](packages/api-common): Shared database schema, migrations, and helpers
+- [packages/](packages): Typescript packages containing SDKs, services, and tooling
   - [packages/api-client](packages/api-client): Type-safe API client bindings
+  - [packages/api-common](packages/api-common): Shared database schema, migrations, and helpers
+  - [packages/api-init-contracts](packages/api-init-contracts): Seed the API database with contract metadata
+  - [packages/api-service](packages/api-service): Fastify REST API service
+  - [packages/aztec-artifacts](packages/aztec-artifacts): Generated Aztec contract artifacts
+  - [packages/collector](packages/collector): L1/L2 blockchain data collectors
+  - [packages/deploy](packages/deploy): Deployment CLI and Docker entrypoint
+  - [packages/l1-artifacts-abi](packages/l1-artifacts-abi): Published L1 ABIs
+  - [packages/l1-artifacts-bytecode](packages/l1-artifacts-bytecode): Published L1 bytecode blobs
+  - [packages/l1-artifacts-dev](packages/l1-artifacts-dev): Dev-only L1 contract artifacts
+  - [packages/repl](packages/repl): Interactive Turnstile REPL
+  - [packages/turnstile-dev](packages/turnstile-dev): Local Aztec & L1 development helpers
+  - [packages/turnstile.js](packages/turnstile.js): Public SDK for interacting with Turnstile
 - [examples/](examples): Example scripts for interacting with Turnstile (API samples live under [examples/turnstile-api](examples/turnstile-api))
 - [scripts/](scripts): Scripts for deploying and interacting with the contracts
 - [hooks/](hooks): Git hooks for the repository
-- [docker/turnstile-sandbox](docker/turnstile-sandbox): Docker config for the Turnstile Sandbox
-- [docker/turnstile-api](docker/turnstile-api): Dockerfile and Compose setup for the API service and collector
+- [docker/common](docker/common): Shared Dockerfile for deployer and service images
+- [docker/turnstile-api](docker/turnstile-api): Docker Compose setup for the API service and collector
 
 ## Development Environment
 
@@ -39,7 +48,7 @@ The Turnstile Sandbox is a modified version of the
 [Aztec Sandbox](https://docs.aztec.network/guides/developer_guides/getting_started/quickstart#install-the-sandbox)
 that includes pre-deployed Turnstile contracts and test tokens. It is intended for use in local development.
 
-See [docker/turnstile-sandbox](docker/turnstile-sandbox) for more information.
+Images are built from [docker/common/Dockerfile](docker/common/Dockerfile); see `packages/deploy` for sandbox deployment helpers.
 
 ## Development
 
@@ -178,7 +187,7 @@ sequenceDiagram
 2. Alice calls the `deposit()` function on the L1 Portal with the token address and amount to deposit.
 3. The L1 Portal transfers Alice's tokens to itself.
 4. The L1 Portal sends a message to the L2 Portal via the Aztec Rollup Inbox informing it of the deposit.
-5. After waiting for the L1->L2 deposit message to be available on L2, Alice calls the `claim()` function on the L2 Portal.
+5. After waiting for the L1->L2 deposit message to be available on L2, Alice calls the L2 Portal to claim the deposit.
 6. The L2 Portal verifies the claim against the L1->L2 deposit message and consumes it.
 7. The L2 Portal tells the L2 Token contract to mint the equivalent amount of tokens for Alice.
 
@@ -215,27 +224,17 @@ sequenceDiagram
 3. Alice calls the `withdraw` function on the L2 Portal with the token & withdrawal amount.
 4. The L2 Portal burns Alice's L2 tokens, using the authentication witness to prove her permission.
 5. The L2 Portal sends a message to the L1 Portal via the Aztec Outbox to withdraw the equivalent amount of tokens.
-6. Alice waits for the withdrawal message to be available on L1, then calls the `claimWithdrawal` function on the L1 Portal.
+6. Alice waits for the withdrawal message to be available on L1, then submits the withdrawal proof to the L1 Portal.
 7. The L1 Portal verifies and consumes the withdrawal message
 8. The L1 Portal transfers the tokens to Alice.
 
 ## Releases
 
-1. On GitHub:
-   - Go to Actions → "Version and Release" workflow
-   - Click "Run workflow"
-   - Select version bump type (patch/minor/major)
-   - Click "Run workflow"
+Releases are managed with [Changesets](https://github.com/changesets/changesets):
 
-This will automatically:
-1. Bump package versions
-2. Create a git tag and GitHub release
-3. Publish packages to NPM
-4. Build and push Docker images to GitHub Container Registry:
-   - `ghcr.io/turnstileportal/turnstile-sandbox-deployer:vX.Y.Z`
-   - `ghcr.io/turnstileportal/turnstile-sandbox-deployer:latest`
-
-Note: The Docker image will use the exact NPM package version from the release.
+1. Run `pnpm changeset` with any user-visible updates before opening a PR.
+2. When the PR merges to `main`, the `Release` workflow runs `pnpm run version`, publishes via `pnpm changeset publish`, and builds Docker images from [docker/common/Dockerfile](docker/common/Dockerfile).
+3. If you need to trigger the workflow manually, use the `Release` action's `workflow_dispatch` entry.
 
 ## Notes
 

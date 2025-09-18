@@ -78,12 +78,12 @@ sandbox:
 	@echo "Starting sandbox..."
 	bash scripts/deploy.sh sandbox-local
 
-.PHONY: turnstile-deploy-docker-image
-turnstile-deploy-docker-image:
+.PHONY: docker-turnstile-deployer-image
+docker-turnstile-deployer-image:
 	@echo "Building turnstile-deploy Docker image..."
 	$(eval VERSION := $(shell grep -m1 '"version":' packages/deploy/package.json | cut -d '"' -f 4))
 	@echo "Using version: $(VERSION)"
-	docker build -t turnstile-api-migrations:$(VERSION) \
+	docker build -t turnstile-deployer:$(VERSION) -t turnstile-deployer:latest \
 		--build-arg SERVICE=@turnstile-portal/deploy \
 		-f docker/common/Dockerfile .
 
@@ -92,7 +92,7 @@ docker-api-migrations-image:
 	@echo "Building @turnstile-portal/api-common Docker image..."
 	$(eval VERSION := $(shell grep -m1 '"version":' packages/api-common/package.json | cut -d '"' -f 4))
 	@echo "Using version: $(VERSION)"
-	docker build -t turnstile-api-migrations:$(VERSION) \
+	docker build -t turnstile-api-migrations:$(VERSION) -t turnstile-api-migrations:latest \
 		--build-arg SERVICE=@turnstile-portal/api-common \
 		-f docker/common/Dockerfile .
 
@@ -101,7 +101,7 @@ docker-api-collector-image:
 	@echo "Building @turnstile-portal/collector Docker image..."
 	$(eval VERSION := $(shell grep -m1 '"version":' packages/collector/package.json | cut -d '"' -f 4))
 	@echo "Using version: $(VERSION)"
-	docker build -t turnstile-api-collector:$(VERSION) \
+	docker build -t turnstile-api-collector:$(VERSION) -t turnstile-api-collector:latest \
 		--build-arg SERVICE=@turnstile-portal/collector \
 		-f docker/common/Dockerfile .
 
@@ -110,7 +110,7 @@ docker-api-service-image:
 	@echo "Building @turnstile-portal/api-service Docker image..."
 	$(eval VERSION := $(shell grep -m1 '"version":' packages/api-service/package.json | cut -d '"' -f 4))
 	@echo "Using version: $(VERSION)"
-	docker build -t turnstile-api-service:$(VERSION) \
+	docker build -t turnstile-api-service:$(VERSION) -t turnstile-api-service:latest \
 		--build-arg SERVICE=@turnstile-portal/api-service \
 		-f docker/common/Dockerfile .
 
@@ -119,5 +119,5 @@ docker-api-images: docker-api-migrations-image docker-api-collector-image docker
 	@echo "Built all API Docker images"
 
 .PHONY: docker
-docker: docker-api-images turnstile-deploy-docker-image
+docker: docker-api-images docker-turnstile-deployer-image
 	@echo "Built all Docker images"

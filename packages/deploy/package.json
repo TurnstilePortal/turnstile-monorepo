@@ -3,6 +3,10 @@
   "version": "0.4.12",
   "description": "Turnstile Deployment Tools",
   "type": "module",
+  "files": [
+    "dist",
+    "docker"
+  ],
   "bin": {
     "turnstile-deploy": "./dist/cli.js"
   },
@@ -30,7 +34,7 @@
     "build": "tsc",
     "clean": "rm -rf dist node_modules",
     "test": "vitest run",
-    "start": "node dist/cli.js"
+    "start": "sh docker/entrypoint.sh"
   },
   "keywords": [],
   "author": "",
@@ -48,6 +52,7 @@
     "@turnstile-portal/turnstile-dev": "workspace:^",
     "@turnstile-portal/turnstile.js": "workspace:^",
     "commander": "^14.0.0",
+    "serve": "^14.2.5",
     "viem": "^2.37.5"
   },
   "publishConfig": {
