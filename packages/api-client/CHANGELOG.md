@@ -1,5 +1,11 @@
 # @turnstile-portal/api-client
 
+## 0.0.14
+
+### Patch Changes
+
+- 04d4f1b: Contract artifacts for api service
+
 ## 0.0.13
 
 ### Patch Changes
