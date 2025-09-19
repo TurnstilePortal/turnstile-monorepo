@@ -1,5 +1,15 @@
 # @turnstile-portal/turnstile.js
 
+## 0.4.16
+
+### Patch Changes
+
+- 1f1d1a0: pluralize api routes & fix artifact stripping
+- Updated dependencies [1f1d1a0]
+  - @turnstile-portal/api-client@0.0.19
+  - @turnstile-portal/aztec-artifacts@0.4.16
+  - @turnstile-portal/l1-artifacts-abi@0.4.16
+
 ## 0.4.15
 
 ### Patch Changes
