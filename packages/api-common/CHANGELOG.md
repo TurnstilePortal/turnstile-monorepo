@@ -1,5 +1,11 @@
 # @turnstile-portal/api-common
 
+## 0.0.16
+
+### Patch Changes
+
+- 176f952: Rework deployment data stored in DB to follow a consistent format
+
 ## 0.0.15
 
 ### Patch Changes

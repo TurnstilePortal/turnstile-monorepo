@@ -1,5 +1,14 @@
 # @turnstile-portal/api-service
 
+## 0.0.16
+
+### Patch Changes
+
+- 176f952: Update schema for contract instances
+- Updated dependencies [176f952]
+  - @turnstile-portal/api-common@0.0.16
+  - @turnstile-portal/aztec-artifacts@0.4.14
+
 ## 0.0.15
 
 ### Patch Changes

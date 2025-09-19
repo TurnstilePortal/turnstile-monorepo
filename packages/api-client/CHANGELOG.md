@@ -1,5 +1,11 @@
 # @turnstile-portal/api-client
 
+## 0.0.16
+
+### Patch Changes
+
+- 176f952: Update schema for contract instances
+
 ## 0.0.15
 
 ### Patch Changes

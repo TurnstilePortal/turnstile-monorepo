@@ -1,5 +1,15 @@
 # @turnstile-portal/api-init-contracts
 
+## 0.0.16
+
+### Patch Changes
+
+- 176f952: Rework deployment data stored in DB to follow a consistent format
+- Updated dependencies [176f952]
+  - @turnstile-portal/api-common@0.0.16
+  - @turnstile-portal/turnstile.js@0.4.14
+  - @turnstile-portal/aztec-artifacts@0.4.14
+
 ## 0.0.15
 
 ### Patch Changes
