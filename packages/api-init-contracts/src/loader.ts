@@ -30,12 +30,12 @@ export async function loadTurnstileContracts(): Promise<{
     } else {
       const newArtifact: NewContractArtifact = {
         artifactHash,
-        artifact: helper.getArtifact(),
+        artifact: await helper.getArtifact(),
         contractClassId,
       };
 
       await storeContractArtifact(newArtifact);
-      console.log(`Stored ${helper.name} artifact with hash: ${artifactHash}`);
+      console.log(`Stored ${helper.name} artifact with contract class ID ${contractClassId} and hash ${artifactHash}`);
       artifactsStored++;
     }
 
