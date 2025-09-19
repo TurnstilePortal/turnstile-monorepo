@@ -1222,7 +1222,7 @@
         }
       }
     },
-    "/contract/{address}": {
+    "/contracts/{address}": {
       "get": {
         "summary": "Get contract instance by address",
         "tags": [
@@ -1397,7 +1397,7 @@
         }
       }
     },
-    "/artifact/{identifier}": {
+    "/artifacts/{identifier}": {
       "get": {
         "summary": "Get contract artifact by identifier",
         "tags": [

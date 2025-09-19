@@ -1,4 +1,5 @@
 import { type DeploymentData, type NetworkName, TurnstileFactory } from '@turnstile-portal/turnstile.js';
+import { logger } from './utils/logger.js';
 
 const NETWORK = (process.env.TURNSTILE_NETWORK as NetworkName) || 'sandbox';
 
@@ -7,6 +8,7 @@ let factoryPromise: Promise<TurnstileFactory> | null = null;
 
 function getFactory(): Promise<TurnstileFactory> {
   if (!factoryPromise) {
+    logger.debug({ network: NETWORK }, 'Creating Turnstile factory from config');
     factoryPromise = TurnstileFactory.fromConfig(NETWORK);
   }
   return factoryPromise;
@@ -15,6 +17,7 @@ function getFactory(): Promise<TurnstileFactory> {
 // Allow injection of deployment data for testing
 export function setDeploymentData(deploymentData: DeploymentData) {
   // Create a mock factory that returns the provided deployment data
+  logger.debug('Injecting deployment data for tests');
   factoryPromise = Promise.resolve({
     getDeploymentData: () => deploymentData,
   } as TurnstileFactory);
@@ -22,6 +25,7 @@ export function setDeploymentData(deploymentData: DeploymentData) {
 
 // Reset factory for testing
 export function resetFactory() {
+  logger.debug('Resetting factory');
   factoryPromise = null;
 }
 

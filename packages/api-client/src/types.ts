@@ -542,7 +542,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/contract/{address}': {
+  '/contracts/{address}': {
     parameters: {
       query?: never;
       header?: never;
@@ -636,7 +636,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/artifact/{identifier}': {
+  '/artifacts/{identifier}': {
     parameters: {
       query?: never;
       header?: never;

@@ -1,5 +1,6 @@
 import type { NewContractArtifact, NewContractInstance } from '@turnstile-portal/api-common/schema';
 import { contractArtifacts, contractInstances } from '@turnstile-portal/api-common/schema';
+import { TokenContractArtifact } from '@turnstile-portal/aztec-artifacts';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   getContractArtifactByHash,
@@ -9,10 +10,31 @@ import {
   storeContractArtifact,
   storeContractInstance,
 } from '../db.js';
+import { stripArtifact } from '../strip-artifact.js';
 import { setupTestDatabase } from './setup.js';
 
 function expectDefined<T>(value: T | null | undefined): asserts value is T {
   expect(value).toBeDefined();
+}
+
+function buildSanitizedTokenArtifact() {
+  return stripArtifact(TokenContractArtifact);
+}
+
+function createNewArtifact({
+  artifactHash,
+  contractClassId,
+  artifact,
+}: {
+  artifactHash: string;
+  contractClassId: string;
+  artifact?: ReturnType<typeof buildSanitizedTokenArtifact>;
+}): NewContractArtifact {
+  return {
+    artifactHash,
+    artifact: artifact ?? buildSanitizedTokenArtifact(),
+    contractClassId,
+  };
 }
 
 describe('db', () => {
@@ -42,13 +64,12 @@ describe('db', () => {
 
   describe('storeContractArtifact', () => {
     it('should store a new contract artifact', async () => {
-      const artifact: NewContractArtifact = {
+      const artifact = createNewArtifact({
         artifactHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-        artifact: { name: 'TestContract', functions: [], outputs: {} },
         contractClassId: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-      };
+      });
 
-      await storeContractArtifact(artifact);
+      await storeContractArtifact({ ...artifact });
 
       const stored = await testDb.db.select().from(contractArtifacts);
       expect(stored).toHaveLength(1);
@@ -56,56 +77,46 @@ describe('db', () => {
       expectDefined(storedArtifact);
       expect(storedArtifact.artifactHash).toBe(artifact.artifactHash);
       expect(storedArtifact.contractClassId).toBe(artifact.contractClassId);
+      const storedContractArtifact = storedArtifact.artifact as { fileMap?: Record<string, unknown> };
+      expect(Object.keys(storedContractArtifact.fileMap ?? {})).toHaveLength(0);
     });
 
     it('should strip debug symbols before persisting artifacts', async () => {
-      const artifact: NewContractArtifact = {
+      const contractArtifact = TokenContractArtifact;
+      const artifact = createNewArtifact({
         artifactHash: '0x1111111111111111111111111111111111111111111111111111111111111111',
-        artifact: {
-          name: 'DebuggyContract',
-          functions: [
-            {
-              name: 'main',
-              debug_symbols: 'opaque-data',
-              selector: '0x1234',
-            },
-            {
-              name: 'helper',
-              selector: '0x5678',
-            },
-          ],
-        },
         contractClassId: '0x2222222222222222222222222222222222222222222222222222222222222222',
-      };
+        artifact: contractArtifact,
+      });
 
-      const originalArtifact = JSON.parse(JSON.stringify(artifact.artifact));
-
-      await storeContractArtifact(artifact);
+      await storeContractArtifact({ ...artifact });
 
       const stored = await testDb.db.select().from(contractArtifacts);
       expect(stored).toHaveLength(1);
       const storedArtifact = stored[0];
       expectDefined(storedArtifact);
-      const storedArtifactData = storedArtifact.artifact as { functions?: Array<Record<string, unknown>> };
-      expect(storedArtifactData.functions?.[0]).not.toHaveProperty('debug_symbols');
-      expect(storedArtifactData.functions?.[1]).not.toHaveProperty('debug_symbols');
-      expect(artifact.artifact).toEqual(originalArtifact);
+      const storedArtifactData = storedArtifact.artifact as {
+        fileMap?: Record<string, unknown>;
+        functions?: Array<{ debugSymbols?: string; debug?: unknown }>;
+      };
+      expect(storedArtifactData.functions?.every((fn) => fn.debugSymbols === '')).toBe(true);
+      expect(Object.keys(storedArtifactData.fileMap ?? {})).toHaveLength(0);
+      expect(contractArtifact.functions.some((fn) => fn.debugSymbols.length > 0)).toBe(true);
     });
 
     it('should update existing artifact on conflict', async () => {
-      const artifact: NewContractArtifact = {
+      const artifact = createNewArtifact({
         artifactHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-        artifact: { name: 'TestContract', functions: [], outputs: {} },
         contractClassId: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-      };
+      });
 
       await storeContractArtifact(artifact);
 
-      const updatedArtifact: NewContractArtifact = {
+      const updatedArtifact = createNewArtifact({
         artifactHash: artifact.artifactHash,
-        artifact: { name: 'UpdatedContract', functions: [], outputs: {} },
         contractClassId: '0x9999567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-      };
+        artifact: { ...buildSanitizedTokenArtifact(), name: 'UpdatedContract' },
+      });
 
       await storeContractArtifact(updatedArtifact);
 
@@ -113,18 +124,24 @@ describe('db', () => {
       expect(stored).toHaveLength(1);
       const storedArtifact = stored[0];
       expectDefined(storedArtifact);
-      expect(storedArtifact.artifact).toEqual(updatedArtifact.artifact);
+      const storedArtifactData = storedArtifact.artifact as {
+        name?: string;
+        fileMap?: Record<string, unknown>;
+        functions?: Array<{ debugSymbols?: string; debug?: unknown }>;
+      };
+      expect(storedArtifactData.name).toBe('UpdatedContract');
+      expect(storedArtifactData.functions?.every((fn) => fn.debugSymbols === '')).toBe(true);
+      expect(Object.keys(storedArtifactData.fileMap ?? {})).toHaveLength(0);
       expect(storedArtifact.contractClassId).toBe(updatedArtifact.contractClassId);
     });
   });
 
   describe('storeContractInstance', () => {
     it('should store a new contract instance', async () => {
-      const artifact: NewContractArtifact = {
+      const artifact = createNewArtifact({
         artifactHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-        artifact: { name: 'TestContract', functions: [], outputs: {} },
         contractClassId: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-      };
+      });
 
       await storeContractArtifact(artifact);
 
@@ -154,11 +171,10 @@ describe('db', () => {
     });
 
     it('should update existing instance on conflict', async () => {
-      const artifact: NewContractArtifact = {
+      const artifact = createNewArtifact({
         artifactHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-        artifact: { name: 'TestContract', functions: [], outputs: {} },
         contractClassId: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-      };
+      });
 
       await storeContractArtifact(artifact);
 
@@ -179,11 +195,11 @@ describe('db', () => {
 
       await storeContractInstance(instance);
 
-      const newArtifact: NewContractArtifact = {
+      const newArtifact = createNewArtifact({
         artifactHash: '0xfffdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-        artifact: { name: 'UpdatedContract', functions: [], outputs: {} },
         contractClassId: '0xfffdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-      };
+        artifact: { ...buildSanitizedTokenArtifact(), name: 'UpdatedContract' },
+      });
 
       await storeContractArtifact(newArtifact);
 
@@ -204,11 +220,10 @@ describe('db', () => {
     });
 
     it('should store contract instance without constructor fields', async () => {
-      const artifact: NewContractArtifact = {
+      const artifact = createNewArtifact({
         artifactHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-        artifact: { name: 'TestContract', functions: [], outputs: {} },
         contractClassId: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-      };
+      });
 
       await storeContractArtifact(artifact);
 
@@ -240,11 +255,10 @@ describe('db', () => {
 
   describe('getContractArtifactByHash', () => {
     it('should retrieve artifact by hash', async () => {
-      const artifact: NewContractArtifact = {
+      const artifact = createNewArtifact({
         artifactHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-        artifact: { name: 'TestContract', functions: [], outputs: {} },
         contractClassId: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-      };
+      });
 
       await storeContractArtifact(artifact);
 
@@ -261,11 +275,10 @@ describe('db', () => {
 
   describe('getContractInstanceByAddress', () => {
     it('should retrieve instance by address', async () => {
-      const artifact: NewContractArtifact = {
+      const artifact = createNewArtifact({
         artifactHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-        artifact: { name: 'TestContract', functions: [], outputs: {} },
         contractClassId: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-      };
+      });
 
       await storeContractArtifact(artifact);
 

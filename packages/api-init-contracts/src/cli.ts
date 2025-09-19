@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import { config } from 'dotenv';
 import { destroyDatabase } from './db.js';
 import { loadTurnstileContracts } from './loader.js';
+import { logger } from './utils/logger.js';
 
 config();
 
@@ -24,15 +25,17 @@ program
         process.env.DATABASE_URL = options.databaseUrl;
       }
 
-      console.log('Starting Turnstile contract data loader...');
+      logger.info('Starting Turnstile contract data loader...');
       const result = await loadTurnstileContracts();
-      console.log('✅ Contract data loaded successfully:', result);
+      logger.info(result, 'Contract data loaded successfully');
       process.exit(0);
     } catch (error) {
-      console.error('❌ Failed to load contract data:', error);
+      logger.error(error, 'Failed to load contract data');
       process.exit(1);
     } finally {
-      await destroyDatabase().catch(console.error);
+      await destroyDatabase().catch((destroyError) =>
+        logger.error(destroyError, 'Failed to destroy database connection'),
+      );
     }
   });
 

@@ -3,9 +3,9 @@ import type { paths } from './types.js';
 
 export type TokensResponse = paths['/tokens']['get']['responses']['200']['content']['application/json'];
 export type Token = paths['/tokens/{address}']['get']['responses']['200']['content']['application/json'];
-export type ContractInstance = paths['/contract/{address}']['get']['responses']['200']['content']['application/json'];
+export type ContractInstance = paths['/contracts/{address}']['get']['responses']['200']['content']['application/json'];
 export type ContractArtifact =
-  paths['/artifact/{identifier}']['get']['responses']['200']['content']['application/json'];
+  paths['/artifacts/{identifier}']['get']['responses']['200']['content']['application/json'];
 export type ContractInstancesResponse =
   paths['/contracts/by-class/{contractClassId}/addresses']['get']['responses']['200']['content']['application/json'];
 export type ErrorResponse = { error: string };
@@ -147,14 +147,14 @@ export class TurnstileApiClient {
     options?: { cache?: RequestCache },
   ): Promise<ContractInstance> {
     const queryString = this.buildQueryString(includeArtifact ? { includeArtifact: 'true' } : {});
-    return this.request<ContractInstance>(`/contract/${address}${queryString}`, options);
+    return this.request<ContractInstance>(`/contracts/${address}${queryString}`, options);
   }
 
   /**
    * Get a contract artifact by contract class ID or artifact hash
    */
   async getArtifact(identifier: string, options?: { cache?: RequestCache }): Promise<ContractArtifact> {
-    return this.request<ContractArtifact>(`/artifact/${identifier}`, options);
+    return this.request<ContractArtifact>(`/artifacts/${identifier}`, options);
   }
 
   /**
