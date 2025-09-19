@@ -1,5 +1,15 @@
 # @turnstile-portal/api-init-contracts
 
+## 0.0.18
+
+### Patch Changes
+
+- 952692a: version bump due to versioning issue
+- Updated dependencies [952692a]
+  - @turnstile-portal/api-common@0.0.18
+  - @turnstile-portal/turnstile.js@0.4.15
+  - @turnstile-portal/aztec-artifacts@0.4.15
+
 ## 0.0.17
 
 ### Patch Changes

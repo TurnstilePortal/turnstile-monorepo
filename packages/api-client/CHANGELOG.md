@@ -1,5 +1,11 @@
 # @turnstile-portal/api-client
 
+## 0.0.18
+
+### Patch Changes
+
+- 952692a: version bump due to versioning issue
+
 ## 0.0.16
 
 ### Patch Changes
