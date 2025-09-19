@@ -1,5 +1,11 @@
 # @turnstile-portal/api-client
 
+## 0.0.19
+
+### Patch Changes
+
+- 1f1d1a0: pluralize api routes & fix artifact stripping
+
 ## 0.0.18
 
 ### Patch Changes

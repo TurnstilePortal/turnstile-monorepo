@@ -1,6 +1,6 @@
 {
   "name": "@turnstile-portal/api-init-contracts",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "description": "Initialize turnstile artifacts in the database",
   "private": true,
   "type": "module",

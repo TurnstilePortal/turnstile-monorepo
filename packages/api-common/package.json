@@ -1,6 +1,6 @@
 {
   "name": "@turnstile-portal/api-common",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "private": true,
   "description": "Shared database schema and types for Turnstile API",
   "main": "dist/index.js",
