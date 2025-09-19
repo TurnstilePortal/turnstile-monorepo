@@ -1,5 +1,11 @@
 # @turnstile-portal/api-init-contracts
 
+## 0.0.17
+
+### Patch Changes
+
+- b361554: fix artifact storage
+
 ## 0.0.16
 
 ### Patch Changes
