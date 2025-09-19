@@ -60,9 +60,7 @@ export const contractQueryParamsJsonSchema = z.object({
 });
 
 // Response schemas
-export const contractInstancesResponseSchema = z.object({
-  data: z.array(z.string().regex(/^0x[a-fA-F0-9]{64}$/)),
-});
+export const contractInstancesResponseSchema = z.array(z.string().regex(/^0x[a-fA-F0-9]{64}$/));
 
 export const contractClassInstanceMatchSchema = z.enum(['current', 'original', 'any']);
 

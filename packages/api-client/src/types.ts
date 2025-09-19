@@ -746,9 +746,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            'application/json': {
-              data: string[];
-            };
+            'application/json': string[];
           };
         };
         /** @description Default Response */

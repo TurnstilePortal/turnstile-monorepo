@@ -92,7 +92,7 @@ const instances = await client.getContractInstancesByClassId(
   '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
   { match: 'any' },
 );
-console.log(instances.data); // Array of contract addresses
+console.log(instances); // Array of contract addresses
 ```
 
 ### Custom Headers and Fetch

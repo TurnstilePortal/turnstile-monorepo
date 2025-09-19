@@ -151,12 +151,8 @@ export async function registerContractRoutes(fastify: FastifyInstance, contractS
 
         const addresses = await contractService.getContractInstancesByClassId(contractClassId, matchScope);
 
-        const response = {
-          data: addresses,
-        };
-
         // Contract instances are immutable, cache for a reasonable time
-        sendJsonResponse(reply, response, CacheControl.PUBLIC_5MIN);
+        sendJsonResponse(reply, addresses, CacheControl.PUBLIC_5MIN);
       } catch (_error) {
         fastify.log.error('Failed to query contract instances by class ID');
         sendError(reply, 500, 'Database error');
