@@ -1,4 +1,5 @@
 import { char, integer, jsonb, pgTable, serial, timestamp } from 'drizzle-orm/pg-core';
+import type { ContractInstantiationData } from '../types.js';
 
 export const contractArtifacts = pgTable('contract_artifacts', {
   id: serial('id').primaryKey(),
@@ -20,7 +21,7 @@ export const contractInstances = pgTable('contract_instances', {
   ),
   initializationHash: char('initialization_hash', { length: 66 }),
   // JSON payload capturing constructor args and public keys used to derive the initialization hash
-  deploymentParams: jsonb('deployment_params'),
+  deploymentParams: jsonb('deployment_params').$type<ContractInstantiationData>(),
   version: integer('version').notNull().default(1),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

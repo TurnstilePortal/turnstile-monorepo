@@ -1279,7 +1279,37 @@
                       "pattern": "^0x[a-fA-F0-9]{64}$"
                     },
                     "deployment_params": {
-                      "nullable": true
+                      "nullable": true,
+                      "type": "object",
+                      "properties": {
+                        "constructorArtifact": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "constructorArgs": {
+                          "nullable": true,
+                          "type": "array",
+                          "items": {}
+                        },
+                        "salt": {
+                          "type": "string",
+                          "pattern": "^0x[a-fA-F0-9]+$"
+                        },
+                        "publicKeys": {
+                          "type": "string",
+                          "pattern": "^0x[a-fA-F0-9]+$"
+                        },
+                        "deployer": {
+                          "type": "string",
+                          "pattern": "^0x[a-fA-F0-9]+$"
+                        }
+                      },
+                      "required": [
+                        "salt",
+                        "publicKeys",
+                        "deployer"
+                      ],
+                      "additionalProperties": false
                     },
                     "version": {
                       "type": "number"
@@ -1475,14 +1505,28 @@
         }
       }
     },
-    "/contracts/instances/{contractClassId}": {
+    "/contracts/by-class/{contractClassId}/addresses": {
       "get": {
-        "summary": "Get contract instances by class ID",
+        "summary": "Get contract addresses for a class",
         "tags": [
           "Contracts"
         ],
-        "description": "Get all contract instance addresses that match the given contract class ID",
+        "description": "Get all contract instance addresses that match the given contract class ID with configurable match scope",
         "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "current",
+                "original",
+                "any"
+              ]
+            },
+            "in": "query",
+            "name": "match",
+            "required": false,
+            "description": "Match scope for contract instances: current (default), original, or any"
+          },
           {
             "schema": {
               "type": "string"
@@ -1498,20 +1542,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "pattern": "^0x[a-fA-F0-9]{64}$"
-                      }
-                    }
-                  },
-                  "required": [
-                    "data"
-                  ],
-                  "additionalProperties": false
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^0x[a-fA-F0-9]{64}$"
+                  }
                 }
               }
             }

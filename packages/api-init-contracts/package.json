@@ -21,6 +21,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@aztec/aztec.js": "1.2.1",
+    "@aztec/foundation": "1.2.1",
     "@aztec/stdlib": "1.2.1",
     "@electric-sql/pglite": "^0.3.8",
     "@turnstile-portal/api-common": "workspace:^",

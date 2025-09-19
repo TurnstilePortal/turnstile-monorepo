@@ -579,7 +579,13 @@ export interface paths {
               original_contract_class_id: string | null;
               current_contract_class_id: string | null;
               initialization_hash: string | null;
-              deployment_params: unknown;
+              deployment_params: {
+                constructorArtifact?: string | null;
+                constructorArgs?: unknown[] | null;
+                salt: string;
+                publicKeys: string;
+                deployer: string;
+              } | null;
               version: number;
               artifact_hash?: string;
               artifact?: unknown;
@@ -709,7 +715,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/contracts/instances/{contractClassId}': {
+  '/contracts/by-class/{contractClassId}/addresses': {
     parameters: {
       query?: never;
       header?: never;
@@ -717,12 +723,15 @@ export interface paths {
       cookie?: never;
     };
     /**
-     * Get contract instances by class ID
-     * @description Get all contract instance addresses that match the given contract class ID
+     * Get contract addresses for a class
+     * @description Get all contract instance addresses that match the given contract class ID with configurable match scope
      */
     get: {
       parameters: {
-        query?: never;
+        query?: {
+          /** @description Match scope for contract instances: current (default), original, or any */
+          match?: 'current' | 'original' | 'any';
+        };
         header?: never;
         path: {
           contractClassId: string;
@@ -737,9 +746,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            'application/json': {
-              data: string[];
-            };
+            'application/json': string[];
           };
         };
         /** @description Default Response */

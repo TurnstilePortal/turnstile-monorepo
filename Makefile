@@ -45,7 +45,7 @@ lint:
 fmt:
 	make -C l1 fmt
 	make -C aztec fmt
-	pnpm run check:fix
+	pnpm run check
 
 .PHONY: artifacts
 artifacts: l1-artifacts aztec-artifacts

@@ -1,5 +1,6 @@
 import { AztecAddress, getContractClassFromArtifact, getContractInstanceFromDeployParams } from '@aztec/aztec.js';
 import { PublicKeys } from '@aztec/stdlib/keys';
+import type { ContractInstantiationData } from '@turnstile-portal/api-common';
 import type { NewContractInstance } from '@turnstile-portal/api-common/schema';
 import { TokenContractArtifact } from '@turnstile-portal/aztec-artifacts';
 import { L2_CONTRACT_DEPLOYMENT_SALT } from '@turnstile-portal/turnstile.js';
@@ -10,14 +11,6 @@ export interface TokenMetadata {
   name: string;
   symbol: string;
   decimals: number;
-}
-
-export interface TokenDeploymentParams {
-  name: string;
-  symbol: string;
-  decimals: number;
-  portalAddress: string;
-  publicKeys: ReturnType<typeof PublicKeys.default>;
 }
 
 export class ContractRegistryService {
@@ -46,13 +39,14 @@ export class ContractRegistryService {
     symbol: string,
     decimals: number,
     portalAddress: AztecAddress,
+    publicKeys: PublicKeys,
   ) {
     const instance = await getContractInstanceFromDeployParams(TokenContractArtifact, {
       constructorArtifact: 'constructor_with_minter',
       constructorArgs: [name, symbol, decimals, portalAddress, AztecAddress.ZERO /* upgrade_authority */],
       salt: L2_CONTRACT_DEPLOYMENT_SALT,
       deployer: AztecAddress.ZERO,
-      publicKeys: PublicKeys.default(),
+      publicKeys,
     });
 
     return instance;
@@ -90,11 +84,13 @@ export class ContractRegistryService {
       const contractClassId = contractClass.id;
 
       // Derive the contract instance
+      const publicKeys = PublicKeys.default();
       const instance = await this.deriveTokenContractInstance(
         metadata.name,
         metadata.symbol,
         metadata.decimals,
         portalAddress,
+        publicKeys,
       );
 
       // Verify the address matches
@@ -106,12 +102,18 @@ export class ContractRegistryService {
       }
 
       // Prepare deployment parameters for storage
-      const deploymentParams: TokenDeploymentParams = {
-        name: metadata.name,
-        symbol: metadata.symbol,
-        decimals: metadata.decimals,
-        portalAddress: portalAddress.toString(),
-        publicKeys: PublicKeys.default(),
+      const deploymentParams: ContractInstantiationData = {
+        constructorArtifact: 'constructor_with_minter',
+        constructorArgs: [
+          metadata.name,
+          metadata.symbol,
+          metadata.decimals,
+          portalAddress.toString(),
+          AztecAddress.ZERO.toString(),
+        ],
+        salt: L2_CONTRACT_DEPLOYMENT_SALT.toString() as `0x${string}`,
+        publicKeys: publicKeys.toString() as `0x${string}`,
+        deployer: AztecAddress.ZERO.toString() as `0x${string}`,
       };
 
       // Create contract instance record
