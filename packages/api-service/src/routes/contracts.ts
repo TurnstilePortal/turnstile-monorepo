@@ -26,7 +26,7 @@ export async function registerContractRoutes(fastify: FastifyInstance, contractS
     Params: { address: string };
     Querystring: { includeArtifact?: string };
   }>(
-    '/contract/:address',
+    '/contracts/:address',
     {
       schema: {
         tags: ['Contracts'],
@@ -77,7 +77,7 @@ export async function registerContractRoutes(fastify: FastifyInstance, contractS
   fastify.get<{
     Params: { identifier: string };
   }>(
-    '/artifact/:identifier',
+    '/artifacts/:identifier',
     {
       schema: {
         tags: ['Contracts'],
