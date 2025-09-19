@@ -17,6 +17,7 @@
       "@turnstile-portal/api-common",
       "@turnstile-portal/api-service",
       "@turnstile-portal/api-client",
+      "@turnstile-portal/api-init-contracts",
       "@turnstile-portal/collector"
     ]
   ],
