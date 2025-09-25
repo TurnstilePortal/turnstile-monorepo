@@ -5,10 +5,8 @@ import swaggerUi from '@fastify/swagger-ui';
 import { createDbClient } from '@turnstile-portal/api-common';
 import type { FastifyInstance } from 'fastify';
 import Fastify from 'fastify';
-import { registerContractRoutes } from './routes/contracts.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerTokenRoutes } from './routes/tokens.js';
-import { ContractService } from './services/contract-service.js';
 import { TokenService } from './services/token-service.js';
 
 function normalizePrefix(input?: string): string {
@@ -46,7 +44,6 @@ async function createServer() {
   }
   const db = createDbClient(databaseUrl);
   const tokenService = new TokenService(db);
-  const contractService = new ContractService(db);
 
   const apiPrefix = normalizePrefix(process.env.API_ROUTE_PREFIX);
   let getSwagger: (() => unknown) | undefined;
@@ -90,7 +87,6 @@ async function createServer() {
       });
 
       await registerTokenRoutes(app, tokenService);
-      await registerContractRoutes(app, contractService);
 
       getSwagger = () => app.swagger();
     },

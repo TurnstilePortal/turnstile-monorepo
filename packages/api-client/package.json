@@ -23,7 +23,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "generate:api": "cd ../api-service && pnpm generate:openapi",
+    "generate:api": "cd ../api-service && pnpm generate",
     "generate:types": "openapi-typescript ../api-service/openapi.generated.json -o ./src/types.ts",
     "generate": "pnpm generate:api && pnpm generate:types",
     "test": "vitest --run",

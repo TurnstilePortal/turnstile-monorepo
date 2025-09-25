@@ -1,14 +1,8 @@
-import type { NewContractArtifact, NewContractInstance } from '@turnstile-portal/api-common/schema';
+import type { AztecArtifactsApiClient } from '@aztec-artifacts/client';
 import { portalHelper, shieldGatewayHelper, tokenHelper } from './contracts/index.js';
-import {
-  getContractArtifactByHash,
-  getContractInstanceByAddress,
-  storeContractArtifact,
-  storeContractInstance,
-} from './db.js';
 import { logger } from './utils/logger.js';
 
-export async function loadTurnstileContracts(): Promise<{
+export async function loadTurnstileContracts(client: AztecArtifactsApiClient): Promise<{
   artifactsStored: number;
   instancesStored: number;
 }> {
@@ -29,44 +23,28 @@ export async function loadTurnstileContracts(): Promise<{
 
     logger.debug({ contract: helper.name, artifactHash, contractClassId }, 'Fetched contract class');
 
-    const existingArtifact = await getContractArtifactByHash(artifactHash);
+    const existingArtifact = await client.getArtifact(artifactHash);
     if (existingArtifact) {
       logger.debug({ contract: helper.name, artifactHash }, 'Artifact already stored');
     } else {
-      const newArtifact: NewContractArtifact = {
-        artifactHash,
-        artifact: await helper.getArtifact(),
-        contractClassId,
-      };
-
-      await storeContractArtifact(newArtifact);
+      await client.uploadContractArtifact(await helper.getArtifact());
       logger.info({ contract: helper.name, artifactHash, contractClassId }, 'Stored contract artifact');
       artifactsStored++;
     }
 
     // Load instance if available
-    if (helper.getContractInstance && helper.getDeploymentParams) {
+    if (helper.getContractInstance && helper.getInitializationData) {
       const instance = await helper.getContractInstance();
       const address = instance.address.toString();
 
       logger.debug({ contract: helper.name, address }, 'Fetched contract instance');
 
-      const existingInstance = await getContractInstanceByAddress(address);
+      const existingInstance = await client.getContract(address);
       if (existingInstance) {
         logger.debug({ contract: helper.name, address }, 'Contract instance already stored');
       } else {
-        const deploymentParams = await helper.getDeploymentParams();
-
-        const newInstance: NewContractInstance = {
-          address,
-          originalContractClassId: instance.originalContractClassId.toString(),
-          currentContractClassId: instance.currentContractClassId.toString(),
-          initializationHash: instance.initializationHash?.toString() ?? null,
-          deploymentParams,
-          version: instance.version,
-        };
-
-        await storeContractInstance(newInstance);
+        const initializationData = await helper.getInitializationData();
+        await client.uploadContractInstance({ instance, initializationData });
         logger.info({ contract: helper.name, address }, 'Stored contract instance');
         instancesStored++;
       }

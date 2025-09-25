@@ -1,67 +1,108 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { contractArtifacts, contractInstances } from '@turnstile-portal/api-common/schema';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { setDatabase } from '../db.js';
+import type { ContractArtifact, ContractInstanceWithAddress } from '@aztec/aztec.js';
+import { getContractClassFromArtifact } from '@aztec/stdlib/contract';
+import type { AztecArtifactsApiClient } from '@aztec-artifacts/client';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as util from '../factory.js';
 import { loadTurnstileContracts } from '../loader.js';
-import { setupTestDatabase } from './setup.js';
 
 // Load test deployment data
 const testDeploymentData = JSON.parse(readFileSync(join(__dirname, 'deployment.json'), 'utf-8'));
 
 describe('loader', () => {
-  let testDb: Awaited<ReturnType<typeof setupTestDatabase>>;
+  let mockClient: AztecArtifactsApiClient;
+  const storedArtifacts = new Set<string>();
+  const storedInstances = new Set<string>();
 
   beforeEach(async () => {
-    testDb = await setupTestDatabase();
-    setDatabase(testDb.db);
     // Set test deployment data to avoid network calls
     util.setDeploymentData(testDeploymentData);
+
+    // Clear stored data
+    storedArtifacts.clear();
+    storedInstances.clear();
+
+    // Create mock client
+    mockClient = {
+      getArtifact: vi.fn(async (artifactHash: string) => {
+        // Return artifact if it was previously stored
+        if (storedArtifacts.has(artifactHash)) {
+          return {} as ContractArtifact; // Mock artifact
+        }
+        return null;
+      }),
+      getContract: vi.fn(async (address: string) => {
+        // Return instance if it was previously stored
+        if (storedInstances.has(address)) {
+          return {
+            instance: {} as ContractInstanceWithAddress,
+          };
+        }
+        return null;
+      }),
+      uploadContractArtifact: vi.fn(async (artifact: ContractArtifact) => {
+        // Simulate storing the artifact
+        const contractClass = await getContractClassFromArtifact(artifact);
+        const artifactHash = contractClass.artifactHash.toString();
+        storedArtifacts.add(artifactHash);
+        return { contractClassId: contractClass.id.toString() };
+      }),
+      uploadContractInstance: vi.fn(async ({ instance }: { instance: ContractInstanceWithAddress }) => {
+        // Simulate storing the instance
+        const address = instance.address.toString();
+        storedInstances.add(address);
+        return { address, contractClassId: instance.currentContractClassId.toString() };
+      }),
+    } as unknown as AztecArtifactsApiClient;
   });
 
   afterEach(async () => {
-    await testDb.cleanup();
-    setDatabase(null);
     // Reset factory to clean state
     util.resetFactory();
   });
 
   describe('loadTurnstileContracts', () => {
     it('should load contract artifacts and instances', async () => {
-      const result = await loadTurnstileContracts();
+      const result = await loadTurnstileContracts(mockClient);
 
-      expect(result.artifactsStored).toBe(3);
-      expect(result.instancesStored).toBe(2);
+      expect(result.artifactsStored, 'artifactsStored').toBe(3);
+      expect(result.instancesStored, 'instancesStored').toBe(2);
 
-      const artifacts = await testDb.db.select().from(contractArtifacts);
-      expect(artifacts).toHaveLength(3);
+      // Verify that upload methods were called
+      expect(mockClient.uploadContractArtifact).toHaveBeenCalledTimes(3);
+      expect(mockClient.uploadContractInstance).toHaveBeenCalledTimes(2);
 
-      const instances = await testDb.db.select().from(contractInstances);
-      expect(instances).toHaveLength(2);
-
-      // Verify that artifacts were stored (we don't need to check specific hashes)
-      expect(artifacts.some((a) => a.contractClassId)).toBe(true);
-      expect(instances.some((i) => i.address)).toBe(true);
+      // Verify that artifacts and instances were stored in our mock
+      expect(storedArtifacts.size).toBe(3);
+      expect(storedInstances.size).toBe(2);
     });
 
     it('should skip existing artifacts and instances', async () => {
       // First run to load all data
-      const firstResult = await loadTurnstileContracts();
+      const firstResult = await loadTurnstileContracts(mockClient);
       expect(firstResult.artifactsStored).toBe(3);
       expect(firstResult.instancesStored).toBe(2);
 
+      // Reset mock call counts
+      vi.clearAllMocks();
+
       // Second run should skip existing data
-      const secondResult = await loadTurnstileContracts();
+      const secondResult = await loadTurnstileContracts(mockClient);
       expect(secondResult.artifactsStored).toBe(0);
       expect(secondResult.instancesStored).toBe(0);
 
-      // Total should still be the same
-      const artifacts = await testDb.db.select().from(contractArtifacts);
-      expect(artifacts).toHaveLength(3);
+      // Verify that upload methods were not called again
+      expect(mockClient.uploadContractArtifact).not.toHaveBeenCalled();
+      expect(mockClient.uploadContractInstance).not.toHaveBeenCalled();
 
-      const instances = await testDb.db.select().from(contractInstances);
-      expect(instances).toHaveLength(2);
+      // Verify that getArtifact and getContract were called to check existence
+      expect(mockClient.getArtifact).toHaveBeenCalledTimes(3);
+      expect(mockClient.getContract).toHaveBeenCalledTimes(2);
+
+      // Total stored should still be the same
+      expect(storedArtifacts.size).toBe(3);
+      expect(storedInstances.size).toBe(2);
     });
   });
 });

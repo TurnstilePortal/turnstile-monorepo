@@ -1,5 +1,5 @@
 import type { ContractArtifact, ContractClassWithId, ContractInstanceWithAddress } from '@aztec/aztec.js';
-import type { ContractInstantiationData } from '@turnstile-portal/api-common';
+import type { InitializationData } from '@aztec-artifacts/client';
 
 /**
  * Interface for contract helpers that provide unified access to contract data.
@@ -19,7 +19,7 @@ export interface ContractHelper {
   getContractInstance?(): Promise<ContractInstanceWithAddress>;
 
   /** Get deployment parameters (optional - only for deployed contracts) */
-  getDeploymentParams?(): Promise<ContractInstantiationData>;
+  getInitializationData?(): Promise<InitializationData | undefined>;
 }
 
 // Re-export all helpers
