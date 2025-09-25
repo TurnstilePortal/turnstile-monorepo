@@ -1,5 +1,12 @@
 # @turnstile-portal/api-init-contracts
 
+## 0.2.1
+
+### Patch Changes
+
+- 5ca3b8e: fix contract artifact loading bugw
+  - @turnstile-portal/api-common@0.2.1
+
 ## 0.2.0
 
 ### Minor Changes
