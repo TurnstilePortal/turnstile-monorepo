@@ -27,6 +27,7 @@ async function main() {
       chunkSize: config.l2.chunkSize,
       l1RpcUrl: config.l1.rpcUrl,
       network: config.l1.network,
+      artifactsApiUrl: config.l2.artifactsApiUrl,
     },
     pollingInterval,
   });

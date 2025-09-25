@@ -21,7 +21,14 @@ program
   .option('-u, --url <url>', 'Aztec Artifacts service URL override')
   .action(async (options) => {
     try {
-      const client = options.url ? new AztecArtifactsApiClient({ baseUrl: options.url }) : createDefaultClient();
+      let client: AztecArtifactsApiClient;
+      if (options.url) {
+        logger.info({ url: options.url }, 'Using custom Aztec Artifacts service URL');
+        client = new AztecArtifactsApiClient({ baseUrl: options.url });
+      } else {
+        logger.info('Using default Aztec Artifacts service URL');
+        client = createDefaultClient();
+      }
       logger.info('Starting Turnstile contract data loader...');
       const result = await loadTurnstileContracts(client);
       logger.info(result, 'Contract data loaded successfully');

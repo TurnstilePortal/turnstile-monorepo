@@ -5,7 +5,12 @@ import {
   getContractInstanceFromInstantiationParams,
 } from '@aztec/aztec.js';
 import { PublicKeys } from '@aztec/stdlib/keys';
-import { createDefaultClient, getFunctionAbi, type InitializationData } from '@aztec-artifacts/client';
+import {
+  AztecArtifactsApiClient,
+  createDefaultClient,
+  getFunctionAbi,
+  type InitializationData,
+} from '@aztec-artifacts/client';
 import { TokenContractArtifact } from '@turnstile-portal/aztec-artifacts';
 import { L2_CONTRACT_DEPLOYMENT_SALT } from '@turnstile-portal/turnstile.js';
 import { logger } from '../utils/logger.js';
@@ -20,10 +25,20 @@ const tokenConstructorName = 'constructor_with_minter';
 const tokenConstructorAbi = getFunctionAbi(TokenContractArtifact, tokenConstructorName);
 
 export class ContractRegistryService {
-  private artifactClientPromise = createDefaultClient();
+  private artifactsClientPromise: AztecArtifactsApiClient;
 
-  private async getArtifactClient() {
-    return this.artifactClientPromise;
+  constructor(artifactsApiUrl?: string) {
+    if (artifactsApiUrl) {
+      logger.info(`Using Aztec Artifacts API at ${artifactsApiUrl}`);
+      this.artifactsClientPromise = new AztecArtifactsApiClient({ baseUrl: artifactsApiUrl });
+    } else {
+      logger.info('Using default Aztec Artifacts API URL');
+      this.artifactsClientPromise = createDefaultClient();
+    }
+  }
+
+  private async getArtifactsClient(): Promise<AztecArtifactsApiClient> {
+    return this.artifactsClientPromise;
   }
 
   /**
@@ -80,7 +95,7 @@ export class ContractRegistryService {
         return;
       }
 
-      const client = await this.getArtifactClient();
+      const client = await this.getArtifactsClient();
 
       await client.uploadContractInstance({
         instance,

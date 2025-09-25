@@ -19,6 +19,7 @@ export interface NetworkConfig {
     portalAddress: `0x${string}`;
     startBlock: number;
     chunkSize: number;
+    artifactsApiUrl?: string;
   };
 }
 export async function getNetworkConfig(): Promise<NetworkConfig> {
@@ -33,6 +34,7 @@ export async function getNetworkConfig(): Promise<NetworkConfig> {
   const l2NodeUrl = process.env.L2_NODE_URL;
   const l2StartBlock = process.env.L2_START_BLOCK;
   const l2ChunkSize = process.env.L2_CHUNK_SIZE;
+  const artifactsApiUrl = process.env.ARTIFACTS_API_URL;
 
   if (!l1RpcUrl) throw new Error('L1_RPC_URL environment variable is required');
   if (!l1StartBlock) throw new Error('L1_START_BLOCK environment variable is required');
@@ -101,6 +103,7 @@ export async function getNetworkConfig(): Promise<NetworkConfig> {
       portalAddress: l2PortalAddress,
       startBlock: Number(l2StartBlock),
       chunkSize: Number(l2ChunkSize),
+      artifactsApiUrl,
     },
   };
 }

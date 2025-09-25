@@ -32,6 +32,7 @@ export interface L2CollectorConfig {
   chunkSize?: number;
   l1RpcUrl: string;
   network: string;
+  artifactsApiUrl?: string;
 }
 
 export class L2Collector {
@@ -44,6 +45,7 @@ export class L2Collector {
     this.config = {
       startBlock: 1,
       chunkSize: 100,
+      artifactsApiUrl: '',
       ...config,
     };
 
@@ -57,7 +59,7 @@ export class L2Collector {
     });
 
     this.metadataService = new MetadataService(l1Client, getDatabase());
-    this.contractRegistryService = new ContractRegistryService();
+    this.contractRegistryService = new ContractRegistryService(config.artifactsApiUrl);
   }
 
   async getL2TokenRegistrations(fromBlock: number, toBlock: number): Promise<Partial<NewToken>[]> {

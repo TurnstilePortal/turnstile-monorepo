@@ -19,6 +19,7 @@ interface CLIOptions {
   network?: string;
   forceL1StartBlock?: string;
   forceL2StartBlock?: string;
+  apiClientUrl?: string;
 }
 
 program
@@ -32,6 +33,7 @@ program
   .option('--network <name>', 'Network to use (e.g., sepolia)')
   .option('--force-l1-start-block <number>', 'Force L1 collector to start from this block (backfill mode)')
   .option('--force-l2-start-block <number>', 'Force L2 collector to start from this block (backfill mode)')
+  .option('-u, --url <url>', 'Aztec Artifacts API URL')
   .option('-v, --verbose', 'Verbose output')
   .parse();
 
@@ -100,6 +102,7 @@ async function runL2DryRun(fromBlock?: number, toBlock?: number): Promise<void> 
     chunkSize: config.l2.chunkSize,
     l1RpcUrl: config.l1.rpcUrl,
     network: config.name,
+    artifactsApiUrl: options.apiClientUrl,
   });
 
   try {

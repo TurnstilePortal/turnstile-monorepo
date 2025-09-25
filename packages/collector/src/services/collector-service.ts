@@ -45,6 +45,7 @@ export class CollectorService {
         chunkSize: config.l2.chunkSize ?? 100,
         l1RpcUrl: config.l1.rpcUrl,
         network: config.l1.network,
+        artifactsApiUrl: config.l2.artifactsApiUrl,
       },
       pollingInterval: config.pollingInterval ?? 30000,
     };
