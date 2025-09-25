@@ -1,4 +1,4 @@
-import type { AztecArtifactsApiClient } from '@aztec-artifacts/client';
+import { type AztecArtifactsApiClient, NotFoundError } from '@aztec-artifacts/client';
 import { portalHelper, shieldGatewayHelper, tokenHelper } from './contracts/index.js';
 import { logger } from './utils/logger.js';
 
@@ -23,10 +23,14 @@ export async function loadTurnstileContracts(client: AztecArtifactsApiClient): P
 
     logger.debug({ contract: helper.name, artifactHash, contractClassId }, 'Fetched contract class');
 
-    const existingArtifact = await client.getArtifact(artifactHash);
-    if (existingArtifact) {
+    try {
+      await client.getArtifact(artifactHash);
       logger.debug({ contract: helper.name, artifactHash }, 'Artifact already stored');
-    } else {
+    } catch (error) {
+      if (!(error instanceof NotFoundError)) {
+        throw error;
+      }
+      console.log(`Uploading artifact for ${helper.name}...`);
       await client.uploadContractArtifact(await helper.getArtifact());
       logger.info({ contract: helper.name, artifactHash, contractClassId }, 'Stored contract artifact');
       artifactsStored++;
@@ -39,10 +43,13 @@ export async function loadTurnstileContracts(client: AztecArtifactsApiClient): P
 
       logger.debug({ contract: helper.name, address }, 'Fetched contract instance');
 
-      const existingInstance = await client.getContract(address);
-      if (existingInstance) {
+      try {
+        await client.getContract(address);
         logger.debug({ contract: helper.name, address }, 'Contract instance already stored');
-      } else {
+      } catch (error) {
+        if (!(error instanceof NotFoundError)) {
+          throw error;
+        }
         const initializationData = await helper.getInitializationData();
         await client.uploadContractInstance({ instance, initializationData });
         logger.info({ contract: helper.name, address }, 'Stored contract instance');
