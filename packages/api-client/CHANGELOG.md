@@ -1,5 +1,11 @@
 # @turnstile-portal/api-client
 
+## 0.1.0
+
+### Minor Changes
+
+- 5c14067: Use the aztec-artifacts.org API to upload contract artifacts instead of making it part of the turnstile api
+
 ## 0.0.19
 
 ### Patch Changes

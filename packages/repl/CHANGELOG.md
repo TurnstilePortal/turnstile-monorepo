@@ -1,5 +1,13 @@
 # @turnstile-portal/repl
 
+## 0.4.17
+
+### Patch Changes
+
+- @turnstile-portal/turnstile.js@0.4.17
+- @turnstile-portal/aztec-artifacts@0.4.17
+- @turnstile-portal/turnstile-dev@0.4.17
+
 ## 0.4.16
 
 ### Patch Changes
