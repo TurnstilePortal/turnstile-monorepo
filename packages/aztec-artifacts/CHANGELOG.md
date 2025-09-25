@@ -1,5 +1,11 @@
 # @turnstile-portal/aztec-artifacts
 
+## 0.5.0
+
+### Minor Changes
+
+- aa72156: update to aztec 2.0.3
+
 ## 0.4.17
 
 ## 0.4.16
