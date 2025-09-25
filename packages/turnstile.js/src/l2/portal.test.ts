@@ -324,7 +324,9 @@ describe('L2Portal', () => {
           }) as unknown as Fr,
       );
 
-      const result = await portal.withdrawPublic(l1TokenAddr, l1RecipientAddr, amount, burnNonce);
+      const result = await portal.withdrawPublic(l1TokenAddr, l1RecipientAddr, amount, burnNonce, {
+        from: mockL2Client.getAddress(),
+      });
 
       // Check the portal contract was retrieved
       expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
@@ -349,7 +351,9 @@ describe('L2Portal', () => {
       mockPortalContract.methods.withdraw_public().send.mockRejectedValueOnce(new Error('Withdraw failed'));
 
       // Verify error is thrown
-      await expect(portal.withdrawPublic(l1TokenAddr, l1RecipientAddr, amount, burnNonce)).rejects.toThrow();
+      await expect(
+        portal.withdrawPublic(l1TokenAddr, l1RecipientAddr, amount, burnNonce, { from: mockL2Client.getAddress() }),
+      ).rejects.toThrow();
     });
   });
 

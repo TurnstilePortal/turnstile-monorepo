@@ -2,11 +2,6 @@
 
 set -e
 
-set -x
-
-pwd
-ls -al
-
 DEPLOY_CONFIG_DIR=${DEPLOY_CONFIG_DIR:-"docker/sandbox-deploy-config"}
 
 aztec_node=$(jq -r .connection.aztec.node ${DEPLOY_CONFIG_DIR}/config.json)

@@ -10,7 +10,8 @@ pub contract Portal {
 
     use aztec::{
         authwit::auth::assert_current_call_valid_authwit_public,
-        event::event_interface::emit_event_in_public_log,
+        context::call_interfaces::CallInterface,
+        event::event_interface::emit_event_in_public,
         hash::hash_args,
         macros::{
             events::event,
@@ -132,9 +133,10 @@ pub contract Portal {
             context.this_address() /* minter */,
             AztecAddress::zero(), /* not upgradable */
         );
-        let args_hash = hash_args(initializer.args);
+        let args_hash = hash_args(initializer.get_args());
         aztec::oracle::debug_log::debug_log_format("Args hash: {0}", [args_hash]);
-        let init_hash = compute_initialization_hash(initializer.selector, args_hash);
+
+        let init_hash = compute_initialization_hash(initializer.get_selector(), args_hash);
         aztec::oracle::debug_log::debug_log_format("Init hash: {0}", [init_hash]);
         let partial_address = PartialAddress::compute(
             config.token_contract_class_id,
@@ -187,7 +189,7 @@ pub contract Portal {
         // Initialize the token mappings
         storage.l1_tokens.at(eth_token).initialize(aztec_token);
         storage.l2_tokens.at(aztec_token).initialize(eth_token);
-        emit_event_in_public_log(Register { eth_token, aztec_token }, &mut context);
+        emit_event_in_public(Register { eth_token, aztec_token }, &mut context);
     }
 
     #[private]
@@ -269,7 +271,7 @@ pub contract Portal {
         amount: u128,
         message_leaf_index: Field,
     ) {
-        emit_event_in_public_log(
+        emit_event_in_public(
             Deposit { eth_token, recipient, amount, message_leaf_index },
             &mut context,
         );
@@ -303,7 +305,7 @@ pub contract Portal {
 
         aztec::oracle::debug_log::debug_log_format("Withdraw L2ToL1 Message {0}", [content_hash]);
 
-        emit_event_in_public_log(
+        emit_event_in_public(
             Withdraw { token: eth_token, from, to: recipient, amount },
             &mut context,
         );

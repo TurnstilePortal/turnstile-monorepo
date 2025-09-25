@@ -41,6 +41,7 @@ async function initiateL2Withdrawal({
   console.log('Setting up burn authorization...');
   const burnAuthTx = await action.send({
     fee: l2Client.getFeeOpts(),
+    from: l2Client.getAddress(),
   });
 
   console.log(`Waiting for burn authorization transaction ${await burnAuthTx.getTxHash()}...`);
@@ -50,6 +51,7 @@ async function initiateL2Withdrawal({
   // Initiate the withdrawal from the Portal
   const { tx: withdrawTx, withdrawData } = await l2Portal.withdrawPublic(l1TokenAddr, l1Recipient, amount, nonce, {
     fee: l2Client.getFeeOpts(),
+    from: l2Client.getAddress(),
   });
 
   console.log(`Withdrawal initiated on L2. Tx: ${(await withdrawTx.getTxHash()).toString()}`);
@@ -94,12 +96,12 @@ async function completeL1Withdrawal({
     60, // Timeout in seconds
   );
 
-  const { siblingPath, l2MessageIndex } = witness;
+  const { siblingPath, leafIndex } = witness;
 
   const l1Token = new L1Token(l1TokenAddr, l1Client);
   console.log(`Current L1 balance: ${await l1Token.balanceOf(l1Client.getAddress())}`);
 
-  const tx = await l1Portal.withdraw(withdrawData, l2BlockNumber, l2MessageIndex, siblingPath);
+  const tx = await l1Portal.withdraw(withdrawData, l2BlockNumber, leafIndex, siblingPath);
   console.log(`L1 Withdraw transaction hash: ${tx}`);
 
   const receipt = await l1Client.getPublicClient().waitForTransactionReceipt({ hash: tx });

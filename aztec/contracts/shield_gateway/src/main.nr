@@ -1,4 +1,4 @@
-mod test;
+pub mod test;
 
 use aztec::macros::aztec;
 
@@ -7,8 +7,8 @@ pub contract ShieldGateway {
     use std::meta::derive;
 
     use aztec::{
-        event::event_interface::{emit_event_in_public_log, EventInterface},
-        macros::{events::event, functions::{initializer, internal, private, public, view}},
+        event::event_interface::{emit_event_in_public, EventInterface},
+        macros::{events::event, functions::{initializer, internal, private, public, utility, view}},
         oracle::capsules,
         protocol_types::{address::AztecAddress, traits::{FromField, Hash, Serialize, ToField}},
     };
@@ -58,10 +58,15 @@ pub contract ShieldGateway {
         amount / BIN_AMOUNT
     }
 
+    #[utility]
+    unconstrained fn binned(amount: u128) -> u128 {
+        _binned(amount)
+    }
+
     #[public]
     #[internal]
     fn _log_transfer(serial: Field, token: AztecAddress, binnedAmount: u128) {
-        emit_event_in_public_log(TransferEvent { serial, token, binnedAmount }, &mut context);
+        emit_event_in_public(TransferEvent { serial, token, binnedAmount }, &mut context);
     }
 
     #[private]

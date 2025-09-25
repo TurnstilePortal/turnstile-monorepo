@@ -20,16 +20,16 @@ onlyBuiltDependencies:
   - c-kzg
 
 overrides:
-  '@aztec/aztec.js': 1.2.1
-  '@aztec/circuit-types': 1.2.1
-  '@aztec/circuits.js': 1.2.1
-  '@aztec/cli': 1.2.1
-  '@aztec/constants': 1.2.1
-  '@aztec/foundation': 1.2.1
-  '@aztec/noir-contracts.js': 1.2.1
-  '@aztec/protocol-contracts': 1.2.1
-  '@aztec/stdlib': 1.2.1
-  '@aztec/types': 1.2.1
+  '@aztec/aztec.js': 2.0.3
+  '@aztec/circuit-types': 2.0.3
+  '@aztec/circuits.js': 2.0.3
+  '@aztec/cli': 2.0.3
+  '@aztec/constants': 2.0.3
+  '@aztec/foundation': 2.0.3
+  '@aztec/noir-contracts.js': 2.0.3
+  '@aztec/protocol-contracts': 2.0.3
+  '@aztec/stdlib': 2.0.3
+  '@aztec/types': 2.0.3
   glob: ^11.0.0
 
 preferWorkspacePackages: true

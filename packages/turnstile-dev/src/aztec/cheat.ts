@@ -11,7 +11,9 @@ export async function getCounterContract(l2Client: L2Client): Promise<CounterCon
 
     const wallet = l2Client.getWallet();
     const ownerAddress = wallet.getAddress();
-    counterContract = await CounterContract.deploy(wallet, 0, ownerAddress).send().deployed();
+    counterContract = await CounterContract.deploy(wallet, 0, ownerAddress)
+      .send({ from: wallet.getAddress() })
+      .deployed();
 
     console.log(`Counter contract deployed at address: ${counterContract.address.toString()}`);
   }
@@ -46,7 +48,7 @@ export async function advanceBlocks(l2Client: L2Client, numBlocks = 1) {
   const owner = l2Client.getWallet().getAddress();
   await retryUntil(async () => {
     for (let i = 0; i < numBlocksStillNeeded; i++) {
-      await counter.methods.increment(owner, owner).send().wait();
+      await counter.methods.increment(owner).send({ from: owner }).wait();
     }
     const currentBlockNumber = await node.getBlockNumber();
     return currentBlockNumber >= endBlock;

@@ -14,7 +14,7 @@ async function doShield(l2Client: L2Client, token: L2Token, amount: bigint) {
     throw new Error('Insufficient balance.');
   }
 
-  const tx = await token.shield(amount);
+  const tx = await token.shield(amount, { from: l2Client.getAddress() });
   console.log(`Transaction submitted: ${await tx.getTxHash()}`);
   return tx;
 }

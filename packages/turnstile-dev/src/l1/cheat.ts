@@ -5,8 +5,7 @@ import type {
   Address,
 } from 'viem';
 import { RollupAbi } from '@aztec/l1-artifacts';
-import { RollupCheatCodes } from '@aztec/aztec.js/testing';
-import { EthCheatCodes } from '@aztec/ethereum/eth-cheatcodes';
+import { EthCheatCodes, RollupCheatCodes } from '@aztec/ethereum/test';
 import { EthAddress } from '@aztec/aztec.js';
 import { type L1Client } from '@turnstile-portal/turnstile.js';
 

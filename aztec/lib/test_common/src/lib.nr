@@ -8,10 +8,10 @@ pub unconstrained fn setup_env_and_accounts<let N: u32>() -> (&mut TestEnvironme
     let mut env = TestEnvironment::new();
     let mut accounts = [AztecAddress::zero(); N];
     for i in 0..N {
-        accounts[i] = env.create_account_contract(i.to_field());
+        accounts[i] = env.create_contract_account();
     }
 
-    env.advance_block_by(1);
+    env.mine_block();
     (&mut env, accounts)
 }
 
@@ -19,9 +19,9 @@ pub unconstrained fn setup_env_and_accounts<let N: u32>() -> (&mut TestEnvironme
 pub unconstrained fn setup_accounts<let N: u32>(env: &mut TestEnvironment) -> [AztecAddress; N] {
     let mut accounts = [AztecAddress::zero(); N];
     for i in 0..N {
-        accounts[i] = env.create_account_contract(i.to_field());
+        accounts[i] = env.create_contract_account();
     }
 
-    env.advance_block_by(1);
+    env.mine_block();
     accounts
 }

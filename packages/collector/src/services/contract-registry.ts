@@ -2,7 +2,7 @@ import {
   AztecAddress,
   type ContractInstanceWithAddress,
   encodeArguments,
-  getContractInstanceFromDeployParams,
+  getContractInstanceFromInstantiationParams,
 } from '@aztec/aztec.js';
 import { PublicKeys } from '@aztec/stdlib/keys';
 import { createDefaultClient, getFunctionAbi, type InitializationData } from '@aztec-artifacts/client';
@@ -36,7 +36,7 @@ export class ContractRegistryService {
     portalAddress: AztecAddress,
     publicKeys: PublicKeys,
   ): Promise<{ instance: ContractInstanceWithAddress; initData: InitializationData }> {
-    const instance = await getContractInstanceFromDeployParams(TokenContractArtifact, {
+    const instance = await getContractInstanceFromInstantiationParams(TokenContractArtifact, {
       constructorArtifact: tokenConstructorAbi,
       constructorArgs: [name, symbol, decimals, portalAddress, AztecAddress.ZERO /* upgrade_authority */],
       salt: L2_CONTRACT_DEPLOYMENT_SALT,
