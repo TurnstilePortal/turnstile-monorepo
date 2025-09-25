@@ -1,5 +1,20 @@
 # @turnstile-portal/turnstile-dev
 
+## 0.5.0
+
+### Minor Changes
+
+- aa72156: update to aztec 2.0.3
+
+### Patch Changes
+
+- Updated dependencies [aa72156]
+  - @turnstile-portal/l1-artifacts-bytecode@0.5.0
+  - @turnstile-portal/l1-artifacts-dev@0.5.0
+  - @turnstile-portal/aztec-artifacts@0.5.0
+  - @turnstile-portal/turnstile.js@0.5.0
+  - @turnstile-portal/l1-artifacts-abi@0.5.0
+
 ## 0.4.17
 
 ### Patch Changes
