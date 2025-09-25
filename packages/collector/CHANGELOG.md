@@ -1,5 +1,12 @@
 # @turnstile-portal/collector
 
+## 0.2.2
+
+### Patch Changes
+
+- 3a78949: more fixes for turnstile api data collectors to work with aztec artifacts api
+  - @turnstile-portal/api-common@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes
