@@ -1,14 +1,14 @@
 import { AztecAddress } from '@aztec/aztec.js';
 import { getConfigPaths, loadDeployConfig } from '@turnstile-portal/deploy';
-import { type L2Token, TurnstileFactory } from '@turnstile-portal/turnstile.js';
+import { type IL2Client, type L2Token, TurnstileFactory } from '@turnstile-portal/turnstile.js';
 import { createL2Client, readKeyData } from '@turnstile-portal/turnstile-dev';
 import type { Command } from 'commander';
 
-async function doTransfer(token: L2Token, recipient: AztecAddress, amount: bigint) {
+async function doTransfer(senderClient: IL2Client, token: L2Token, recipient: AztecAddress, amount: bigint) {
   const symbol = await token.getSymbol();
   console.log(`Transferring ${amount} ${symbol} to ${recipient}...`);
 
-  const tx = await token.transferPublic(recipient, amount);
+  const tx = await token.transferPublic(recipient, amount, { from: senderClient.getAddress() });
   console.log(`Transaction submitted: ${await tx.getTxHash()}\nWaiting for receipt...`);
   const receipt = await tx.wait();
   console.log('Transfer status:', receipt.status);
@@ -61,7 +61,7 @@ export function registerAztecTransferPublic(program: Command) {
       if (initialSenderBalance < amount) {
         throw new Error('Insufficient balance');
       }
-      await doTransfer(l2Token, recipient, amount);
+      await doTransfer(l2Client, l2Token, recipient, amount);
 
       const finalRecipientBalance = await l2Token.balanceOfPublic(recipient);
       console.log(`Final recipient balance (${recipient}): ${finalRecipientBalance}`);

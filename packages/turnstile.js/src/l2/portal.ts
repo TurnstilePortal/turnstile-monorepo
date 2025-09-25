@@ -5,7 +5,7 @@ import {
   EthAddress,
   EventSelector,
   Fr,
-  getContractInstanceFromDeployParams,
+  getContractInstanceFromInstantiationParams,
   type LogFilter,
   type LogId,
   PublicKeys,
@@ -203,7 +203,7 @@ export class L2Portal implements IL2Portal {
 
     try {
       const portal = await this.getInstance();
-      const config = await portal.methods.get_config_public().simulate();
+      const config = await portal.methods.get_config_public().simulate({ from: this.client.getAddress() });
 
       this.config = {
         l1_portal: EthAddress.fromField(new Fr(config.l1_portal.inner)),
@@ -248,7 +248,7 @@ export class L2Portal implements IL2Portal {
           amount,
           Fr.fromHexString(`0x${index.toString(16)}`),
         )
-        .send();
+        .send({ from: this.client.getAddress() });
     } catch (error) {
       throw createError(
         ErrorCode.BRIDGE_DEPOSIT,
@@ -282,7 +282,7 @@ export class L2Portal implements IL2Portal {
           amount,
           Fr.fromHexString(`0x${index.toString(16)}`),
         )
-        .send();
+        .send({ from: this.client.getAddress() });
     } catch (error) {
       throw createError(
         ErrorCode.BRIDGE_DEPOSIT,
@@ -363,7 +363,7 @@ export class L2Portal implements IL2Portal {
           decimals,
           Fr.fromHexString(`0x${index.toString(16)}`),
         )
-        .send();
+        .send({ from: this.client.getAddress() });
     } catch (error) {
       throw createError(
         ErrorCode.BRIDGE_REGISTER,
@@ -395,7 +395,7 @@ export class L2Portal implements IL2Portal {
     l1RecipientAddr: Hex,
     amount: bigint,
     burnNonce: Fr,
-    sendMethodOptions?: SendMethodOptions,
+    sendMethodOptions: SendMethodOptions,
   ): Promise<{ tx: SentTx; withdrawData: Hex }> {
     try {
       const portal = await this.getInstance();
@@ -439,7 +439,7 @@ export class L2Portal implements IL2Portal {
       const portal = await this.getInstance();
       const simulationResult = await portal.methods
         .get_l2_token_unconstrained(EthAddress.fromString(l1TokenAddr))
-        .simulate();
+        .simulate({ from: this.client.getAddress() });
 
       const l2TokenAddr =
         typeof simulationResult === 'bigint'
@@ -484,7 +484,9 @@ export class L2Portal implements IL2Portal {
   async getL1TokenFromL2Address(l2TokenAddr: Hex): Promise<EthAddress> {
     try {
       const portal = await this.getInstance();
-      const result = await portal.methods.get_l1_token_unconstrained(AztecAddress.fromString(l2TokenAddr)).simulate();
+      const result = await portal.methods
+        .get_l1_token_unconstrained(AztecAddress.fromString(l2TokenAddr))
+        .simulate({ from: this.client.getAddress() });
       return EthAddress.fromString(`0x${result.inner.toString(16).padStart(40, '0')}`);
     } catch (error) {
       throw createError(
@@ -506,7 +508,7 @@ export class L2Portal implements IL2Portal {
       const portal = await this.getInstance();
       const simulationResult = await portal.methods
         .is_registered_l1_unconstrained(EthAddress.fromString(l1TokenAddr))
-        .simulate();
+        .simulate({ from: this.client.getAddress() });
       return simulationResult;
     } catch (error) {
       throw createError(
@@ -528,7 +530,7 @@ export class L2Portal implements IL2Portal {
       const portal = await this.getInstance();
       const simulationResult = await portal.methods
         .is_registered_l2_unconstrained(AztecAddress.fromString(l2TokenAddr))
-        .simulate();
+        .simulate({ from: this.client.getAddress() });
       return simulationResult;
     } catch (error) {
       throw createError(
@@ -667,10 +669,6 @@ export class L2Portal implements IL2Portal {
     }
   }
 
-  public getL2ToL1MessageLeafIndex(witness: L2ToL1MembershipWitness): bigint {
-    return 2n ** BigInt(witness.siblingPath.pathSize) + witness.l2MessageIndex;
-  }
-
   /**
    * Encode the withdraw data used for the L2 to L1 withdraw message
    * @param l1TokenAddr The L1 token address
@@ -711,7 +709,7 @@ export class L2Portal implements IL2Portal {
     tokenContractClassId: Fr,
     shieldGateway: AztecAddress,
   ) {
-    const instance = await getContractInstanceFromDeployParams(PortalContractArtifact, {
+    const instance = await getContractInstanceFromInstantiationParams(PortalContractArtifact, {
       constructorArtifact: 'constructor',
       constructorArgs: [l1Portal, tokenContractClassId, shieldGateway],
       salt: L2_CONTRACT_DEPLOYMENT_SALT,
@@ -761,6 +759,7 @@ export class L2Portal implements IL2Portal {
   ): Promise<ShieldGatewayContract> {
     console.debug('Deploying Shield Gateway...');
     const options: DeployOptions = {
+      from: client.getAddress(),
       universalDeploy: true,
       contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
       fee: client.getFeeOpts(),
@@ -793,6 +792,7 @@ export class L2Portal implements IL2Portal {
       const wallet = client.getWallet();
 
       const options: DeployOptions = {
+        from: client.getAddress(),
         universalDeploy: true,
         contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
         fee: client.getFeeOpts(),

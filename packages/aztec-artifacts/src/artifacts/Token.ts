@@ -14,7 +14,6 @@ import {
   type ContractInstanceWithAddress,
   type ContractMethod,
   type ContractStorageLayout,
-  type ContractNotes,
   decodeFromAbi,
   DeployMethod,
   EthAddress,
@@ -26,7 +25,6 @@ import {
   loadContractArtifact,
   loadContractArtifactForPublic,
   type NoirCompiledContract,
-  NoteSelector,
   Point,
   type PublicKey,
   PublicKeys,
@@ -150,15 +148,6 @@ shield_gateway: {
       } as ContractStorageLayout<'name' | 'symbol' | 'decimals' | 'private_balances' | 'total_supply' | 'shielded_supply' | 'public_balances' | 'minter' | 'upgrade_authority' | 'shield_gateway'>;
     }
     
-
-  public static get notes(): ContractNotes<'UintNote'> {
-    return {
-      UintNote: {
-          id: new NoteSelector(0),
-        }
-    } as ContractNotes<'UintNote'>;
-  }
-  
 
   /** Type-safe wrappers for the public methods exposed by the contract. */
   public declare methods: {

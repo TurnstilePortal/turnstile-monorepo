@@ -7,7 +7,7 @@ import {
   computeInnerAuthWitHashFromAction,
   type DeployOptions,
   Fr,
-  getContractInstanceFromDeployParams,
+  getContractInstanceFromInstantiationParams,
   type IntentInnerHash,
   ProtocolContractAddress,
   readFieldCompressedString,
@@ -69,7 +69,7 @@ export interface IL2Token {
    * @param amount The amount to transfer
    * @returns The transaction
    */
-  transferPublic(to: AztecAddress, amount: bigint): Promise<SentTx>;
+  transferPublic(to: AztecAddress, amount: bigint, options: SendMethodOptions): Promise<SentTx>;
 
   /**
    * Transfers tokens privately to an account
@@ -78,21 +78,26 @@ export interface IL2Token {
    * @param verifiedID The verified ID of the recipient
    * @returns The transaction
    */
-  transferPrivate(to: AztecAddress, amount: bigint, verifiedID: Fr[] & { length: 5 }): Promise<SentTx>;
+  transferPrivate(
+    to: AztecAddress,
+    amount: bigint,
+    verifiedID: Fr[] & { length: 5 },
+    options: SendMethodOptions,
+  ): Promise<SentTx>;
 
   /**
    * Shields tokens (converts public to private)
    * @param amount The amount to shield
    * @returns The transaction
    */
-  shield(amount: bigint): Promise<SentTx>;
+  shield(amount: bigint, options: SendMethodOptions): Promise<SentTx>;
 
   /**
    * Unshields tokens (converts private to public)
    * @param amount The amount to unshield
    * @returns The transaction
    */
-  unshield(amount: bigint): Promise<SentTx>;
+  unshield(amount: bigint, options: SendMethodOptions): Promise<SentTx>;
 
   /**
    * Creates an action for burning tokens (used for withdrawals)
@@ -159,7 +164,7 @@ export class L2Token implements IL2Token {
    */
   async getPortal(): Promise<AztecAddress> {
     if (!this.portal) {
-      const simulationResult = await this.token.methods.get_portal().simulate();
+      const simulationResult = await this.token.methods.get_portal().simulate({ from: this.client.getAddress() });
       if (typeof simulationResult === 'bigint') {
         this.portal = AztecAddress.fromBigInt(simulationResult);
       } else {
@@ -175,7 +180,7 @@ export class L2Token implements IL2Token {
    */
   async getSymbol(): Promise<string> {
     try {
-      const symbol = await this.token.methods.symbol().simulate();
+      const symbol = await this.token.methods.symbol().simulate({ from: this.client.getAddress() });
       return readFieldCompressedString(symbol);
     } catch (error) {
       throw createError(
@@ -193,7 +198,7 @@ export class L2Token implements IL2Token {
    */
   async getName(): Promise<string> {
     try {
-      const name = await this.token.methods.name().simulate();
+      const name = await this.token.methods.name().simulate({ from: this.client.getAddress() });
       return readFieldCompressedString(name);
     } catch (error) {
       throw createError(
@@ -211,7 +216,7 @@ export class L2Token implements IL2Token {
    */
   async getDecimals(): Promise<number> {
     try {
-      return Number(await this.token.methods.decimals().simulate());
+      return Number(await this.token.methods.decimals().simulate({ from: this.client.getAddress() }));
     } catch (error) {
       throw createError(
         ErrorCode.L2_TOKEN_OPERATION,
@@ -229,7 +234,7 @@ export class L2Token implements IL2Token {
    */
   async balanceOfPublic(address: AztecAddress): Promise<bigint> {
     try {
-      return await this.token.methods.balance_of_public(address).simulate();
+      return await this.token.methods.balance_of_public(address).simulate({ from: this.client.getAddress() });
     } catch (error) {
       throw createError(
         ErrorCode.L2_INSUFFICIENT_BALANCE,
@@ -251,7 +256,7 @@ export class L2Token implements IL2Token {
    */
   async balanceOfPrivate(address: AztecAddress): Promise<bigint> {
     try {
-      return await this.token.methods.balance_of_private(address).simulate();
+      return await this.token.methods.balance_of_private(address).simulate({ from: this.client.getAddress() });
     } catch (error) {
       throw createError(
         ErrorCode.L2_INSUFFICIENT_BALANCE,
@@ -273,7 +278,7 @@ export class L2Token implements IL2Token {
    * @param options Transaction options
    * @returns The transaction
    */
-  async transferPublic(to: AztecAddress, amount: bigint, options?: SendMethodOptions): Promise<SentTx> {
+  async transferPublic(to: AztecAddress, amount: bigint, options: SendMethodOptions): Promise<SentTx> {
     try {
       const from = this.client.getAddress();
       return this.token.methods
@@ -309,8 +314,8 @@ export class L2Token implements IL2Token {
   async transferPrivate(
     to: AztecAddress,
     amount: bigint,
-    verifiedID?: Fr[] & { length: 5 },
-    options?: SendMethodOptions,
+    verifiedID: (Fr[] & { length: 5 }) | undefined,
+    options: SendMethodOptions,
   ): Promise<SentTx> {
     try {
       const from = this.client.getAddress();
@@ -361,7 +366,7 @@ export class L2Token implements IL2Token {
    * @param options Transaction options
    * @returns The transaction
    */
-  async shield(amount: bigint, options?: SendMethodOptions): Promise<SentTx> {
+  async shield(amount: bigint, options: SendMethodOptions): Promise<SentTx> {
     try {
       const address = this.client.getAddress();
       return this.token.methods.shield(address, amount, Fr.ZERO).send(options);
@@ -376,7 +381,7 @@ export class L2Token implements IL2Token {
    * @param options Transaction options
    * @returns The transaction
    */
-  async unshield(amount: bigint, options?: SendMethodOptions): Promise<SentTx> {
+  async unshield(amount: bigint, options: SendMethodOptions): Promise<SentTx> {
     try {
       const address = this.client.getAddress();
       return this.token.methods.unshield(address, amount, Fr.ZERO).send(options);
@@ -489,7 +494,7 @@ export class L2Token implements IL2Token {
    */
   private async getShieldGatewayAddress(): Promise<AztecAddress> {
     try {
-      return await this.token.methods.get_shield_gateway_public().simulate();
+      return await this.token.methods.get_shield_gateway_public().simulate({ from: this.client.getAddress() });
     } catch (error) {
       throw createError(
         ErrorCode.L2_CONTRACT_INTERACTION,
@@ -542,6 +547,7 @@ export class L2Token implements IL2Token {
       const wallet = client.getWallet();
 
       const options: DeployOptions = {
+        from: client.getAddress(),
         universalDeploy: true,
         contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
         fee: client.getFeeOpts(),
@@ -582,7 +588,7 @@ export class L2Token implements IL2Token {
     symbol: string,
     decimals: number,
   ): Promise<L2Token> {
-    const instance = await getContractInstanceFromDeployParams(TokenContractArtifact, {
+    const instance = await getContractInstanceFromInstantiationParams(TokenContractArtifact, {
       constructorArtifact: 'constructor_with_minter',
       constructorArgs: [name, symbol, decimals, portalAddress, AztecAddress.ZERO /* upgrade_authority */],
       salt: L2_CONTRACT_DEPLOYMENT_SALT,

@@ -33,7 +33,7 @@
   ],
   "features": {
     "ghcr.io/ClarifiedLabs/devcontainer-features/aztec-sandbox:4": {
-      "aztec_version": "1.2.1"
+      "aztec_version": "2.0.3"
     },
     "ghcr.io/ClarifiedLabs/devcontainer-features/foundry:1": {
       "version": "nightly"
@@ -48,8 +48,7 @@
   "containerEnv": {
     "npm_config_store_dir": "/home/vscode/.pnpm-store",
     "FOUNDRY_DISABLE_NIGHTLY_WARNING": "1",
-    "NODE_NO_WARNINGS": "1",
-    "LOG_LEVEL": "info; verbose: aztec:simulator"
+    "NODE_NO_WARNINGS": "1"
   },
   "onCreateCommand": {
     "mount_permissions": "mount | egrep '.pnpm-store|node_modules' | awk '{print $3}' | sudo xargs chown `id -u`:`id -g`"
@@ -60,7 +59,7 @@
   },
   "postCreateCommand": {
     "vscode_shell_integration": "echo 'source `code --locate-shell-integration-path bash`' >> ~/.bashrc",
-    "setup": "make init && pnpm run build",
+    "setup": "make init",
     "agents": "npm i -g @openai/codex @anthropic-ai/claude-code"
   },
   "customizations": {

@@ -4,7 +4,7 @@ import {
   Fr,
   FunctionSelector,
   FunctionType,
-  getContractInstanceFromDeployParams,
+  getContractInstanceFromInstantiationParams,
   L1FeeJuicePortalManager,
   ProtocolContractAddress,
   retryUntil,
@@ -118,7 +118,9 @@ async function getFeeJuiceClaimSelector(_l2Client: L2Client) {
 }
 
 export async function getSponsoredFPCInstance() {
-  return await getContractInstanceFromDeployParams(SponsoredFPCContract.artifact, { salt: new Fr(SPONSORED_FPC_SALT) });
+  return await getContractInstanceFromInstantiationParams(SponsoredFPCContract.artifact, {
+    salt: new Fr(SPONSORED_FPC_SALT),
+  });
 }
 
 export async function getSponsoredFPCAddress() {
@@ -170,7 +172,7 @@ export async function claimFeeJuiceOnL2(l2Client: L2Client, claim: L2AmountClaim
   console.log('Proving tx...');
   const txProvingResult = await wallet.proveTx(txRequest, txSimulationResult.privateExecutionResult);
   console.log('Sending tx...');
-  const sentTx = new SentTx(wallet, async () => wallet.sendTx(txProvingResult.toTx()));
+  const sentTx = new SentTx(wallet, async () => wallet.sendTx(await txProvingResult.toTx()));
   console.log('Waiting for tx to be mined...');
   const receipt = await sentTx.wait();
   console.log(`Claimed fee juice in tx ${receipt.txHash.toString()}`);

@@ -18,6 +18,7 @@ build: $(ARTIFACTS)
 target/%.json: contracts/$(PKG)/Nargo.toml $(NR_FILES)
 	@echo "Building $*"
 	aztec-nargo compile --silence-warnings --package $(shell echo "$*" | sed 's/\([^-]*\).*/\1/')
+	aztec-postprocess-contract
 
 # Format code
 fmt:
@@ -25,7 +26,7 @@ fmt:
 
 # Test target depends on build
 test: build
-	LOG_LEVEL="info; verbose: cli" aztec test --show-output
+	aztec test --show-output
 
 # Clean target to remove artifacts
 clean:

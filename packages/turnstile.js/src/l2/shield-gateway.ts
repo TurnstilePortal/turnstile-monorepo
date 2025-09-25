@@ -1,4 +1,4 @@
-import { AztecAddress, getContractInstanceFromDeployParams } from '@aztec/aztec.js';
+import { AztecAddress, getContractInstanceFromInstantiationParams } from '@aztec/aztec.js';
 import { PublicKeys } from '@aztec/stdlib/keys';
 
 import { ShieldGatewayContractArtifact } from '@turnstile-portal/aztec-artifacts';
@@ -18,7 +18,7 @@ import { L2_CONTRACT_DEPLOYMENT_SALT } from './constants.js';
  * @throws Error if the computed address doesn't match the expected address
  */
 export async function registerShieldGatewayInPXE(client: IL2Client, shieldGatewayAddress: AztecAddress) {
-  const instance = await getContractInstanceFromDeployParams(ShieldGatewayContractArtifact, {
+  const instance = await getContractInstanceFromInstantiationParams(ShieldGatewayContractArtifact, {
     salt: L2_CONTRACT_DEPLOYMENT_SALT,
     deployer: AztecAddress.ZERO,
     publicKeys: PublicKeys.default(),
