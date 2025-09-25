@@ -22,9 +22,6 @@
     "check": "biome check --fix",
     "update-aztec-version": "tsx scripts/update-aztec-deps.ts"
   },
-  "resolutions": {
-    "@aztec/**": "1.2.1"
-  },
   "devDependencies": {
     "@biomejs/biome": "2.2.2",
     "@changesets/cli": "^2.29.6",

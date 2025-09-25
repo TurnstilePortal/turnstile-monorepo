@@ -20,6 +20,7 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
+    "@aztec-artifacts/client": "^0.1.2",
     "@aztec/aztec.js": "1.2.1",
     "@aztec/l1-artifacts": "1.2.1",
     "@aztec/stdlib": "1.2.1",
