@@ -1,5 +1,18 @@
 # @turnstile-portal/deploy
 
+## 0.5.1
+
+### Patch Changes
+
+- 7ea20f4: make sure send method options are provided when sending transactions
+- Updated dependencies [7ea20f4]
+  - @turnstile-portal/turnstile.js@0.5.1
+  - @turnstile-portal/aztec-artifacts@0.5.1
+  - @turnstile-portal/l1-artifacts-abi@0.5.1
+  - @turnstile-portal/l1-artifacts-bytecode@0.5.1
+  - @turnstile-portal/l1-artifacts-dev@0.5.1
+  - @turnstile-portal/turnstile-dev@0.5.1
+
 ## 0.5.0
 
 ### Minor Changes

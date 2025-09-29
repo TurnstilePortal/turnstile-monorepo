@@ -1,5 +1,15 @@
 # @turnstile-portal/api-init-contracts
 
+## 0.2.3
+
+### Patch Changes
+
+- 7ea20f4: make sure send method options are provided when sending transactions
+- Updated dependencies [7ea20f4]
+  - @turnstile-portal/turnstile.js@0.5.1
+  - @turnstile-portal/aztec-artifacts@0.5.1
+  - @turnstile-portal/api-common@0.2.3
+
 ## 0.2.2
 
 ### Patch Changes

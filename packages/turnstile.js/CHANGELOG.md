@@ -1,5 +1,14 @@
 # @turnstile-portal/turnstile.js
 
+## 0.5.1
+
+### Patch Changes
+
+- 7ea20f4: make sure send method options are provided when sending transactions
+  - @turnstile-portal/aztec-artifacts@0.5.1
+  - @turnstile-portal/l1-artifacts-abi@0.5.1
+  - @turnstile-portal/api-client@0.2.3
+
 ## 0.5.0
 
 ### Minor Changes
