@@ -190,7 +190,9 @@ describe('L2Portal', () => {
           }) as unknown as Fr,
       );
 
-      const tx = await portal.claimDeposit(l1TokenAddr, l2RecipientAddr, amount, index);
+      const tx = await portal.claimDeposit(l1TokenAddr, l2RecipientAddr, amount, index, {
+        from: mockL2Client.getAddress(),
+      });
 
       // Check the portal contract was retrieved
       expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
@@ -215,7 +217,9 @@ describe('L2Portal', () => {
       mockPortalContract.methods.claim_public().send.mockRejectedValueOnce(new Error('Claim failed'));
 
       // Verify error is thrown
-      await expect(portal.claimDeposit(l1TokenAddr, l2RecipientAddr, amount, index)).rejects.toThrow();
+      await expect(
+        portal.claimDeposit(l1TokenAddr, l2RecipientAddr, amount, index, { from: mockL2Client.getAddress() }),
+      ).rejects.toThrow();
     });
   });
 
@@ -234,7 +238,9 @@ describe('L2Portal', () => {
           }) as unknown as Fr,
       );
 
-      const tx = await portal.claimDepositShielded(l1TokenAddr, l2RecipientAddr, amount, index);
+      const tx = await portal.claimDepositShielded(l1TokenAddr, l2RecipientAddr, amount, index, {
+        from: mockL2Client.getAddress(),
+      });
 
       // Check the portal contract was retrieved
       expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
@@ -259,7 +265,9 @@ describe('L2Portal', () => {
       mockPortalContract.methods.claim_shielded().send.mockRejectedValueOnce(new Error('Claim failed'));
 
       // Verify error is thrown
-      await expect(portal.claimDepositShielded(l1TokenAddr, l2RecipientAddr, amount, index)).rejects.toThrow();
+      await expect(
+        portal.claimDepositShielded(l1TokenAddr, l2RecipientAddr, amount, index, { from: mockL2Client.getAddress() }),
+      ).rejects.toThrow();
     });
   });
 
@@ -280,7 +288,9 @@ describe('L2Portal', () => {
           }) as unknown as Fr,
       );
 
-      const tx = await portal.registerToken(l1TokenAddr, l2TokenAddr, name, symbol, decimals, index);
+      const tx = await portal.registerToken(l1TokenAddr, l2TokenAddr, name, symbol, decimals, index, {
+        from: mockL2Client.getAddress(),
+      });
 
       // Check the portal contract was retrieved
       expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
@@ -305,7 +315,11 @@ describe('L2Portal', () => {
       mockPortalContract.methods.register_private().send.mockRejectedValueOnce(new Error('Register failed'));
 
       // Verify error is thrown
-      await expect(portal.registerToken(l1TokenAddr, l2TokenAddr, name, symbol, decimals, index)).rejects.toThrow();
+      await expect(
+        portal.registerToken(l1TokenAddr, l2TokenAddr, name, symbol, decimals, index, {
+          from: mockL2Client.getAddress(),
+        }),
+      ).rejects.toThrow();
     });
   });
 

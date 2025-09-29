@@ -62,10 +62,17 @@ export interface IL2Portal {
    * @param l2RecipientAddr The L2 recipient address
    * @param amount The amount to deposit
    * @param index The index of the L1ToL2Message
+   * @param options Transaction options
    * @returns The transaction
    * @throws {TurnstileError} With ErrorCode.BRIDGE_DEPOSIT if claiming fails
    */
-  claimDeposit(l1TokenAddr: Hex, l2RecipientAddr: Hex, amount: bigint, index: bigint): Promise<SentTx>;
+  claimDeposit(
+    l1TokenAddr: Hex,
+    l2RecipientAddr: Hex,
+    amount: bigint,
+    index: bigint,
+    options: SendMethodOptions,
+  ): Promise<SentTx>;
 
   /**
    * Claim tokens deposited to the L2 chain to the recipient's private balance
@@ -73,10 +80,17 @@ export interface IL2Portal {
    * @param l2RecipientAddr The L2 recipient address
    * @param amount The amount to deposit
    * @param index The index of the L1ToL2Message
+   * @param options Transaction options
    * @returns The transaction
    * @throws {TurnstileError} With ErrorCode.BRIDGE_DEPOSIT if claiming fails
    */
-  claimDepositShielded(l1TokenAddr: Hex, l2RecipientAddr: Hex, amount: bigint, index: bigint): Promise<SentTx>;
+  claimDepositShielded(
+    l1TokenAddr: Hex,
+    l2RecipientAddr: Hex,
+    amount: bigint,
+    index: bigint,
+    options: SendMethodOptions,
+  ): Promise<SentTx>;
 
   /**
    * Checks if a deposit is claimed on the L2 chain
@@ -94,6 +108,7 @@ export interface IL2Portal {
    * @param symbol The token symbol
    * @param decimals The token decimals
    * @param index The index of the L1ToL2Message
+   * @param options Transaction options
    * @returns The transaction
    * @throws {TurnstileError} With ErrorCode.BRIDGE_REGISTER if registration fails
    */
@@ -104,6 +119,7 @@ export interface IL2Portal {
     symbol: string,
     decimals: number,
     index: bigint,
+    options: SendMethodOptions,
   ): Promise<SentTx>;
 
   /**
@@ -121,7 +137,7 @@ export interface IL2Portal {
     l1RecipientAddr: Hex,
     amount: bigint,
     burnNonce: Fr,
-    sendMethodOptions?: SendMethodOptions,
+    sendMethodOptions: SendMethodOptions,
   ): Promise<{ tx: SentTx; withdrawData: Hex }>;
 
   /**
@@ -236,9 +252,16 @@ export class L2Portal implements IL2Portal {
    * @param l2RecipientAddr The L2 recipient address
    * @param amount The amount to deposit
    * @param index The index of the L1ToL2Message
+   * @param options Transaction options
    * @returns The transaction
    */
-  async claimDeposit(l1TokenAddr: Hex, l2RecipientAddr: Hex, amount: bigint, index: bigint): Promise<SentTx> {
+  async claimDeposit(
+    l1TokenAddr: Hex,
+    l2RecipientAddr: Hex,
+    amount: bigint,
+    index: bigint,
+    options: SendMethodOptions,
+  ): Promise<SentTx> {
     try {
       const portal = await this.getInstance();
       return await portal.methods
@@ -248,7 +271,7 @@ export class L2Portal implements IL2Portal {
           amount,
           Fr.fromHexString(`0x${index.toString(16)}`),
         )
-        .send({ from: this.client.getAddress() });
+        .send(options);
     } catch (error) {
       throw createError(
         ErrorCode.BRIDGE_DEPOSIT,
@@ -270,9 +293,16 @@ export class L2Portal implements IL2Portal {
    * @param l2RecipientAddr The L2 recipient address
    * @param amount The amount to deposit
    * @param index The index of the L1ToL2Message
+   * @param options Transaction options
    * @returns The transaction
    */
-  async claimDepositShielded(l1TokenAddr: Hex, l2RecipientAddr: Hex, amount: bigint, index: bigint): Promise<SentTx> {
+  async claimDepositShielded(
+    l1TokenAddr: Hex,
+    l2RecipientAddr: Hex,
+    amount: bigint,
+    index: bigint,
+    options: SendMethodOptions,
+  ): Promise<SentTx> {
     try {
       const portal = await this.getInstance();
       return await portal.methods
@@ -282,7 +312,7 @@ export class L2Portal implements IL2Portal {
           amount,
           Fr.fromHexString(`0x${index.toString(16)}`),
         )
-        .send({ from: this.client.getAddress() });
+        .send(options);
     } catch (error) {
       throw createError(
         ErrorCode.BRIDGE_DEPOSIT,
@@ -349,6 +379,7 @@ export class L2Portal implements IL2Portal {
     symbol: string,
     decimals: number,
     index: bigint,
+    options: SendMethodOptions,
   ): Promise<SentTx> {
     try {
       const portal = await this.getInstance();
@@ -363,7 +394,7 @@ export class L2Portal implements IL2Portal {
           decimals,
           Fr.fromHexString(`0x${index.toString(16)}`),
         )
-        .send({ from: this.client.getAddress() });
+        .send(options);
     } catch (error) {
       throw createError(
         ErrorCode.BRIDGE_REGISTER,
@@ -386,7 +417,7 @@ export class L2Portal implements IL2Portal {
    * @param l1RecipientAddr The L1 recipient address
    * @param amount The amount to withdraw
    * @param burnNonce The burn nonce
-   * @param sendMethodOptions Optional transaction options
+   * @param sendMethodOptions Transaction options
    * @returns Object containing the transaction and the encoded withdrawal data
    * @throws {TurnstileError} With ErrorCode.BRIDGE_WITHDRAW if the withdrawal fails
    */

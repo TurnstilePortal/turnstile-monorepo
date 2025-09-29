@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import type { ContractArtifact, ContractInstanceWithAddress } from '@aztec/aztec.js';
 import { getContractClassFromArtifact } from '@aztec/stdlib/contract';
 import type { AztecArtifactsApiClient } from '@aztec-artifacts/client';
+import { NotFoundError } from '@aztec-artifacts/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as util from '../factory.js';
 import { loadTurnstileContracts } from '../loader.js';
@@ -30,7 +31,7 @@ describe('loader', () => {
         if (storedArtifacts.has(artifactHash)) {
           return {} as ContractArtifact; // Mock artifact
         }
-        return null;
+        throw new NotFoundError(`Artifact ${artifactHash} not found`);
       }),
       getContract: vi.fn(async (address: string) => {
         // Return instance if it was previously stored
@@ -39,7 +40,7 @@ describe('loader', () => {
             instance: {} as ContractInstanceWithAddress,
           };
         }
-        return null;
+        throw new NotFoundError(`Contract instance at ${address} not found`);
       }),
       uploadContractArtifact: vi.fn(async (artifact: ContractArtifact) => {
         // Simulate storing the artifact

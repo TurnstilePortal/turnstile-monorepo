@@ -195,7 +195,10 @@ export async function registerL2DevToken(
   */
 
   // Now actually register the token
-  const registerTokenTx = await portal.registerToken(l1TokenAddr, l2TokenAddr, name, symbol, decimals, index);
+  const registerTokenTx = await portal.registerToken(l1TokenAddr, l2TokenAddr, name, symbol, decimals, index, {
+    from: l2Client.getAddress(),
+    fee: l2Client.getFeeOpts(),
+  });
 
   console.log(`Transaction submitted: ${await registerTokenTx.getTxHash()}`);
   console.log('Waiting for receipt...');
@@ -216,7 +219,10 @@ export async function deployL2DevToken(
 ): Promise<L2Token> {
   try {
     console.log(`Deploying L2 Token ${name} (${symbol})...`);
-    const token = await L2Token.deploy(l2Client, aztecPortal, name, symbol, decimals);
+    const token = await L2Token.deploy(l2Client, aztecPortal, name, symbol, decimals, {
+      from: l2Client.getAddress(),
+      fee: l2Client.getFeeOpts(),
+    });
 
     console.log(
       `L2 Token ${name} (${symbol}) partial address: ${(await token.getContract().partialAddress).toString()}`,
@@ -263,7 +269,10 @@ export async function bridgeL1ToL2DevToken(
   await waitForL2Block(l2Client, Number(depositResult.l2BlockNumber));
   const l2Portal = new L2Portal(l2PortalAddr, l2Client);
 
-  const claimTx = await l2Portal.claimDeposit(l1TokenAddr, recipient, amount, depositResult.messageIndex);
+  const claimTx = await l2Portal.claimDeposit(l1TokenAddr, recipient, amount, depositResult.messageIndex, {
+    from: l2Client.getAddress(),
+    fee: l2Client.getFeeOpts(),
+  });
 
   console.log(`L2 claim tx submitted: ${await claimTx.getTxHash()}`);
   const claimReceipt = await claimTx.wait();

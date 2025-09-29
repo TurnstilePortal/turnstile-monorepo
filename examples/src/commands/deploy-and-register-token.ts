@@ -118,7 +118,10 @@ async function deployL2DevToken(
   decimals: number,
 ): Promise<L2Token> {
   console.log(`Deploying L2 Token ${name} (${symbol})...`);
-  const token = await L2Token.deploy(l2Client, aztecPortal, name, symbol, decimals);
+  const token = await L2Token.deploy(l2Client, aztecPortal, name, symbol, decimals, {
+    from: l2Client.getAddress(),
+    fee: l2Client.getFeeOpts(),
+  });
   console.log(`TokenContract deployed at ${token.getAddress().toString()}`);
   return token;
 }
@@ -143,17 +146,21 @@ async function registerL2DevToken(
 
   const l1ToL2Message = Fr.fromHexString(msgHash);
 
-  console.log(`Waiting for L1 to L2 message ${l1ToL2Message.toString()} to be available...`);
+  console.log(`Waiting for L1 to L2 message ${l1ToL2Message.toString()} to be available at block ${l2BlockNumber}...`);
   await retryUntil(
     async () => {
-      console.log('Still waiting...');
-      return await l2Client.getNode().isL1ToL2MessageSynced(l1ToL2Message);
+      const currentBlockNumber = await l2Client.getNode().getBlockNumber();
+      console.log(`Current L2 block number: ${currentBlockNumber}, target: ${l2BlockNumber}`);
+      return currentBlockNumber >= l2BlockNumber;
     },
     'L1 to L2 message to be synced',
     30,
   );
 
-  const registerTokenTx = await portal.registerToken(l1TokenAddr, l2TokenAddr, name, symbol, decimals, index);
+  const registerTokenTx = await portal.registerToken(l1TokenAddr, l2TokenAddr, name, symbol, decimals, index, {
+    from: l2Client.getAddress(),
+    fee: l2Client.getFeeOpts(),
+  });
 
   console.log(`Transaction submitted: ${await registerTokenTx.getTxHash()}`);
   const aztecRegisterReceipt = await registerTokenTx.wait();

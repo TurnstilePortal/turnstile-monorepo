@@ -541,13 +541,12 @@ export class L2Token implements IL2Token {
     name: string,
     symbol: string,
     decimals: number,
-    deployOptions: Partial<DeployOptions> = {},
+    deployOptions: DeployOptions,
   ): Promise<L2Token> {
     try {
       const wallet = client.getWallet();
 
       const options: DeployOptions = {
-        from: client.getAddress(),
         universalDeploy: true,
         contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
         fee: client.getFeeOpts(),

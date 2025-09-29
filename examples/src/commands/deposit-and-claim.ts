@@ -119,7 +119,10 @@ export function registerDepositAndClaim(program: Command) {
       // Ensure L2 Token is registered in the PXE
       await factory.createL2Token(l2Client, factory.getTokenInfo(tokenSymbol));
 
-      const tx = await aztecPortal.claimDeposit(l1TokenAddr, l2Recipient, amount, BigInt(index));
+      const tx = await aztecPortal.claimDeposit(l1TokenAddr, l2Recipient, amount, BigInt(index), {
+        from: l2Client.getAddress(),
+        fee: l2Client.getFeeOpts(),
+      });
       console.log(`Claim transaction hash: ${await tx.getTxHash()}\nWaiting for receipt...`);
       const receipt = await tx.wait();
       if (receipt.status !== TxStatus.SUCCESS) {
