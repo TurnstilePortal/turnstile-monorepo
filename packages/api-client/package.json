@@ -1,6 +1,6 @@
 {
   "name": "@turnstile-portal/api-client",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Type-safe API client for Turnstile API",
   "repository": {
     "type": "git",

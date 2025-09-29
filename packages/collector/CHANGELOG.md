@@ -1,5 +1,15 @@
 # @turnstile-portal/collector
 
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies [7ea20f4]
+  - @turnstile-portal/turnstile.js@0.5.1
+  - @turnstile-portal/aztec-artifacts@0.5.1
+  - @turnstile-portal/l1-artifacts-abi@0.5.1
+  - @turnstile-portal/api-common@0.2.3
+
 ## 0.2.2
 
 ### Patch Changes
