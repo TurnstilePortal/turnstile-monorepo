@@ -1,5 +1,6 @@
 import {
   AztecAddress,
+  BatchCall,
   type DeployOptions,
   decodeFromAbi,
   EthAddress,
@@ -11,6 +12,7 @@ import {
   PublicKeys,
   type SendMethodOptions,
   type SentTx,
+  TxStatus,
 } from '@aztec/aztec.js';
 import { sha256ToField } from '@aztec/foundation/crypto';
 import { serializeToBuffer } from '@aztec/foundation/serialize';
@@ -876,6 +878,55 @@ export class L2Portal implements IL2Portal {
       afterLog,
     };
     return this.client.getNode().getPublicLogs(filter);
+  }
+
+  async deployAndRegisterL2Token(
+    l1TokenAddr: Hex,
+    name: string,
+    symbol: string,
+    decimals: number,
+    index: bigint, // L1ToL2Message index
+    sendMethodOptions: SendMethodOptions,
+  ): Promise<AztecAddress> {
+    const portal = await this.getInstance();
+    const tokenInstance = await L2Token.getInstance(portal.address, name, symbol, decimals);
+    const tokenDeployPayload = await L2Token.deployPayload(
+      this.client,
+      portal.address,
+      name,
+      symbol,
+      decimals,
+      sendMethodOptions,
+    );
+
+    const registerPayload = await portal.methods
+      .register_private(
+        EthAddress.fromString(l1TokenAddr),
+        tokenInstance.address,
+        name,
+        name.length,
+        symbol,
+        symbol.length,
+        decimals,
+        Fr.fromHexString(`0x${index.toString(16)}`),
+      )
+      .request(sendMethodOptions);
+
+    const batch = new BatchCall(this.client.getWallet(), [tokenDeployPayload, registerPayload]);
+
+    const sentTx = batch.send(sendMethodOptions);
+    const receipt = await sentTx.wait();
+    if (receipt.status !== TxStatus.SUCCESS) {
+      throw createError(
+        ErrorCode.L2_DEPLOYMENT,
+        `Failed to deploy and register L2 token for L1 token ${l1TokenAddr} `,
+        { l1TokenAddress: l1TokenAddr },
+      );
+    }
+
+    console.debug(`Deployed and registered L2 token ${tokenInstance.address.toString()} for L1 token ${l1TokenAddr} `);
+
+    return tokenInstance.address;
   }
 }
 

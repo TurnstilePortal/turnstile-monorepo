@@ -32,4 +32,7 @@ overrides:
   '@aztec/types': 2.0.3
   glob: ^11.0.0
 
+patchedDependencies:
+  '@aztec/aztec.js@2.0.3': patches/@aztec__aztec.js@2.0.3.patch
+
 preferWorkspacePackages: true

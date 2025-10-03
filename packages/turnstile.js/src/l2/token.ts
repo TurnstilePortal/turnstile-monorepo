@@ -1,11 +1,12 @@
 import {
   AztecAddress,
+  BatchCall,
   Capsule,
   Contract,
   ContractFunctionInteraction,
+  type ContractInstanceWithAddress,
   computeAuthWitMessageHash,
   computeInnerAuthWitHashFromAction,
-  type DeployOptions,
   Fr,
   getContractInstanceFromInstantiationParams,
   type IntentInnerHash,
@@ -13,7 +14,10 @@ import {
   readFieldCompressedString,
   type SendMethodOptions,
   type SentTx,
+  type TxExecutionRequest,
+  TxStatus,
 } from '@aztec/aztec.js';
+import type { ExecutionPayload } from '@aztec/entrypoints/payload';
 import { type ABIParameterVisibility, type FunctionAbi, FunctionType } from '@aztec/stdlib/abi';
 import { PublicKeys } from '@aztec/stdlib/keys';
 import { TokenContract, TokenContractArtifact } from '@turnstile-portal/aztec-artifacts';
@@ -532,7 +536,7 @@ export class L2Token implements IL2Token {
    * @param name The token name
    * @param symbol The token symbol
    * @param decimals The token decimals
-   * @param deployOptions The deployment options
+   * @param sendMethodOptions Tx send options
    * @returns The token
    */
   static async deploy(
@@ -541,30 +545,27 @@ export class L2Token implements IL2Token {
     name: string,
     symbol: string,
     decimals: number,
-    deployOptions: DeployOptions,
+    sendMethodOptions: SendMethodOptions,
   ): Promise<L2Token> {
     try {
       const wallet = client.getWallet();
 
-      const options: DeployOptions = {
-        universalDeploy: true,
-        contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
-        fee: client.getFeeOpts(),
-        ...deployOptions,
-      };
+      const deployPayload = await L2Token.deployPayload(client, portalAddr, name, symbol, decimals, sendMethodOptions);
+      const batch = new BatchCall(wallet, [deployPayload]);
+      const sentTx = await batch.send(sendMethodOptions);
+      const receipt = await sentTx.wait();
+      if (receipt.status !== TxStatus.SUCCESS) {
+        throw createError(ErrorCode.L2_DEPLOYMENT, 'Token deployment transaction failed', {
+          tokenName: name,
+          tokenSymbol: symbol,
+          decimals,
+          txHash: sentTx.getTxHash().toString(),
+        });
+      }
 
-      const tokenContract = await Contract.deploy(
-        wallet,
-        TokenContractArtifact,
-        [name, symbol, decimals, portalAddr /* minter */, AztecAddress.ZERO /* upgrade_authority */],
-        'constructor_with_minter',
-      )
-        .send(options)
-        .deployed();
-
-      const token = await TokenContract.at(tokenContract.address, wallet);
-
-      return new L2Token(token, client);
+      // Get an instance of the contract so we can use the address with L2Token.fromAddress
+      const instance = await L2Token.getInstance(portalAddr, name, symbol, decimals);
+      return L2Token.fromAddress(instance.address, client);
     } catch (error) {
       throw createError(
         ErrorCode.L2_DEPLOYMENT,
@@ -579,6 +580,60 @@ export class L2Token implements IL2Token {
     }
   }
 
+  static deployMethod(client: IL2Client, portalAddr: AztecAddress, name: string, symbol: string, decimals: number) {
+    return Contract.deploy(
+      client.getWallet(),
+      TokenContractArtifact,
+      [name, symbol, decimals, portalAddr /* minter */, AztecAddress.ZERO /* upgrade_authority */],
+      'constructor_with_minter',
+    );
+  }
+
+  static async deployTx(
+    client: IL2Client,
+    portalAddr: AztecAddress,
+    name: string,
+    symbol: string,
+    decimals: number,
+    sendMethodOptions: SendMethodOptions,
+  ): Promise<TxExecutionRequest> {
+    return L2Token.deployMethod(client, portalAddr, name, symbol, decimals).create({
+      universalDeploy: true,
+      contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
+      ...sendMethodOptions,
+    });
+  }
+
+  static async deployPayload(
+    client: IL2Client,
+    portalAddr: AztecAddress,
+    name: string,
+    symbol: string,
+    decimals: number,
+    sendMethodOptions: SendMethodOptions,
+  ): Promise<ExecutionPayload> {
+    return L2Token.deployMethod(client, portalAddr, name, symbol, decimals).request({
+      universalDeploy: true,
+      contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
+      ...sendMethodOptions,
+    });
+  }
+
+  static async getInstance(
+    portalAddress: AztecAddress,
+    name: string,
+    symbol: string,
+    decimals: number,
+  ): Promise<ContractInstanceWithAddress> {
+    return getContractInstanceFromInstantiationParams(TokenContractArtifact, {
+      constructorArtifact: 'constructor_with_minter',
+      constructorArgs: [name, symbol, decimals, portalAddress, AztecAddress.ZERO /* upgrade_authority */],
+      salt: L2_CONTRACT_DEPLOYMENT_SALT,
+      deployer: AztecAddress.ZERO,
+      publicKeys: PublicKeys.default(),
+    });
+  }
+
   static async register(
     client: IL2Client,
     tokenAddress: AztecAddress,
@@ -587,13 +642,7 @@ export class L2Token implements IL2Token {
     symbol: string,
     decimals: number,
   ): Promise<L2Token> {
-    const instance = await getContractInstanceFromInstantiationParams(TokenContractArtifact, {
-      constructorArtifact: 'constructor_with_minter',
-      constructorArgs: [name, symbol, decimals, portalAddress, AztecAddress.ZERO /* upgrade_authority */],
-      salt: L2_CONTRACT_DEPLOYMENT_SALT,
-      deployer: AztecAddress.ZERO,
-      publicKeys: PublicKeys.default(),
-    });
+    const instance = await L2Token.getInstance(portalAddress, name, symbol, decimals);
 
     if (!instance.address.equals(tokenAddress)) {
       throw createError(

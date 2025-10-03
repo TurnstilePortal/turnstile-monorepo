@@ -4,12 +4,15 @@
 
 import {
   AztecAddress,
+  BatchCall,
   Contract,
   type ContractFunctionInteraction,
   Fr,
+  getContractInstanceFromInstantiationParams,
   type PXE,
   readFieldCompressedString,
   type SentTx,
+  TxStatus,
   type Wallet,
 } from '@aztec/aztec.js';
 import { TokenContract } from '@turnstile-portal/aztec-artifacts';
@@ -85,6 +88,27 @@ describe('L2Token', () => {
       writable: true,
     });
 
+    // Mock TxStatus
+    Object.defineProperty(TxStatus, 'SUCCESS', {
+      value: 'success',
+      writable: true,
+    });
+
+    // Mock BatchCall
+    BatchCall.mockImplementation((_wallet, _payloads) => ({
+      send: vi.fn().mockResolvedValue({
+        getTxHash: vi.fn().mockReturnValue({ toString: () => 'mock-tx-hash' }),
+        getReceipt: vi.fn().mockResolvedValue({
+          status: TxStatus.SUCCESS,
+        }),
+      }),
+    }));
+
+    // Mock getContractInstanceFromInstantiationParams
+    (getContractInstanceFromInstantiationParams as vi.Mock).mockResolvedValue({
+      address: tokenAddr,
+    });
+
     // Mock the wallet
     mockWallet = {
       getAddress: vi.fn().mockReturnValue(accountAddr),
@@ -154,6 +178,11 @@ describe('L2Token', () => {
     Contract.deploy = vi.fn().mockReturnValue({
       send: vi.fn().mockReturnValue({
         deployed: vi.fn().mockResolvedValue({ address: tokenAddr }),
+      }),
+      request: vi.fn().mockResolvedValue({
+        // Mock ExecutionPayload
+        packedArguments: [],
+        calls: [],
       }),
     });
 
@@ -295,7 +324,8 @@ describe('L2Token', () => {
     const amount = BigInt(500);
 
     it('should transfer tokens publicly', async () => {
-      const tx = await token.transferPublic(recipient, amount);
+      const sendMethodOptions = {}; // Empty options for testing
+      const tx = await token.transferPublic(recipient, amount, sendMethodOptions);
 
       // Check the client method was called to get the sender address
       expect(mockL2Client.getAddress).toHaveBeenCalled();
@@ -321,7 +351,8 @@ describe('L2Token', () => {
       mockTokenContract.methods.transfer_public_to_public().send.mockRejectedValueOnce(mockError);
 
       // Check that the error is thrown with the correct code
-      await expect(token.transferPublic(recipient, amount)).rejects.toHaveProperty(
+      const sendMethodOptions = {}; // Empty options for testing
+      await expect(token.transferPublic(recipient, amount, sendMethodOptions)).rejects.toHaveProperty(
         'code',
         ErrorCode.L2_TOKEN_OPERATION,
       );
@@ -351,7 +382,8 @@ describe('L2Token', () => {
       // Setup the mock for getShieldGatewayAddress
       mockTokenContract.methods.get_shield_gateway_public().simulate.mockResolvedValue(portalAddr);
 
-      const tx = await token.transferPrivate(recipient, amount, verifiedID);
+      const sendMethodOptions = {}; // Empty options for testing
+      const tx = await token.transferPrivate(recipient, amount, verifiedID, sendMethodOptions);
 
       // Check the client methods were called
       expect(mockL2Client.getAddress).toHaveBeenCalled();
@@ -380,7 +412,8 @@ describe('L2Token', () => {
       mockTokenContract.methods.transfer_private_to_private().send.mockRejectedValueOnce(mockError);
 
       // Check that the error is thrown with the correct code
-      await expect(token.transferPrivate(recipient, amount, verifiedID)).rejects.toHaveProperty(
+      const sendMethodOptions = {}; // Empty options for testing
+      await expect(token.transferPrivate(recipient, amount, verifiedID, sendMethodOptions)).rejects.toHaveProperty(
         'code',
         ErrorCode.L2_TOKEN_OPERATION,
       );
@@ -396,7 +429,8 @@ describe('L2Token', () => {
       mockTokenContract.methods.get_shield_gateway_public().simulate.mockRejectedValueOnce(mockError);
 
       // Check that the error is thrown with the correct code (function implementation throws L2_CONTRACT_INTERACTION)
-      await expect(token.transferPrivate(recipient, amount, verifiedID)).rejects.toHaveProperty(
+      const sendMethodOptions = {}; // Empty options for testing
+      await expect(token.transferPrivate(recipient, amount, verifiedID, sendMethodOptions)).rejects.toHaveProperty(
         'code',
         ErrorCode.L2_CONTRACT_INTERACTION,
       );
@@ -413,7 +447,8 @@ describe('L2Token', () => {
       });
 
       // The error should be wrapped in a TurnstileError with the L2_TOKEN_OPERATION code
-      await expect(token.transferPrivate(recipient, amount, verifiedID)).rejects.toHaveProperty(
+      const sendMethodOptions = {}; // Empty options for testing
+      await expect(token.transferPrivate(recipient, amount, verifiedID, sendMethodOptions)).rejects.toHaveProperty(
         'code',
         ErrorCode.L2_TOKEN_OPERATION,
       );
@@ -425,7 +460,8 @@ describe('L2Token', () => {
       mockTokenContract.methods.get_shield_gateway_public().simulate.mockResolvedValue(portalAddr);
 
       // The implementation should handle this case one way or another
-      await token.transferPrivate(nullAddr, amount, verifiedID);
+      const sendMethodOptions = {}; // Empty options for testing
+      await token.transferPrivate(nullAddr, amount, verifiedID, sendMethodOptions);
 
       // Verify the contract method was called with the provided parameters
       expect(mockTokenContract.methods.transfer_private_to_private).toHaveBeenCalledWith(
@@ -442,7 +478,8 @@ describe('L2Token', () => {
       mockTokenContract.methods.get_shield_gateway_public().simulate.mockResolvedValue(portalAddr);
 
       // Call with negative amount
-      await token.transferPrivate(recipient, negativeAmount, verifiedID);
+      const sendMethodOptions = {}; // Empty options for testing
+      await token.transferPrivate(recipient, negativeAmount, verifiedID, sendMethodOptions);
 
       // Verify the contract method was called with the provided parameters
       expect(mockTokenContract.methods.transfer_private_to_private).toHaveBeenCalledWith(
@@ -456,7 +493,7 @@ describe('L2Token', () => {
       mockTokenContract.methods.transfer_private_to_private.mockClear();
 
       // Call with zero amount
-      await token.transferPrivate(recipient, zeroAmount, verifiedID);
+      await token.transferPrivate(recipient, zeroAmount, verifiedID, sendMethodOptions);
 
       // Verify the contract method was called with the provided parameters
       expect(mockTokenContract.methods.transfer_private_to_private).toHaveBeenCalledWith(
@@ -474,7 +511,8 @@ describe('L2Token', () => {
     const negativeAmount = BigInt(-1);
 
     it('should shield tokens (convert public to private)', async () => {
-      const tx = await token.shield(amount);
+      const sendMethodOptions = {}; // Empty options for testing
+      const tx = await token.shield(amount, sendMethodOptions);
 
       // Check the client method was called to get the sender address
       expect(mockL2Client.getAddress).toHaveBeenCalled();
@@ -495,13 +533,18 @@ describe('L2Token', () => {
       mockTokenContract.methods.shield().send.mockRejectedValueOnce(mockError);
 
       // Check that the error is thrown with the correct code
-      await expect(token.shield(amount)).rejects.toHaveProperty('code', ErrorCode.L2_SHIELD_OPERATION);
+      const sendMethodOptions = {}; // Empty options for testing
+      await expect(token.shield(amount, sendMethodOptions)).rejects.toHaveProperty(
+        'code',
+        ErrorCode.L2_SHIELD_OPERATION,
+      );
     });
 
     // Test that implementation handles edge case amounts
     it('should handle edge case shield amounts', async () => {
+      const sendMethodOptions = {}; // Empty options for testing
       // Call with negative amount
-      await token.shield(negativeAmount);
+      await token.shield(negativeAmount, sendMethodOptions);
 
       // Verify the contract method was called with the provided parameters
       expect(mockTokenContract.methods.shield).toHaveBeenCalledWith(accountAddr, negativeAmount, Fr.ZERO);
@@ -510,7 +553,7 @@ describe('L2Token', () => {
       mockTokenContract.methods.shield.mockClear();
 
       // Call with zero amount
-      await token.shield(zeroAmount);
+      await token.shield(zeroAmount, sendMethodOptions);
 
       // Verify the contract method was called with the provided parameters
       expect(mockTokenContract.methods.shield).toHaveBeenCalledWith(accountAddr, zeroAmount, Fr.ZERO);
@@ -523,7 +566,8 @@ describe('L2Token', () => {
     const negativeAmount = BigInt(-1);
 
     it('should unshield tokens (convert private to public)', async () => {
-      const tx = await token.unshield(amount);
+      const sendMethodOptions = {}; // Empty options for testing
+      const tx = await token.unshield(amount, sendMethodOptions);
 
       // Check the client method was called to get the sender address
       expect(mockL2Client.getAddress).toHaveBeenCalled();
@@ -544,13 +588,18 @@ describe('L2Token', () => {
       mockTokenContract.methods.unshield().send.mockRejectedValueOnce(mockError);
 
       // Check that the error is thrown with the correct code
-      await expect(token.unshield(amount)).rejects.toHaveProperty('code', ErrorCode.L2_UNSHIELD_OPERATION);
+      const sendMethodOptions = {}; // Empty options for testing
+      await expect(token.unshield(amount, sendMethodOptions)).rejects.toHaveProperty(
+        'code',
+        ErrorCode.L2_UNSHIELD_OPERATION,
+      );
     });
 
     // Test that implementation handles edge case amounts
     it('should handle edge case unshield amounts', async () => {
+      const sendMethodOptions = {}; // Empty options for testing
       // Call with negative amount
-      await token.unshield(negativeAmount);
+      await token.unshield(negativeAmount, sendMethodOptions);
 
       // Verify the contract method was called with the provided parameters
       expect(mockTokenContract.methods.unshield).toHaveBeenCalledWith(accountAddr, negativeAmount, Fr.ZERO);
@@ -559,7 +608,7 @@ describe('L2Token', () => {
       mockTokenContract.methods.unshield.mockClear();
 
       // Call with zero amount
-      await token.unshield(zeroAmount);
+      await token.unshield(zeroAmount, sendMethodOptions);
 
       // Verify the contract method was called with the provided parameters
       expect(mockTokenContract.methods.unshield).toHaveBeenCalledWith(accountAddr, zeroAmount, Fr.ZERO);
@@ -666,10 +715,16 @@ describe('L2Token', () => {
           send: vi.fn().mockReturnValue({
             deployed: vi.fn().mockResolvedValue({ address: tokenAddr }),
           }),
+          request: vi.fn().mockResolvedValue({
+            // Mock ExecutionPayload
+            packedArguments: [],
+            calls: [],
+          }),
         });
         TokenContract.at = vi.fn().mockResolvedValue(mockTokenContract);
 
-        const result = await L2Token.deploy(mockL2Client, portalAddr, name, symbol, decimals);
+        const sendMethodOptions = {}; // Empty options for testing
+        const result = await L2Token.deploy(mockL2Client, portalAddr, name, symbol, decimals, sendMethodOptions);
 
         // Check that the contract was deployed with the correct parameters
         expect(Contract.deploy).toHaveBeenCalledWith(
@@ -689,10 +744,16 @@ describe('L2Token', () => {
           send: vi.fn().mockReturnValue({
             deployed: vi.fn().mockResolvedValue({ address: tokenAddr }),
           }),
+          request: vi.fn().mockResolvedValue({
+            // Mock ExecutionPayload
+            packedArguments: [],
+            calls: [],
+          }),
         });
         TokenContract.at = vi.fn().mockResolvedValue(mockTokenContract);
 
-        const result = await L2Token.deploy(mockL2Client, portalAddr, name, symbol, decimals);
+        const sendMethodOptions = {}; // Empty options for testing
+        const result = await L2Token.deploy(mockL2Client, portalAddr, name, symbol, decimals, sendMethodOptions);
 
         // Check that the contract was deployed with the correct parameters
         expect(Contract.deploy).toHaveBeenCalledWith(
@@ -719,13 +780,16 @@ describe('L2Token', () => {
           send: vi.fn().mockImplementation(() => {
             throw mockError;
           }),
+          request: vi.fn().mockImplementation(() => {
+            throw mockError;
+          }),
         });
 
+        const sendMethodOptions = {}; // Empty options for testing
         // Check that the error is thrown with the correct code
-        await expect(L2Token.deploy(mockL2Client, portalAddr, name, symbol, decimals)).rejects.toHaveProperty(
-          'code',
-          ErrorCode.L2_DEPLOYMENT,
-        );
+        await expect(
+          L2Token.deploy(mockL2Client, portalAddr, name, symbol, decimals, sendMethodOptions),
+        ).rejects.toHaveProperty('code', ErrorCode.L2_DEPLOYMENT);
       });
     });
   });
