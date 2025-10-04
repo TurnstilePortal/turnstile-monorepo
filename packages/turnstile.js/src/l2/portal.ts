@@ -1,6 +1,5 @@
 import {
   AztecAddress,
-  BatchCall,
   type DeployOptions,
   decodeFromAbi,
   EthAddress,
@@ -32,6 +31,7 @@ import { L1Token } from '../l1/token.js';
 import type { Hex } from '../types.js';
 import type { IL2Client } from './client.js';
 import { L2_CONTRACT_DEPLOYMENT_SALT, PUBLIC_NOT_SECRET_SECRET } from './constants.js';
+import { ContractBatchBuilder } from './contract-interaction.js';
 import { registerShieldGatewayInPXE } from './shield-gateway.js';
 import { L2Token } from './token.js';
 
@@ -57,6 +57,12 @@ export interface IL2Portal {
    * @throws {TurnstileError} With ErrorCode.L2_CONTRACT_INTERACTION if configuration retrieval fails
    */
   getL1Portal(): Promise<EthAddress>;
+
+  /**
+   * Creates a batch builder for multiple portal operations
+   * @returns A batch builder instance
+   */
+  batch(): ContractBatchBuilder;
 
   /**
    * Claim tokens deposited to the L2 chain to the recipient's public balance
@@ -246,6 +252,14 @@ export class L2Portal implements IL2Portal {
   async getL1Portal(): Promise<EthAddress> {
     const config = await this.getConfig();
     return config.l1_portal;
+  }
+
+  /**
+   * Creates a batch builder for multiple portal operations
+   * @returns A batch builder instance
+   */
+  batch(): ContractBatchBuilder {
+    return new ContractBatchBuilder(this.client.getWallet());
   }
 
   /**
@@ -890,31 +904,33 @@ export class L2Portal implements IL2Portal {
   ): Promise<AztecAddress> {
     const portal = await this.getInstance();
     const tokenInstance = await L2Token.getInstance(portal.address, name, symbol, decimals);
-    const tokenDeployPayload = await L2Token.deployPayload(
-      this.client,
-      portal.address,
+
+    // Get the deployment interaction
+    const tokenDeployInteraction = L2Token.deployMethod(this.client, portal.address, name, symbol, decimals);
+
+    const registerInteraction = portal.methods.register_private(
+      EthAddress.fromString(l1TokenAddr),
+      tokenInstance.address,
       name,
+      name.length,
       symbol,
+      symbol.length,
       decimals,
-      sendMethodOptions,
+      Fr.fromHexString(`0x${index.toString(16)}`),
     );
 
-    const registerPayload = await portal.methods
-      .register_private(
-        EthAddress.fromString(l1TokenAddr),
-        tokenInstance.address,
-        name,
-        name.length,
-        symbol,
-        symbol.length,
-        decimals,
-        Fr.fromHexString(`0x${index.toString(16)}`),
-      )
-      .request(sendMethodOptions);
+    const batch = new ContractBatchBuilder(this.client.getWallet())
+      .add(tokenDeployInteraction)
+      .add(registerInteraction);
 
-    const batch = new BatchCall(this.client.getWallet(), [tokenDeployPayload, registerPayload]);
+    // Apply deployment options to the batch send
+    const deployOptions = {
+      ...sendMethodOptions,
+      universalDeploy: true,
+      contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
+    };
 
-    const sentTx = batch.send(sendMethodOptions);
+    const sentTx = batch.send(deployOptions);
     const receipt = await sentTx.wait();
     if (receipt.status !== TxStatus.SUCCESS) {
       throw createError(

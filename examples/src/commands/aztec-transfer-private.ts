@@ -24,7 +24,7 @@ async function doTransfer(
   ];
   console.log('Using Verified ID:', verifiedID);
 
-  const tx = await token.transferPrivate(recipient, amount, verifiedID, { from: senderClient.getAddress() });
+  const tx = token.transferPrivate(recipient, amount, verifiedID).send({ from: senderClient.getAddress() });
   console.log(`Transaction submitted: ${await tx.getTxHash()}\nWaiting for receipt...`);
   const receipt = await tx.wait();
   console.log('Transfer status:', receipt.status);
