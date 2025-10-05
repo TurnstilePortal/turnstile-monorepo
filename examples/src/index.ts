@@ -3,6 +3,8 @@
 import { Command } from 'commander';
 import { registerAztecTransferPrivate } from './commands/aztec-transfer-private.js';
 import { registerAztecTransferPublic } from './commands/aztec-transfer-public.js';
+import { registerBatchClaimDeposits } from './commands/batch-claim-deposits.js';
+import { registerBatchShieldUnshield } from './commands/batch-shield-unshield.js';
 import { registerBatchTokenOperations } from './commands/batch-token-operations.js';
 import { registerDeployAndRegisterToken } from './commands/deploy-and-register-token.js';
 import { registerDepositAndClaim } from './commands/deposit-and-claim.js';
@@ -24,8 +26,10 @@ async function main() {
     );
 
   registerDepositAndClaim(program);
+  registerBatchClaimDeposits(program);
   registerWithdrawTokens(program);
   registerShieldTokens(program);
+  registerBatchShieldUnshield(program);
   registerDeployAndRegisterToken(program);
   registerAztecTransferPrivate(program);
   registerAztecTransferPublic(program);

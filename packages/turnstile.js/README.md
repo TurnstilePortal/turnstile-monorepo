@@ -195,6 +195,42 @@ const { tx, leaf } = await portal.withdrawPublic(
 // The leaf can be used later for the L1 withdrawal proof
 ```
 
+### Batch Operations
+
+You can batch multiple operations together to save on transaction costs:
+
+```typescript
+import { ContractBatchBuilder } from '@turnstile-portal/turnstile.js';
+
+// Basic batching - all operations use the same options
+const batch = new ContractBatchBuilder(wallet)
+  .add(token.methods.transfer(recipient1, amount1))
+  .add(token.methods.transfer(recipient2, amount2))
+  .add(token.methods.approve(spender, allowance));
+
+await batch.send({ fee: feeOptions });
+
+// Advanced batching - different options per operation
+// Useful when mixing deployments with regular calls
+const deployPayload = await TokenContract.deploy(wallet, ...args)
+  .request({
+    universalDeploy: true,
+    contractAddressSalt: salt
+  });
+
+const registerPayload = await portal.methods.register_private(...)
+  .request({
+    fee: specificFeeOptions
+  });
+
+const batch = new ContractBatchBuilder(wallet)
+  .add(deployPayload)
+  .add(registerPayload);
+
+// Send the batch - options are already baked into the payloads
+await batch.send({ from: sender });
+```
+
 ## Supported Networks
 
 The configuration system supports these networks out of the box:

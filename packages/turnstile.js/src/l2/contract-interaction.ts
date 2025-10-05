@@ -80,6 +80,20 @@ export class ContractBatchBuilder {
   /**
    * Adds an interaction to the batch
    * Supports ContractInteraction, ContractFunctionInteraction, DeployMethod, and ExecutionPayload
+   *
+   * @example
+   * // Add a regular contract call (will use default options when sent)
+   * batch.add(contract.methods.foo())
+   *
+   * @example
+   * // Add with specific options using ExecutionPayload
+   * const payload = await contract.methods.foo().request({ fee: someFeeOpts })
+   * batch.add(payload)
+   *
+   * @example
+   * // Add a deployment with specific options
+   * const deployPayload = await Token.deploy().request({ universalDeploy: true, contractAddressSalt: salt })
+   * batch.add(deployPayload)
    */
   add(call: ContractInteraction | BatchableCall): this {
     if (call instanceof ContractInteraction) {
@@ -87,6 +101,19 @@ export class ContractBatchBuilder {
     } else {
       this.calls.push(call);
     }
+    return this;
+  }
+
+  /**
+   * Adds an ExecutionPayload to the batch
+   * This is a convenience method for adding pre-built payloads with specific options
+   *
+   * @example
+   * const payload = await contract.methods.foo().request({ fee: someFeeOpts })
+   * batch.addPayload(payload)
+   */
+  addPayload(payload: ExecutionPayload): this {
+    this.calls.push(payload);
     return this;
   }
 
@@ -135,6 +162,20 @@ export class ContractBatchBuilder {
 
   /**
    * Sends all interactions as a batch transaction
+   *
+   * @param options Options applied to the batch send. Note that if you need different
+   * options for different interactions, create ExecutionPayloads with `.request(options)`
+   * before adding them to the batch.
+   *
+   * @example
+   * // Same options for all interactions
+   * batch.add(contract.methods.foo()).add(contract.methods.bar()).send(commonOptions)
+   *
+   * @example
+   * // Different options per interaction
+   * const payload1 = await contract.methods.foo().request({ fee: highFee })
+   * const payload2 = await contract.methods.bar().request({ fee: lowFee })
+   * batch.add(payload1).add(payload2).send(baseOptions)
    */
   send(options: SendMethodOptions): SentTx {
     if (this.calls.length === 0) {
