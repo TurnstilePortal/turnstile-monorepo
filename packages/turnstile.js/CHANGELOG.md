@@ -1,5 +1,13 @@
 # @turnstile-portal/turnstile.js
 
+## 0.6.1
+
+### Patch Changes
+
+- b371e08: improve batchability
+  - @turnstile-portal/aztec-artifacts@0.6.1
+  - @turnstile-portal/l1-artifacts-abi@0.6.1
+
 ## 0.6.0
 
 ### Minor Changes
