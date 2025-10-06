@@ -1,5 +1,12 @@
 # @turnstile-portal/api-service
 
+## 0.2.4
+
+### Patch Changes
+
+- @turnstile-portal/aztec-artifacts@0.6.0
+- @turnstile-portal/api-common@0.2.4
+
 ## 0.2.3
 
 ### Patch Changes

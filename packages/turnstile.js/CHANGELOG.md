@@ -1,5 +1,17 @@
 # @turnstile-portal/turnstile.js
 
+## 0.6.0
+
+### Minor Changes
+
+- 78aaf39: batching support for l2 contract operations
+
+### Patch Changes
+
+- @turnstile-portal/aztec-artifacts@0.6.0
+- @turnstile-portal/l1-artifacts-abi@0.6.0
+- @turnstile-portal/api-client@0.2.4
+
 ## 0.5.1
 
 ### Patch Changes
