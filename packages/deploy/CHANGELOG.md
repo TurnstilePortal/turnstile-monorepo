@@ -1,5 +1,18 @@
 # @turnstile-portal/deploy
 
+## 0.6.1
+
+### Patch Changes
+
+- b371e08: improve batchability
+- Updated dependencies [b371e08]
+  - @turnstile-portal/turnstile.js@0.6.1
+  - @turnstile-portal/aztec-artifacts@0.6.1
+  - @turnstile-portal/l1-artifacts-abi@0.6.1
+  - @turnstile-portal/l1-artifacts-bytecode@0.6.1
+  - @turnstile-portal/l1-artifacts-dev@0.6.1
+  - @turnstile-portal/turnstile-dev@0.6.1
+
 ## 0.6.0
 
 ### Minor Changes
