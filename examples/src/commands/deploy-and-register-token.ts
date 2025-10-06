@@ -179,7 +179,8 @@ export function registerDeployAndRegisterToken(program: Command) {
         // Create L2Portal instance & ensure it's registered in PXE
         const aztecPortal = await factory.createL2Portal(l2Client, l1Client);
 
-        const l2TokenAddr = await aztecPortal.deployAndRegisterL2Token(
+        // Use the new prepare method to get the batch builder
+        const { batch, instance: l2TokenInstance } = await aztecPortal.prepareDeployAndRegisterL2Token(
           l1TokenAddr,
           tokenName,
           tokenSymbol,
@@ -188,7 +189,18 @@ export function registerDeployAndRegisterToken(program: Command) {
           { from: l2Client.getAddress(), fee: l2Client.getFeeOpts() },
         );
 
-        console.log(`✅ L2 token deployed and registered at: ${l2TokenAddr}`);
+        // Send the batched deploy and register transaction
+        const sentTx = batch.send({ from: l2Client.getAddress(), fee: l2Client.getFeeOpts() });
+        const receipt = await sentTx.wait();
+
+        if (receipt.status !== 'success') {
+          throw new Error(`Deploy and register failed: ${receipt.status}`);
+        }
+
+        const l2TokenAddr = l2TokenInstance.address;
+        const l2TxHash = await sentTx.getTxHash();
+
+        console.log(`✅ L2 token deployed and registered at ${l2TokenAddr} in tx ${l2TxHash.toString()}`);
         console.log('✅ L2 registration complete');
 
         console.log('--------------------------------------------------');

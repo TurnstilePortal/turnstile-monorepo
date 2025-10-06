@@ -119,6 +119,9 @@ export function registerDepositAndClaim(program: Command) {
       // Ensure L2 Token is registered in the PXE
       await factory.createL2Token(l2Client, factory.getTokenInfo(tokenSymbol));
 
+      // Note: For multiple claims, you could use prepareClaimDeposit() with a batch builder
+      // to combine multiple operations in a single transaction. For a single claim,
+      // we use the standard claimDeposit() method.
       const tx = await aztecPortal.claimDeposit(l1TokenAddr, l2Recipient, amount, BigInt(index), {
         from: l2Client.getAddress(),
         fee: l2Client.getFeeOpts(),

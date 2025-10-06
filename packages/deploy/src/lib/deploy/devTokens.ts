@@ -195,6 +195,8 @@ export async function registerL2DevToken(
   */
 
   // Now actually register the token
+  // Note: For batch operations, you could use prepareRegisterToken() with a batch builder
+  // to combine multiple token registrations or other operations in a single transaction
   const registerTokenTx = await portal.registerToken(l1TokenAddr, l2TokenAddr, name, symbol, decimals, index, {
     from: l2Client.getAddress(),
     fee: l2Client.getFeeOpts(),
@@ -269,6 +271,8 @@ export async function bridgeL1ToL2DevToken(
   await waitForL2Block(l2Client, Number(depositResult.l2BlockNumber));
   const l2Portal = new L2Portal(l2PortalAddr, l2Client);
 
+  // Note: For batch operations, you could use prepareClaimDeposit() with a batch builder
+  // to claim multiple deposits in a single transaction
   const claimTx = await l2Portal.claimDeposit(l1TokenAddr, recipient, amount, depositResult.messageIndex, {
     from: l2Client.getAddress(),
     fee: l2Client.getFeeOpts(),

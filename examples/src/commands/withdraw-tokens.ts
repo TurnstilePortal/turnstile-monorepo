@@ -1,8 +1,7 @@
-import { EthAddress, Fr, TxStatus } from '@aztec/aztec.js';
+import { TxStatus } from '@aztec/aztec.js';
 import type { L2ToL1MembershipWitness } from '@aztec/stdlib/messaging';
 import { getConfigPaths, loadDeployConfig } from '@turnstile-portal/deploy';
 import {
-  ContractBatchBuilder,
   type Hex,
   type IL1Client,
   type IL2Client,
@@ -14,7 +13,7 @@ import {
 } from '@turnstile-portal/turnstile.js';
 import { getChain, getClients, setAssumeProven } from '@turnstile-portal/turnstile-dev';
 import type { Command } from 'commander';
-import { encodeFunctionData, getAddress, http } from 'viem';
+import { getAddress, http } from 'viem';
 
 async function initiateL2Withdrawal({
   l2Client,
@@ -39,26 +38,26 @@ async function initiateL2Withdrawal({
   // Create burn authorization action
   const { action: burnAuthAction, nonce } = await l2Token.createPublicBurnAuthwitAction(l2Client.getAddress(), amount);
 
-  // Get the portal instance to access methods directly
-  const portal = await l2Portal.getInstance();
-  const from = l2Client.getAddress();
-
-  // Create withdrawal interaction (doesn't execute yet)
-  // withdraw_public expects: eth_token, from, recipient, amount, withdrawNonce, burnNonce
-  // Note: withdrawNonce must be 0 when the sender is withdrawing their own funds (not using authwit)
-  const withdrawNonce = Fr.ZERO; // Must be 0 for self-withdrawals
-  const withdrawInteraction = portal.methods.withdraw_public(
-    EthAddress.fromString(l1TokenAddr),
-    from,
-    EthAddress.fromString(l1Recipient),
+  // Use the new prepareWithdrawPublic method to get the interaction
+  const { interaction: withdrawInteraction, withdrawData } = await l2Portal.prepareWithdrawPublic(
+    l1TokenAddr,
+    l1Recipient,
     amount,
-    withdrawNonce,
     nonce, // burnNonce from the burn authorization
   );
 
   // Batch both operations together
   console.log('Batching burn authorization and withdrawal into a single transaction...');
-  const batch = new ContractBatchBuilder(l2Client.getWallet()).add(burnAuthAction).add(withdrawInteraction);
+  const batch = l2Portal.batch();
+
+  // Add burn authorization action
+  batch.add(burnAuthAction);
+
+  // Add withdrawal interaction
+  const withdrawPayload = await withdrawInteraction.request({
+    fee: l2Client.getFeeOpts(),
+  });
+  batch.add(withdrawPayload);
 
   // Execute the batch
   const batchTx = batch.send({
@@ -79,24 +78,7 @@ async function initiateL2Withdrawal({
     throw new Error('Failed to get block number');
   }
 
-  // Generate withdrawal data after the transaction is complete
-  // We need to encode the withdrawal data manually since encodeWithdrawData is private
-  const withdrawAbi = {
-    inputs: [
-      { name: 'token', type: 'address' },
-      { name: 'l1Recipient', type: 'address' },
-      { name: 'amount', type: 'uint256' },
-    ],
-    name: 'withdraw',
-    type: 'function',
-  } as const;
-
-  const withdrawData = encodeFunctionData({
-    abi: [withdrawAbi],
-    functionName: 'withdraw',
-    args: [l1TokenAddr, l1Recipient, amount],
-  }) as `0x${string}`;
-
+  // We already have withdrawData from prepareWithdrawPublic, no need to encode it manually
   const l1ContractAddresses = await l2Client.getNode().getL1ContractAddresses();
   const outboxVersion = await l2Portal.getAztecL1OutboxVersion(l1ContractAddresses.outboxAddress);
   const message = await l2Portal.computeL2ToL1Message(l1TokenAddr, l1Recipient, amount, outboxVersion);

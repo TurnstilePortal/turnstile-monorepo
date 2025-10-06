@@ -1,5 +1,6 @@
 import {
   AztecAddress,
+  type ContractInstanceWithAddress,
   type DeployOptions,
   decodeFromAbi,
   EthAddress,
@@ -11,6 +12,7 @@ import {
   PublicKeys,
   type SendMethodOptions,
   type SentTx,
+  type TxHash,
   TxStatus,
 } from '@aztec/aztec.js';
 import { sha256ToField } from '@aztec/foundation/crypto';
@@ -180,6 +182,25 @@ export interface IL2Portal {
    * @returns True if the token is registered on L1
    */
   isRegisteredByL2Address(l2TokenAddr: Hex): Promise<boolean>;
+
+  /**
+   * Batch transaction to deploy a new L2 token contract and register it with the portal
+   * @param l1TokenAddr The L1 token address
+   * @param name The token name
+   * @param symbol The token symbol
+   * @param decimals The token decimals
+   * @param index The index of the L1ToL2Message registration messge
+   * @param sendMethodOptions Transaction options
+   * @return The deployed token instance and transaction hash
+   */
+  deployAndRegisterL2Token(
+    l1TokenAddr: Hex,
+    name: string,
+    symbol: string,
+    decimals: number,
+    index: bigint, // L1ToL2Message registeration message index
+    sendMethodOptions: SendMethodOptions,
+  ): Promise<{ instance: ContractInstanceWithAddress; txHash: TxHash }>;
 }
 
 /**
@@ -268,6 +289,24 @@ export class L2Portal implements IL2Portal {
   }
 
   /**
+   * Prepares a claim deposit interaction that can be batched or sent directly
+   * @param l1TokenAddr The L1 token address
+   * @param l2RecipientAddr The L2 recipient address
+   * @param amount The amount to deposit
+   * @param index The index of the L1ToL2Message
+   * @returns The interaction that can be sent or batched
+   */
+  async prepareClaimDeposit(l1TokenAddr: Hex, l2RecipientAddr: Hex, amount: bigint, index: bigint) {
+    const portal = await this.getInstance();
+    return portal.methods.claim_public(
+      EthAddress.fromString(l1TokenAddr),
+      AztecAddress.fromString(l2RecipientAddr),
+      amount,
+      Fr.fromHexString(`0x${index.toString(16)}`),
+    );
+  }
+
+  /**
    * Claim tokens deposited to the L2 chain to the recipient's public balance
    * @param l1TokenAddr The L1 token address
    * @param l2RecipientAddr The L2 recipient address
@@ -284,15 +323,8 @@ export class L2Portal implements IL2Portal {
     options: SendMethodOptions,
   ): Promise<SentTx> {
     try {
-      const portal = await this.getInstance();
-      return await portal.methods
-        .claim_public(
-          EthAddress.fromString(l1TokenAddr),
-          AztecAddress.fromString(l2RecipientAddr),
-          amount,
-          Fr.fromHexString(`0x${index.toString(16)}`),
-        )
-        .send(options);
+      const interaction = await this.prepareClaimDeposit(l1TokenAddr, l2RecipientAddr, amount, index);
+      return interaction.send(options);
     } catch (error) {
       throw createError(
         ErrorCode.BRIDGE_DEPOSIT,
@@ -306,6 +338,24 @@ export class L2Portal implements IL2Portal {
         error,
       );
     }
+  }
+
+  /**
+   * Prepares a claim deposit shielded interaction that can be batched or sent directly
+   * @param l1TokenAddr The L1 token address
+   * @param l2RecipientAddr The L2 recipient address
+   * @param amount The amount to deposit
+   * @param index The index of the L1ToL2Message
+   * @returns The interaction that can be sent or batched
+   */
+  async prepareClaimDepositShielded(l1TokenAddr: Hex, l2RecipientAddr: Hex, amount: bigint, index: bigint) {
+    const portal = await this.getInstance();
+    return portal.methods.claim_shielded(
+      EthAddress.fromString(l1TokenAddr),
+      AztecAddress.fromString(l2RecipientAddr),
+      amount,
+      Fr.fromHexString(`0x${index.toString(16)}`),
+    );
   }
 
   /**
@@ -325,15 +375,8 @@ export class L2Portal implements IL2Portal {
     options: SendMethodOptions,
   ): Promise<SentTx> {
     try {
-      const portal = await this.getInstance();
-      return await portal.methods
-        .claim_shielded(
-          EthAddress.fromString(l1TokenAddr),
-          AztecAddress.fromString(l2RecipientAddr),
-          amount,
-          Fr.fromHexString(`0x${index.toString(16)}`),
-        )
-        .send(options);
+      const interaction = await this.prepareClaimDepositShielded(l1TokenAddr, l2RecipientAddr, amount, index);
+      return interaction.send(options);
     } catch (error) {
       throw createError(
         ErrorCode.BRIDGE_DEPOSIT,
@@ -384,6 +427,37 @@ export class L2Portal implements IL2Portal {
   }
 
   /**
+   * Prepares a register token interaction that can be batched or sent directly
+   * @param l1TokenAddr The L1 token address
+   * @param l2TokenAddr The L2 token address
+   * @param name The token name
+   * @param symbol The token symbol
+   * @param decimals The token decimals
+   * @param index The index of the L1ToL2Message
+   * @returns The interaction that can be sent or batched
+   */
+  async prepareRegisterToken(
+    l1TokenAddr: Hex,
+    l2TokenAddr: Hex,
+    name: string,
+    symbol: string,
+    decimals: number,
+    index: bigint,
+  ) {
+    const portal = await this.getInstance();
+    return portal.methods.register_private(
+      EthAddress.fromString(l1TokenAddr),
+      AztecAddress.fromString(l2TokenAddr),
+      name,
+      name.length,
+      symbol,
+      symbol.length,
+      decimals,
+      Fr.fromHexString(`0x${index.toString(16)}`),
+    );
+  }
+
+  /**
    * Registers a token on the L2 chain
    * @param l1TokenAddr The L1 token address
    * @param l2TokenAddr The L2 token address
@@ -391,6 +465,7 @@ export class L2Portal implements IL2Portal {
    * @param symbol The token symbol
    * @param decimals The token decimals
    * @param index The index of the L1ToL2Message
+   * @param options Transaction options
    * @returns The transaction
    */
   async registerToken(
@@ -403,19 +478,8 @@ export class L2Portal implements IL2Portal {
     options: SendMethodOptions,
   ): Promise<SentTx> {
     try {
-      const portal = await this.getInstance();
-      return await portal.methods
-        .register_private(
-          EthAddress.fromString(l1TokenAddr),
-          AztecAddress.fromString(l2TokenAddr),
-          name,
-          name.length,
-          symbol,
-          symbol.length,
-          decimals,
-          Fr.fromHexString(`0x${index.toString(16)}`),
-        )
-        .send(options);
+      const interaction = await this.prepareRegisterToken(l1TokenAddr, l2TokenAddr, name, symbol, decimals, index);
+      return interaction.send(options);
     } catch (error) {
       throw createError(
         ErrorCode.BRIDGE_REGISTER,
@@ -430,6 +494,32 @@ export class L2Portal implements IL2Portal {
         error,
       );
     }
+  }
+
+  /**
+   * Prepares a withdraw public interaction that can be batched or sent directly
+   * @param l1TokenAddr The L1 token address
+   * @param l1RecipientAddr The L1 recipient address
+   * @param amount The amount to withdraw
+   * @param burnNonce The burn nonce
+   * @returns Object containing the interaction and encoded withdrawal data
+   */
+  async prepareWithdrawPublic(l1TokenAddr: Hex, l1RecipientAddr: Hex, amount: bigint, burnNonce: Fr) {
+    const portal = await this.getInstance();
+    const from = this.client.getAddress();
+
+    const interaction = portal.methods.withdraw_public(
+      EthAddress.fromString(l1TokenAddr),
+      from,
+      EthAddress.fromString(l1RecipientAddr),
+      amount,
+      Fr.ZERO, // withdrawNonce
+      burnNonce,
+    );
+
+    const withdrawData = this.encodeWithdrawData(l1TokenAddr, l1RecipientAddr, amount);
+
+    return { interaction, withdrawData };
   }
 
   /**
@@ -450,21 +540,14 @@ export class L2Portal implements IL2Portal {
     sendMethodOptions: SendMethodOptions,
   ): Promise<{ tx: SentTx; withdrawData: Hex }> {
     try {
-      const portal = await this.getInstance();
-      const from = this.client.getAddress();
+      const { interaction, withdrawData } = await this.prepareWithdrawPublic(
+        l1TokenAddr,
+        l1RecipientAddr,
+        amount,
+        burnNonce,
+      );
 
-      const tx = await portal.methods
-        .withdraw_public(
-          EthAddress.fromString(l1TokenAddr),
-          from,
-          EthAddress.fromString(l1RecipientAddr),
-          amount,
-          Fr.ZERO, // withdrawNonce
-          burnNonce,
-        )
-        .send(sendMethodOptions);
-
-      const withdrawData = this.encodeWithdrawData(l1TokenAddr, l1RecipientAddr, amount);
+      const tx = interaction.send(sendMethodOptions);
 
       return { tx, withdrawData };
     } catch (error) {
@@ -899,20 +982,30 @@ export class L2Portal implements IL2Portal {
     return this.client.getNode().getPublicLogs(filter);
   }
 
-  async deployAndRegisterL2Token(
+  /**
+   * Prepares a batch for deploying and registering an L2 token
+   * @param l1TokenAddr The L1 token address
+   * @param name The token name
+   * @param symbol The token symbol
+   * @param decimals The token decimals
+   * @param index The L1ToL2Message index
+   * @param sendMethodOptions Send options for register interaction
+   * @returns Object containing the batch builder and token instance
+   */
+  async prepareDeployAndRegisterL2Token(
     l1TokenAddr: Hex,
     name: string,
     symbol: string,
     decimals: number,
     index: bigint, // L1ToL2Message index
     sendMethodOptions: SendMethodOptions,
-  ): Promise<AztecAddress> {
+  ): Promise<{ batch: ContractBatchBuilder; instance: ContractInstanceWithAddress }> {
     const portal = await this.getInstance();
 
     await this.client.getWallet().registerContractClass(TokenContractArtifact);
 
     const tokenInstance = await L2Token.getInstance(portal.address, name, symbol, decimals);
-    console.debug(`Deploying L2 token ${tokenInstance.address} for L1 token ${l1TokenAddr}...`);
+    console.debug(`Preparing deployment of L2 token ${tokenInstance.address} for L1 token ${l1TokenAddr}...`);
     // Token needs to be registered in the client PXE prior to deployment
     this.client.getWallet().registerContract({ instance: tokenInstance });
 
@@ -944,7 +1037,27 @@ export class L2Portal implements IL2Portal {
     // Build batch with the pre-configured payloads
     const batch = new ContractBatchBuilder(this.client.getWallet()).add(tokenDeployPayload).add(registerPayload);
 
-    // Send the batch (options have already been baked into the payloads)
+    return { batch, instance: tokenInstance };
+  }
+
+  async deployAndRegisterL2Token(
+    l1TokenAddr: Hex,
+    name: string,
+    symbol: string,
+    decimals: number,
+    index: bigint, // L1ToL2Message index
+    sendMethodOptions: SendMethodOptions,
+  ): Promise<{ instance: ContractInstanceWithAddress; txHash: TxHash }> {
+    const { batch, instance } = await this.prepareDeployAndRegisterL2Token(
+      l1TokenAddr,
+      name,
+      symbol,
+      decimals,
+      index,
+      sendMethodOptions,
+    );
+
+    // Send the batch
     const sentTx = batch.send(sendMethodOptions);
     const receipt = await sentTx.wait();
     if (receipt.status !== TxStatus.SUCCESS) {
@@ -955,9 +1068,9 @@ export class L2Portal implements IL2Portal {
       );
     }
 
-    console.debug(`Deployed and registered L2 token ${tokenInstance.address.toString()} for L1 token ${l1TokenAddr} `);
+    console.debug(`Deployed and registered L2 token ${instance.address.toString()} for L1 token ${l1TokenAddr} `);
 
-    return tokenInstance.address;
+    return { instance, txHash: await sentTx.getTxHash() };
   }
 }
 

@@ -1,12 +1,6 @@
-import { EthAddress, Fr, TxStatus } from '@aztec/aztec.js';
+import { TxStatus } from '@aztec/aztec.js';
 import { getConfigPaths, loadDeployConfig } from '@turnstile-portal/deploy';
-import {
-  ContractBatchBuilder,
-  type IL2Client,
-  type L1Client,
-  L1Portal,
-  TurnstileFactory,
-} from '@turnstile-portal/turnstile.js';
+import { type IL2Client, type L1Client, L1Portal, TurnstileFactory } from '@turnstile-portal/turnstile.js';
 import { getChain, getClients, InsecureMintableToken, waitForL2Block } from '@turnstile-portal/turnstile-dev';
 import type { Command } from 'commander';
 import type { Address } from 'viem';
@@ -98,10 +92,9 @@ async function batchClaimDeposits({
 
   // Get the L2 Portal instance
   const l2Portal = await factory.createL2Portal(l2Client);
-  const portal = await l2Portal.getInstance();
 
   // Create batch builder
-  const batch = new ContractBatchBuilder(l2Client.getWallet());
+  const batch = l2Portal.batch();
 
   // Add all claim interactions to the batch
   for (const deposit of deposits) {
@@ -110,15 +103,19 @@ async function batchClaimDeposits({
     // Ensure the L2 token is registered
     await factory.createL2Token(l2Client, factory.getTokenInfo(deposit.tokenSymbol));
 
-    // Create claim interaction (doesn't execute yet)
-    const claimInteraction = portal.methods.claim_public(
-      EthAddress.fromString(deposit.tokenAddr),
-      l2Client.getAddress(), // Use L2 address format
+    // Use the new prepareClaimDeposit method to get the interaction
+    const claimInteraction = await l2Portal.prepareClaimDeposit(
+      deposit.tokenAddr,
+      l2Client.getAddress().toString(),
       deposit.amount,
-      Fr.fromHexString(`0x${deposit.messageIndex.toString(16)}`),
+      BigInt(deposit.messageIndex),
     );
 
-    batch.add(claimInteraction);
+    // Add the interaction to the batch
+    const payload = await claimInteraction.request({
+      fee: l2Client.getFeeOpts(),
+    });
+    batch.add(payload);
   }
 
   // Execute the batch claim

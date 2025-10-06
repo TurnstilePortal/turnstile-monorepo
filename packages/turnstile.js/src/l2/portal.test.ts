@@ -175,6 +175,42 @@ describe('L2Portal', () => {
     });
   });
 
+  describe('prepareClaimDeposit', () => {
+    const l1TokenAddr = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    const l2RecipientAddr = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+    const amount = BigInt(1000);
+    const index = BigInt(123);
+
+    it('should prepare a claim deposit interaction', async () => {
+      // Mock the Fr.fromHexString return value
+      Fr.fromHexString = vi.fn().mockImplementation(
+        (hex) =>
+          ({
+            toString: () => `fr_${hex}`,
+          }) as unknown as Fr,
+      );
+
+      const interaction = await portal.prepareClaimDeposit(l1TokenAddr, l2RecipientAddr, amount, index);
+
+      // Check the portal contract was retrieved
+      expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
+
+      // Check EthAddress and AztecAddress conversion
+      expect(EthAddress.fromString).toHaveBeenCalledWith(l1TokenAddr);
+      expect(AztecAddress.fromString).toHaveBeenCalledWith(l2RecipientAddr);
+
+      // Check Fr conversion for index
+      expect(Fr.fromHexString).toHaveBeenCalledWith(`0x${index.toString(16)}`);
+
+      // Check claim_public method was called
+      expect(mockPortalContract.methods.claim_public).toHaveBeenCalled();
+
+      // Verify the interaction object is returned
+      expect(interaction).toBeDefined();
+      expect(interaction.send).toBeDefined();
+    });
+  });
+
   describe('claimDeposit', () => {
     const l1TokenAddr = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
     const l2RecipientAddr = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
@@ -223,6 +259,42 @@ describe('L2Portal', () => {
     });
   });
 
+  describe('prepareClaimDepositShielded', () => {
+    const l1TokenAddr = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    const l2RecipientAddr = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+    const amount = BigInt(1000);
+    const index = BigInt(123);
+
+    it('should prepare a claim deposit shielded interaction', async () => {
+      // Mock the Fr.fromHexString return value
+      Fr.fromHexString = vi.fn().mockImplementation(
+        (hex) =>
+          ({
+            toString: () => `fr_${hex}`,
+          }) as unknown as Fr,
+      );
+
+      const interaction = await portal.prepareClaimDepositShielded(l1TokenAddr, l2RecipientAddr, amount, index);
+
+      // Check the portal contract was retrieved
+      expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
+
+      // Check EthAddress and AztecAddress conversion
+      expect(EthAddress.fromString).toHaveBeenCalledWith(l1TokenAddr);
+      expect(AztecAddress.fromString).toHaveBeenCalledWith(l2RecipientAddr);
+
+      // Check Fr conversion for index
+      expect(Fr.fromHexString).toHaveBeenCalledWith(`0x${index.toString(16)}`);
+
+      // Check claim_shielded method was called
+      expect(mockPortalContract.methods.claim_shielded).toHaveBeenCalled();
+
+      // Verify the interaction object is returned
+      expect(interaction).toBeDefined();
+      expect(interaction.send).toBeDefined();
+    });
+  });
+
   describe('claimDepositShielded', () => {
     const l1TokenAddr = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
     const l2RecipientAddr = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
@@ -268,6 +340,57 @@ describe('L2Portal', () => {
       await expect(
         portal.claimDepositShielded(l1TokenAddr, l2RecipientAddr, amount, index, { from: mockL2Client.getAddress() }),
       ).rejects.toThrow();
+    });
+  });
+
+  describe('prepareRegisterToken', () => {
+    const l1TokenAddr = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    const l2TokenAddr = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+    const name = 'TestToken';
+    const symbol = 'TEST';
+    const decimals = 18;
+    const index = BigInt(456);
+
+    it('should prepare a register token interaction', async () => {
+      // Mock the Fr.fromHexString return value
+      Fr.fromHexString = vi.fn().mockImplementation((hex) => ({
+        toString: () => `fr_${hex}`,
+      }));
+
+      const interaction = await portal.prepareRegisterToken(l1TokenAddr, l2TokenAddr, name, symbol, decimals, index);
+
+      // Check the portal contract was retrieved
+      expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
+
+      // Check register_private method was called
+      expect(mockPortalContract.methods.register_private).toHaveBeenCalled();
+
+      // Verify the interaction object is returned
+      expect(interaction).toBeDefined();
+      expect(interaction.send).toBeDefined();
+    });
+  });
+
+  describe('prepareWithdrawPublic', () => {
+    const l1TokenAddr = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    const l1RecipientAddr = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+    const amount = BigInt(1000);
+    const burnNonce = Fr.random();
+
+    it('should prepare a withdraw public interaction with data', async () => {
+      const result = await portal.prepareWithdrawPublic(l1TokenAddr, l1RecipientAddr, amount, burnNonce);
+
+      // Check the portal contract was retrieved
+      expect(PortalContract.at).toHaveBeenCalledWith(portalAddr, mockWallet);
+
+      // Check withdraw_public method was called
+      expect(mockPortalContract.methods.withdraw_public).toHaveBeenCalled();
+
+      // Verify both interaction and withdrawData are returned
+      expect(result.interaction).toBeDefined();
+      expect(result.interaction.send).toBeDefined();
+      expect(result.withdrawData).toBeDefined();
+      expect(result.withdrawData).toMatch(/^0x/);
     });
   });
 
@@ -354,20 +477,20 @@ describe('L2Portal', () => {
       expect(mockPortalContract.methods.withdraw_public().send).toHaveBeenCalled();
 
       // Check the returned object has tx and withdrawData
-      expect(result).toEqual({
-        tx: { txHash: '0xdefg' },
-        withdrawData: expect.stringMatching(/^0x[a-fA-F0-9]+$/),
-      });
+      expect(result.tx).toBeDefined();
+      expect(result.withdrawData).toMatch(/^0x[a-fA-F0-9]+$/);
     });
 
     it('should throw an error when withdraw_public fails', async () => {
-      // Setup error case
-      mockPortalContract.methods.withdraw_public().send.mockRejectedValueOnce(new Error('Withdraw failed'));
+      // Setup error case - mock the withdraw_public method to throw
+      mockPortalContract.methods.withdraw_public.mockImplementationOnce(() => {
+        throw new Error('Withdraw failed');
+      });
 
       // Verify error is thrown
       await expect(
         portal.withdrawPublic(l1TokenAddr, l1RecipientAddr, amount, burnNonce, { from: mockL2Client.getAddress() }),
-      ).rejects.toThrow();
+      ).rejects.toThrow('Failed to withdraw');
     });
   });
 
