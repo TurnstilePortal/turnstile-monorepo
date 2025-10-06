@@ -8,7 +8,7 @@ async function doTransfer(senderClient: IL2Client, token: L2Token, recipient: Az
   const symbol = await token.getSymbol();
   console.log(`Transferring ${amount} ${symbol} to ${recipient}...`);
 
-  const tx = await token.transferPublic(recipient, amount, { from: senderClient.getAddress() });
+  const tx = token.transferPublic(recipient, amount).send({ from: senderClient.getAddress() });
   console.log(`Transaction submitted: ${await tx.getTxHash()}\nWaiting for receipt...`);
   const receipt = await tx.wait();
   console.log('Transfer status:', receipt.status);

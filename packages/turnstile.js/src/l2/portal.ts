@@ -11,6 +11,7 @@ import {
   PublicKeys,
   type SendMethodOptions,
   type SentTx,
+  TxStatus,
 } from '@aztec/aztec.js';
 import { sha256ToField } from '@aztec/foundation/crypto';
 import { serializeToBuffer } from '@aztec/foundation/serialize';
@@ -22,7 +23,12 @@ import {
   getNonNullifiedL1ToL2MessageWitness,
   type L2ToL1MembershipWitness,
 } from '@aztec/stdlib/messaging';
-import { PortalContract, PortalContractArtifact, ShieldGatewayContract } from '@turnstile-portal/aztec-artifacts';
+import {
+  PortalContract,
+  PortalContractArtifact,
+  ShieldGatewayContract,
+  TokenContractArtifact,
+} from '@turnstile-portal/aztec-artifacts';
 import { encodeFunctionData, getContract } from 'viem';
 import { createError, ErrorCode, isTurnstileError } from '../errors.js';
 import type { IL1Client } from '../l1/client.js';
@@ -30,6 +36,7 @@ import { L1Token } from '../l1/token.js';
 import type { Hex } from '../types.js';
 import type { IL2Client } from './client.js';
 import { L2_CONTRACT_DEPLOYMENT_SALT, PUBLIC_NOT_SECRET_SECRET } from './constants.js';
+import { ContractBatchBuilder } from './contract-interaction.js';
 import { registerShieldGatewayInPXE } from './shield-gateway.js';
 import { L2Token } from './token.js';
 
@@ -55,6 +62,12 @@ export interface IL2Portal {
    * @throws {TurnstileError} With ErrorCode.L2_CONTRACT_INTERACTION if configuration retrieval fails
    */
   getL1Portal(): Promise<EthAddress>;
+
+  /**
+   * Creates a batch builder for multiple portal operations
+   * @returns A batch builder instance
+   */
+  batch(): ContractBatchBuilder;
 
   /**
    * Claim tokens deposited to the L2 chain to the recipient's public balance
@@ -244,6 +257,14 @@ export class L2Portal implements IL2Portal {
   async getL1Portal(): Promise<EthAddress> {
     const config = await this.getConfig();
     return config.l1_portal;
+  }
+
+  /**
+   * Creates a batch builder for multiple portal operations
+   * @returns A batch builder instance
+   */
+  batch(): ContractBatchBuilder {
+    return new ContractBatchBuilder(this.client.getWallet());
   }
 
   /**
@@ -876,6 +897,67 @@ export class L2Portal implements IL2Portal {
       afterLog,
     };
     return this.client.getNode().getPublicLogs(filter);
+  }
+
+  async deployAndRegisterL2Token(
+    l1TokenAddr: Hex,
+    name: string,
+    symbol: string,
+    decimals: number,
+    index: bigint, // L1ToL2Message index
+    sendMethodOptions: SendMethodOptions,
+  ): Promise<AztecAddress> {
+    const portal = await this.getInstance();
+
+    await this.client.getWallet().registerContractClass(TokenContractArtifact);
+
+    const tokenInstance = await L2Token.getInstance(portal.address, name, symbol, decimals);
+    console.debug(`Deploying L2 token ${tokenInstance.address} for L1 token ${l1TokenAddr}...`);
+    // Token needs to be registered in the client PXE prior to deployment
+    this.client.getWallet().registerContract({ instance: tokenInstance });
+
+    // Get the deployment interaction
+    const tokenDeployInteraction = L2Token.deployMethod(this.client, portal.address, name, symbol, decimals);
+
+    const registerInteraction = portal.methods.register_private(
+      EthAddress.fromString(l1TokenAddr),
+      tokenInstance.address,
+      name,
+      name.length,
+      symbol,
+      symbol.length,
+      decimals,
+      Fr.fromHexString(`0x${index.toString(16)}`),
+    );
+
+    // Create deployment options for the token deployment
+    const deployOptions = {
+      ...sendMethodOptions,
+      universalDeploy: true,
+      contractAddressSalt: L2_CONTRACT_DEPLOYMENT_SALT,
+    };
+
+    // Create ExecutionPayloads with their specific options
+    const tokenDeployPayload = await tokenDeployInteraction.request(deployOptions);
+    const registerPayload = await registerInteraction.request(sendMethodOptions);
+
+    // Build batch with the pre-configured payloads
+    const batch = new ContractBatchBuilder(this.client.getWallet()).add(tokenDeployPayload).add(registerPayload);
+
+    // Send the batch (options have already been baked into the payloads)
+    const sentTx = batch.send(sendMethodOptions);
+    const receipt = await sentTx.wait();
+    if (receipt.status !== TxStatus.SUCCESS) {
+      throw createError(
+        ErrorCode.L2_DEPLOYMENT,
+        `Failed to deploy and register L2 token for L1 token ${l1TokenAddr} `,
+        { l1TokenAddress: l1TokenAddr },
+      );
+    }
+
+    console.debug(`Deployed and registered L2 token ${tokenInstance.address.toString()} for L1 token ${l1TokenAddr} `);
+
+    return tokenInstance.address;
   }
 }
 

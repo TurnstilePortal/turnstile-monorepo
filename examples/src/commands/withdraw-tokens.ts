@@ -1,7 +1,8 @@
-import { TxStatus } from '@aztec/aztec.js';
+import { EthAddress, Fr, TxStatus } from '@aztec/aztec.js';
 import type { L2ToL1MembershipWitness } from '@aztec/stdlib/messaging';
 import { getConfigPaths, loadDeployConfig } from '@turnstile-portal/deploy';
 import {
+  ContractBatchBuilder,
   type Hex,
   type IL1Client,
   type IL2Client,
@@ -13,7 +14,7 @@ import {
 } from '@turnstile-portal/turnstile.js';
 import { getChain, getClients, setAssumeProven } from '@turnstile-portal/turnstile-dev';
 import type { Command } from 'commander';
-import { getAddress, http } from 'viem';
+import { encodeFunctionData, getAddress, http } from 'viem';
 
 async function initiateL2Withdrawal({
   l2Client,
@@ -31,39 +32,70 @@ async function initiateL2Withdrawal({
   amount: bigint;
 }) {
   const symbol = await l2Token.getSymbol();
-  console.log(`Initiating withdrawal of ${amount} ${symbol} to L1 recipient ${l1Recipient}`);
+  console.log(`Initiating batched withdrawal of ${amount} ${symbol} to L1 recipient ${l1Recipient}`);
 
   console.log('Current L2 balance:', await l2Token.balanceOfPublic(l2Client.getAddress()));
 
-  // Create burn action
-  const { action, nonce } = await l2Token.createPublicBurnAuthwitAction(l2Client.getAddress(), amount);
+  // Create burn authorization action
+  const { action: burnAuthAction, nonce } = await l2Token.createPublicBurnAuthwitAction(l2Client.getAddress(), amount);
 
-  console.log('Setting up burn authorization...');
-  const burnAuthTx = await action.send({
+  // Get the portal instance to access methods directly
+  const portal = await l2Portal.getInstance();
+  const from = l2Client.getAddress();
+
+  // Create withdrawal interaction (doesn't execute yet)
+  // withdraw_public expects: eth_token, from, recipient, amount, withdrawNonce, burnNonce
+  // Note: withdrawNonce must be 0 when the sender is withdrawing their own funds (not using authwit)
+  const withdrawNonce = Fr.ZERO; // Must be 0 for self-withdrawals
+  const withdrawInteraction = portal.methods.withdraw_public(
+    EthAddress.fromString(l1TokenAddr),
+    from,
+    EthAddress.fromString(l1Recipient),
+    amount,
+    withdrawNonce,
+    nonce, // burnNonce from the burn authorization
+  );
+
+  // Batch both operations together
+  console.log('Batching burn authorization and withdrawal into a single transaction...');
+  const batch = new ContractBatchBuilder(l2Client.getWallet()).add(burnAuthAction).add(withdrawInteraction);
+
+  // Execute the batch
+  const batchTx = batch.send({
     fee: l2Client.getFeeOpts(),
     from: l2Client.getAddress(),
   });
 
-  console.log(`Waiting for burn authorization transaction ${await burnAuthTx.getTxHash()}...`);
-  const burnAuthReceipt = await burnAuthTx.wait();
-  console.log(`Burn authorization sent. Status: ${burnAuthReceipt.status.toString()}`);
+  console.log(`Batch transaction submitted: ${(await batchTx.getTxHash()).toString()}`);
+  console.log('This transaction includes both burn authorization and withdrawal initiation');
 
-  // Initiate the withdrawal from the Portal
-  const { tx: withdrawTx, withdrawData } = await l2Portal.withdrawPublic(l1TokenAddr, l1Recipient, amount, nonce, {
-    fee: l2Client.getFeeOpts(),
-    from: l2Client.getAddress(),
-  });
-
-  console.log(`Withdrawal initiated on L2. Tx: ${(await withdrawTx.getTxHash()).toString()}`);
-
-  const receipt = await withdrawTx.wait();
+  const receipt = await batchTx.wait();
   if (receipt.status !== TxStatus.SUCCESS) {
-    throw new Error('Withdrawal failed');
+    throw new Error('Batched withdrawal failed');
   }
+
   const l2BlockNumber = receipt.blockNumber;
   if (!l2BlockNumber) {
     throw new Error('Failed to get block number');
   }
+
+  // Generate withdrawal data after the transaction is complete
+  // We need to encode the withdrawal data manually since encodeWithdrawData is private
+  const withdrawAbi = {
+    inputs: [
+      { name: 'token', type: 'address' },
+      { name: 'l1Recipient', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    name: 'withdraw',
+    type: 'function',
+  } as const;
+
+  const withdrawData = encodeFunctionData({
+    abi: [withdrawAbi],
+    functionName: 'withdraw',
+    args: [l1TokenAddr, l1Recipient, amount],
+  }) as `0x${string}`;
 
   const l1ContractAddresses = await l2Client.getNode().getL1ContractAddresses();
   const outboxVersion = await l2Portal.getAztecL1OutboxVersion(l1ContractAddresses.outboxAddress);
@@ -71,6 +103,7 @@ async function initiateL2Withdrawal({
   const witness = await l2Portal.getL2ToL1MembershipWitness(l2BlockNumber, message);
 
   console.log('New L2 balance:', await l2Token.balanceOfPublic(l2Client.getAddress()));
+  console.log('Batched withdrawal completed in a single transaction!');
 
   return { l2BlockNumber, witness, message, withdrawData };
 }
