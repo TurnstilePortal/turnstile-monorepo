@@ -1,16 +1,12 @@
 // @ts-nocheck
-import {
-  BatchCall,
-  type ContractFunctionInteraction,
-  type SendMethodOptions,
-  type SimulateMethodOptions,
-  type Wallet,
-} from '@aztec/aztec.js';
+import type { ContractFunctionInteraction, SendMethodOptions, SimulateMethodOptions, Wallet } from '@aztec/aztec.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ExtendedBatchCall } from '../utils/extended-batch-call.js';
 import { L2TokenBatchBuilder, L2TokenInteraction } from './token-interaction.js';
 
 // Mock the imports
 vi.mock('@aztec/aztec.js');
+vi.mock('../utils/extended-batch-call.js');
 
 describe('L2TokenInteraction', () => {
   let mockInteraction: ContractFunctionInteraction;
@@ -109,8 +105,8 @@ describe('L2TokenBatchBuilder', () => {
       prove: vi.fn().mockResolvedValue({ proof: 'proof2' }),
     } as unknown as ContractFunctionInteraction;
 
-    // Mock BatchCall
-    BatchCall.mockImplementation((_wallet, _interactions) => ({
+    // Mock ExtendedBatchCall
+    ExtendedBatchCall.mockImplementation((_wallet, _interactions) => ({
       send: vi.fn().mockReturnValue({ txHash: '0xbatch' }),
       simulate: vi.fn().mockResolvedValue({ result: 'batch-sim' }),
       prove: vi.fn().mockResolvedValue({ proof: 'batch-proof' }),
@@ -173,12 +169,12 @@ describe('L2TokenBatchBuilder', () => {
       expect(result).toEqual({ txHash: '0x111' });
     });
 
-    it('should use BatchCall for multiple interactions', () => {
+    it('should use ExtendedBatchCall for multiple interactions', () => {
       const options = { from: '0xabc' } as unknown as SendMethodOptions;
       batchBuilder.add(mockInteraction1).add(mockInteraction2);
       const result = batchBuilder.send(options);
 
-      expect(BatchCall).toHaveBeenCalledWith(mockWallet, [mockInteraction1, mockInteraction2]);
+      expect(ExtendedBatchCall).toHaveBeenCalledWith(mockWallet, [mockInteraction1, mockInteraction2]);
       expect(result).toEqual({ txHash: '0xbatch' });
     });
   });
@@ -197,11 +193,11 @@ describe('L2TokenBatchBuilder', () => {
       expect(result).toEqual({ result: 'sim1' });
     });
 
-    it('should use BatchCall for multiple interactions', async () => {
+    it('should use ExtendedBatchCall for multiple interactions', async () => {
       batchBuilder.add(mockInteraction1).add(mockInteraction2);
       const result = await batchBuilder.simulate();
 
-      expect(BatchCall).toHaveBeenCalledWith(mockWallet, [mockInteraction1, mockInteraction2]);
+      expect(ExtendedBatchCall).toHaveBeenCalledWith(mockWallet, [mockInteraction1, mockInteraction2]);
       expect(result).toEqual({ result: 'batch-sim' });
     });
   });

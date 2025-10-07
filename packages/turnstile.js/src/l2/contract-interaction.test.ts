@@ -1,16 +1,20 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: tests */
 import type { Contract, ContractFunctionInteraction, DeployMethod, SendMethodOptions, Wallet } from '@aztec/aztec.js';
-import { AztecAddress, BatchCall } from '@aztec/aztec.js';
+import { AztecAddress } from '@aztec/aztec.js';
 import type { ExecutionPayload } from '@aztec/entrypoints/payload';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ExtendedBatchCall } from '../utils/extended-batch-call.js';
 import { ContractBatchBuilder } from './contract-interaction.js';
 
-// Mock the aztec.js module
+// Mock the aztec.js module and ExtendedBatchCall
 vi.mock('@aztec/aztec.js', () => ({
-  BatchCall: vi.fn(),
   AztecAddress: {
     ZERO: { toString: () => '0x0000000000000000000000000000000000000000' },
   },
+}));
+
+vi.mock('../utils/extended-batch-call.js', () => ({
+  ExtendedBatchCall: vi.fn(),
 }));
 
 describe('ContractBatchBuilder', () => {
@@ -166,29 +170,29 @@ describe('ContractBatchBuilder', () => {
       expect(mockSend).toHaveBeenCalledWith(validOptions);
     });
 
-    it('should use BatchCall for ExecutionPayload', () => {
+    it('should use ExtendedBatchCall for ExecutionPayload', () => {
       const mockBatchSend = vi.fn().mockReturnValue({} as any);
-      (BatchCall as any).mockImplementation(() => ({
+      (ExtendedBatchCall as any).mockImplementation(() => ({
         send: mockBatchSend,
       }));
 
       builder.add(mockPayload);
       builder.send(validOptions);
 
-      expect(BatchCall).toHaveBeenCalledWith(mockWallet, [mockPayload]);
+      expect(ExtendedBatchCall).toHaveBeenCalledWith(mockWallet, [mockPayload]);
       expect(mockBatchSend).toHaveBeenCalledWith(validOptions);
     });
 
-    it('should use BatchCall for multiple interactions', () => {
+    it('should use ExtendedBatchCall for multiple interactions', () => {
       const mockBatchSend = vi.fn().mockReturnValue({} as any);
-      (BatchCall as any).mockImplementation(() => ({
+      (ExtendedBatchCall as any).mockImplementation(() => ({
         send: mockBatchSend,
       }));
 
       builder.add(mockInteraction).add(mockPayload);
       builder.send(validOptions);
 
-      expect(BatchCall).toHaveBeenCalledWith(mockWallet, [mockInteraction, mockPayload]);
+      expect(ExtendedBatchCall).toHaveBeenCalledWith(mockWallet, [mockInteraction, mockPayload]);
       expect(mockBatchSend).toHaveBeenCalledWith(validOptions);
     });
   });

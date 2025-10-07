@@ -1,5 +1,6 @@
 import {
   AztecAddress,
+  type ContractFunctionInteraction,
   type ContractInstanceWithAddress,
   type DeployOptions,
   decodeFromAbi,
@@ -296,7 +297,12 @@ export class L2Portal implements IL2Portal {
    * @param index The index of the L1ToL2Message
    * @returns The interaction that can be sent or batched
    */
-  async prepareClaimDeposit(l1TokenAddr: Hex, l2RecipientAddr: Hex, amount: bigint, index: bigint) {
+  async prepareClaimDeposit(
+    l1TokenAddr: Hex,
+    l2RecipientAddr: Hex,
+    amount: bigint,
+    index: bigint,
+  ): Promise<ContractFunctionInteraction> {
     const portal = await this.getInstance();
     return portal.methods.claim_public(
       EthAddress.fromString(l1TokenAddr),
@@ -348,7 +354,12 @@ export class L2Portal implements IL2Portal {
    * @param index The index of the L1ToL2Message
    * @returns The interaction that can be sent or batched
    */
-  async prepareClaimDepositShielded(l1TokenAddr: Hex, l2RecipientAddr: Hex, amount: bigint, index: bigint) {
+  async prepareClaimDepositShielded(
+    l1TokenAddr: Hex,
+    l2RecipientAddr: Hex,
+    amount: bigint,
+    index: bigint,
+  ): Promise<ContractFunctionInteraction> {
     const portal = await this.getInstance();
     return portal.methods.claim_shielded(
       EthAddress.fromString(l1TokenAddr),
@@ -443,7 +454,7 @@ export class L2Portal implements IL2Portal {
     symbol: string,
     decimals: number,
     index: bigint,
-  ) {
+  ): Promise<ContractFunctionInteraction> {
     const portal = await this.getInstance();
     return portal.methods.register_private(
       EthAddress.fromString(l1TokenAddr),
@@ -504,7 +515,12 @@ export class L2Portal implements IL2Portal {
    * @param burnNonce The burn nonce
    * @returns Object containing the interaction and encoded withdrawal data
    */
-  async prepareWithdrawPublic(l1TokenAddr: Hex, l1RecipientAddr: Hex, amount: bigint, burnNonce: Fr) {
+  async prepareWithdrawPublic(
+    l1TokenAddr: Hex,
+    l1RecipientAddr: Hex,
+    amount: bigint,
+    burnNonce: Fr,
+  ): Promise<{ interaction: ContractFunctionInteraction; withdrawData: Hex }> {
     const portal = await this.getInstance();
     const from = this.client.getAddress();
 

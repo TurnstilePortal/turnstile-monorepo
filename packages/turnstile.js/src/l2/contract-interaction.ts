@@ -1,15 +1,15 @@
-import {
-  BatchCall,
-  type Contract,
-  type ContractFunctionInteraction,
-  type DeployMethod,
-  type DeployOptions,
-  type SendMethodOptions,
-  type SentTx,
-  type SimulateMethodOptions,
-  type Wallet,
+import type {
+  Contract,
+  ContractFunctionInteraction,
+  DeployMethod,
+  DeployOptions,
+  SendMethodOptions,
+  SentTx,
+  SimulateMethodOptions,
+  Wallet,
 } from '@aztec/aztec.js';
 import type { ExecutionPayload } from '@aztec/entrypoints/payload';
+import { ExtendedBatchCall } from '../utils/extended-batch-call.js';
 
 /**
  * Type representing any call that can be added to a batch
@@ -191,13 +191,13 @@ export class ContractBatchBuilder {
       if ('send' in firstCall && typeof firstCall.send === 'function') {
         return firstCall.send(options);
       }
-      // If it's an ExecutionPayload, we need to wrap it in a BatchCall
-      const batch = new BatchCall(this.wallet, [firstCall]);
+      // If it's an ExecutionPayload, we need to wrap it in an ExtendedBatchCall
+      const batch = new ExtendedBatchCall(this.wallet, [firstCall]);
       return batch.send(options);
     }
 
-    // For multiple interactions, use BatchCall
-    const batch = new BatchCall(this.wallet, this.calls);
+    // For multiple interactions, use ExtendedBatchCall
+    const batch = new ExtendedBatchCall(this.wallet, this.calls);
     return batch.send(options);
   }
 
@@ -219,14 +219,14 @@ export class ContractBatchBuilder {
         const opts = options || ({} as T);
         return firstCall.simulate(opts);
       }
-      // If it's an ExecutionPayload, we need to wrap it in a BatchCall
-      const batch = new BatchCall(this.wallet, [firstCall]);
+      // If it's an ExecutionPayload, we need to wrap it in an ExtendedBatchCall
+      const batch = new ExtendedBatchCall(this.wallet, [firstCall]);
       const opts = options || ({} as T);
       return batch.simulate(opts);
     }
 
-    // For multiple interactions, use BatchCall
-    const batch = new BatchCall(this.wallet, this.calls);
+    // For multiple interactions, use ExtendedBatchCall
+    const batch = new ExtendedBatchCall(this.wallet, this.calls);
     const opts = options || ({} as T);
     return batch.simulate(opts);
   }
@@ -248,13 +248,13 @@ export class ContractBatchBuilder {
       if ('prove' in firstCall && typeof firstCall.prove === 'function') {
         return firstCall.prove(options);
       }
-      // If it's an ExecutionPayload, we need to wrap it in a BatchCall
-      const batch = new BatchCall(this.wallet, [firstCall]);
+      // If it's an ExecutionPayload, we need to wrap it in an ExtendedBatchCall
+      const batch = new ExtendedBatchCall(this.wallet, [firstCall]);
       return batch.prove(options);
     }
 
-    // For multiple interactions, use BatchCall
-    const batch = new BatchCall(this.wallet, this.calls);
+    // For multiple interactions, use ExtendedBatchCall
+    const batch = new ExtendedBatchCall(this.wallet, this.calls);
     return batch.prove(options);
   }
 

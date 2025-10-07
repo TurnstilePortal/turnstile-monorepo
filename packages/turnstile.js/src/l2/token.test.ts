@@ -4,7 +4,6 @@
 
 import {
   AztecAddress,
-  BatchCall,
   Contract,
   type ContractFunctionInteraction,
   Fr,
@@ -18,12 +17,14 @@ import {
 import { TokenContract } from '@turnstile-portal/aztec-artifacts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErrorCode, TurnstileError } from '../errors.js';
+import { ExtendedBatchCall } from '../utils/extended-batch-call.js';
 import type { L2Client } from './client.js';
 import { L2Token } from './token.js';
 
 // Mock the imports
 vi.mock('@aztec/aztec.js');
 vi.mock('@turnstile-portal/aztec-artifacts');
+vi.mock('../utils/extended-batch-call.js');
 
 describe('L2Token', () => {
   // Set up test fixtures
@@ -94,8 +95,8 @@ describe('L2Token', () => {
       writable: true,
     });
 
-    // Mock BatchCall
-    BatchCall.mockImplementation((_wallet, _payloads) => ({
+    // Mock ExtendedBatchCall
+    ExtendedBatchCall.mockImplementation((_wallet, _payloads) => ({
       send: vi.fn().mockReturnValue({
         getTxHash: vi.fn().mockReturnValue({ toString: () => 'mock-tx-hash' }),
         wait: vi.fn().mockResolvedValue({

@@ -54,9 +54,7 @@ async function initiateL2Withdrawal({
   batch.add(burnAuthAction);
 
   // Add withdrawal interaction
-  const withdrawPayload = await withdrawInteraction.request({
-    fee: l2Client.getFeeOpts(),
-  });
+  const withdrawPayload = await withdrawInteraction.request();
   batch.add(withdrawPayload);
 
   // Execute the batch

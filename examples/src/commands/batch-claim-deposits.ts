@@ -112,9 +112,7 @@ async function batchClaimDeposits({
     );
 
     // Add the interaction to the batch
-    const payload = await claimInteraction.request({
-      fee: l2Client.getFeeOpts(),
-    });
+    const payload = await claimInteraction.request();
     batch.add(payload);
   }
 

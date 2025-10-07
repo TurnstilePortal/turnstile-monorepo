@@ -14,4 +14,5 @@ export * from './l2/shield-gateway.js';
 export * from './l2/token.js';
 export * from './l2/token-interaction.js';
 export * from './types.js';
+export * from './utils/index.js';
 export * from './validator.js';

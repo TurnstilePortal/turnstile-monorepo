@@ -1,6 +1,5 @@
 import {
   AztecAddress,
-  BatchCall,
   Capsule,
   Contract,
   ContractFunctionInteraction,
@@ -22,6 +21,7 @@ import { type ABIParameterVisibility, type FunctionAbi, FunctionType } from '@az
 import { PublicKeys } from '@aztec/stdlib/keys';
 import { TokenContract, TokenContractArtifact } from '@turnstile-portal/aztec-artifacts';
 import { createError, ErrorCode, ErrorFactories, isTurnstileError } from '../errors.js';
+import { ExtendedBatchCall } from '../utils/extended-batch-call.js';
 import type { IL2Client } from './client.js';
 import { L2_CONTRACT_DEPLOYMENT_SALT, VP_SLOT } from './constants.js';
 import { L2TokenBatchBuilder, L2TokenInteraction } from './token-interaction.js';
@@ -600,7 +600,7 @@ export class L2Token implements IL2Token {
       const wallet = client.getWallet();
 
       const deployPayload = await L2Token.deployPayload(client, portalAddr, name, symbol, decimals, sendMethodOptions);
-      const batch = new BatchCall(wallet, [deployPayload]);
+      const batch = new ExtendedBatchCall(wallet, [deployPayload]);
       const sentTx = await batch.send(sendMethodOptions);
       const receipt = await sentTx.wait();
       if (receipt.status !== TxStatus.SUCCESS) {
