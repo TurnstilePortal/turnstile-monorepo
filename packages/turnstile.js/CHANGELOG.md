@@ -1,5 +1,13 @@
 # @turnstile-portal/turnstile.js
 
+## 0.6.4
+
+### Patch Changes
+
+- e41cee3: do not include artifact when registering token instance in user's pxe
+  - @turnstile-portal/aztec-artifacts@0.6.4
+  - @turnstile-portal/l1-artifacts-abi@0.6.4
+
 ## 0.6.3
 
 ### Patch Changes
