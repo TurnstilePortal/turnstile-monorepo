@@ -677,8 +677,9 @@ export class L2Token implements IL2Token {
         },
       );
     }
+
     console.debug(`Registering Token in PXE: ${tokenAddress.toString()}`);
-    await client.getWallet().registerContract({ instance, artifact: TokenContractArtifact });
+    await client.getWallet().registerContract({ instance });
 
     return L2Token.fromAddress(tokenAddress, client);
   }

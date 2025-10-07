@@ -848,6 +848,10 @@ export class L2Portal implements IL2Portal {
     return encoded;
   }
 
+  static async registerTokenContractClass(client: IL2Client) {
+    await client.getWallet().registerContractClass(TokenContractArtifact);
+  }
+
   static async registerShieldGateway(client: IL2Client, shieldGatewayAddr: AztecAddress) {
     const instance = await registerShieldGatewayInPXE(client, shieldGatewayAddr);
     return instance;
@@ -894,6 +898,7 @@ export class L2Portal implements IL2Portal {
     l1Client?: IL1Client,
   ) {
     await L2Portal.registerShieldGateway(client, shieldGateway);
+    await L2Portal.registerTokenContractClass(client);
     const instance = await L2Portal.registerPortal(client, l2Portal, l1Portal, tokenContractClassId, shieldGateway);
     return new L2Portal(instance.address, client, l1Client);
   }
