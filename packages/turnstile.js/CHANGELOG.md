@@ -1,5 +1,13 @@
 # @turnstile-portal/turnstile.js
 
+## 0.6.2
+
+### Patch Changes
+
+- aa5c712: rework batching implementation
+  - @turnstile-portal/aztec-artifacts@0.6.2
+  - @turnstile-portal/l1-artifacts-abi@0.6.2
+
 ## 0.6.1
 
 ### Patch Changes

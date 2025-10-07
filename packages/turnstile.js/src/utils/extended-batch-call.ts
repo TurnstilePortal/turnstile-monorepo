@@ -47,7 +47,6 @@ interface UtilityCallResult {
 
 /**
  * Extended BatchCall that accepts both contract interactions and raw ExecutionPayload objects.
- * This allows for more flexible batch operations without relying on pnpm patches.
  */
 export class ExtendedBatchCall extends BatchCall {
   // Store the mixed array of interactions and payloads
