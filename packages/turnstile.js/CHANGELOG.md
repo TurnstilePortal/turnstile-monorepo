@@ -1,5 +1,13 @@
 # @turnstile-portal/turnstile.js
 
+## 0.6.3
+
+### Patch Changes
+
+- 3db9403: make l2 token balanceOf methods batchable
+  - @turnstile-portal/aztec-artifacts@0.6.3
+  - @turnstile-portal/l1-artifacts-abi@0.6.3
+
 ## 0.6.2
 
 ### Patch Changes
