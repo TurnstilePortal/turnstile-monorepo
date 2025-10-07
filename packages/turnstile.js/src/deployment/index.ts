@@ -1,12 +1,4 @@
-// Export types
-
-// Export configuration functions
-export {
-  clearConfigCache,
-  loadConfig,
-} from './config.js';
-// Export factory
-export { TurnstileFactory } from './factory.js';
+export { clearConfigCache, loadConfig } from './config.js';
 export type {
   ConfigSource,
   DeploymentData,
