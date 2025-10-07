@@ -54,8 +54,12 @@ export function registerBatchShieldUnshield(program: Command) {
 
       // Get current balances
       console.log('\n=== Current Balances ===');
-      const publicBalance = await l2Token.balanceOfPublic(l2Client.getAddress());
-      const privateBalance = await l2Token.balanceOfPrivate(l2Client.getAddress());
+      const publicBalance = await l2Token
+        .balanceOfPublic(l2Client.getAddress())
+        .simulate({ from: l2Client.getAddress() });
+      const privateBalance = await l2Token
+        .balanceOfPrivate(l2Client.getAddress())
+        .simulate({ from: l2Client.getAddress() });
       console.log(`Public balance: ${publicBalance}`);
       console.log(`Private balance: ${privateBalance}`);
 
@@ -146,8 +150,12 @@ export function registerBatchShieldUnshield(program: Command) {
 
       // Show updated balances
       console.log('\n=== Updated Balances ===');
-      const newPublicBalance = await l2Token.balanceOfPublic(l2Client.getAddress());
-      const newPrivateBalance = await l2Token.balanceOfPrivate(l2Client.getAddress());
+      const newPublicBalance = await l2Token
+        .balanceOfPublic(l2Client.getAddress())
+        .simulate({ from: l2Client.getAddress() });
+      const newPrivateBalance = await l2Token
+        .balanceOfPrivate(l2Client.getAddress())
+        .simulate({ from: l2Client.getAddress() });
       console.log(`Public balance: ${publicBalance} → ${newPublicBalance}`);
       console.log(`Private balance: ${privateBalance} → ${newPrivateBalance}`);
 

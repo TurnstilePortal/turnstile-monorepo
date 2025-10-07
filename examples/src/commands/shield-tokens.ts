@@ -8,7 +8,7 @@ async function doShield(l2Client: L2Client, token: L2Token, amount: bigint) {
   const symbol = await token.getSymbol();
   console.log(`Shielding ${amount} ${symbol}...`);
 
-  const balance = await token.balanceOfPublic(l2Client.getAddress());
+  const balance = await token.balanceOfPublic(l2Client.getAddress()).simulate({ from: l2Client.getAddress() });
   console.log(`Current balance: ${balance}`);
   if (balance < amount) {
     throw new Error('Insufficient balance.');
@@ -52,8 +52,12 @@ export function registerShieldTokens(program: Command) {
 
       // Create token & ensure L2 Token is registered in the PXE
       const token = await factory.createL2Token(l2Client, tokenInfo);
-      const startingBalance = await token.balanceOfPublic(l2Client.getAddress());
-      const startingPrivateBalance = await token.balanceOfPrivate(l2Client.getAddress());
+      const startingBalance = await token
+        .balanceOfPublic(l2Client.getAddress())
+        .simulate({ from: l2Client.getAddress() });
+      const startingPrivateBalance = await token
+        .balanceOfPrivate(l2Client.getAddress())
+        .simulate({ from: l2Client.getAddress() });
 
       const tx = await doShield(l2Client, token, amount);
       const receipt = await tx.wait();
@@ -65,8 +69,10 @@ export function registerShieldTokens(program: Command) {
       console.log('Shielding successful!');
 
       // Check the balance after the shield
-      const finalBalance = await token.balanceOfPublic(l2Client.getAddress());
-      const finalPrivateBalance = await token.balanceOfPrivate(l2Client.getAddress());
+      const finalBalance = await token.balanceOfPublic(l2Client.getAddress()).simulate({ from: l2Client.getAddress() });
+      const finalPrivateBalance = await token
+        .balanceOfPrivate(l2Client.getAddress())
+        .simulate({ from: l2Client.getAddress() });
 
       console.log(`Starting public balance: ${startingBalance}`);
       console.log(`Starting private balance: ${startingPrivateBalance}`);

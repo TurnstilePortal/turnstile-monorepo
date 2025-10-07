@@ -33,7 +33,10 @@ async function initiateL2Withdrawal({
   const symbol = await l2Token.getSymbol();
   console.log(`Initiating batched withdrawal of ${amount} ${symbol} to L1 recipient ${l1Recipient}`);
 
-  console.log('Current L2 balance:', await l2Token.balanceOfPublic(l2Client.getAddress()));
+  console.log(
+    'Current L2 balance:',
+    await l2Token.balanceOfPublic(l2Client.getAddress()).simulate({ from: l2Client.getAddress() }),
+  );
 
   // Create burn authorization action
   const { action: burnAuthAction, nonce } = await l2Token.createPublicBurnAuthwitAction(l2Client.getAddress(), amount);
@@ -82,7 +85,10 @@ async function initiateL2Withdrawal({
   const message = await l2Portal.computeL2ToL1Message(l1TokenAddr, l1Recipient, amount, outboxVersion);
   const witness = await l2Portal.getL2ToL1MembershipWitness(l2BlockNumber, message);
 
-  console.log('New L2 balance:', await l2Token.balanceOfPublic(l2Client.getAddress()));
+  console.log(
+    'New L2 balance:',
+    await l2Token.balanceOfPublic(l2Client.getAddress()).simulate({ from: l2Client.getAddress() }),
+  );
   console.log('Batched withdrawal completed in a single transaction!');
 
   return { l2BlockNumber, witness, message, withdrawData };

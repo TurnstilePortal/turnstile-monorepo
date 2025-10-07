@@ -52,10 +52,14 @@ export function registerAztecTransferPublic(program: Command) {
       console.log(`Registering Token in PXE: ${tokenAddr.toString()}`);
       const l2Token = await factory.createL2Token(l2Client, tokenInfo);
 
-      const initialRecipientBalance = await l2Token.balanceOfPrivate(recipient);
+      const initialRecipientBalance = await l2Token
+        .balanceOfPrivate(recipient)
+        .simulate({ from: l2Client.getAddress() });
       console.log(`Initial recipient balance (${recipient}): ${initialRecipientBalance}`);
 
-      const initialSenderBalance = await l2Token.balanceOfPublic(l2Client.getAddress());
+      const initialSenderBalance = await l2Token
+        .balanceOfPublic(l2Client.getAddress())
+        .simulate({ from: l2Client.getAddress() });
       console.log(`Initial sender balance (${l2Client.getAddress()}): ${initialSenderBalance}`);
 
       if (initialSenderBalance < amount) {
@@ -63,10 +67,12 @@ export function registerAztecTransferPublic(program: Command) {
       }
       await doTransfer(l2Client, l2Token, recipient, amount);
 
-      const finalRecipientBalance = await l2Token.balanceOfPublic(recipient);
+      const finalRecipientBalance = await l2Token.balanceOfPublic(recipient).simulate({ from: l2Client.getAddress() });
       console.log(`Final recipient balance (${recipient}): ${finalRecipientBalance}`);
 
-      const finalSenderBalance = await l2Token.balanceOfPublic(l2Client.getAddress());
+      const finalSenderBalance = await l2Token
+        .balanceOfPublic(l2Client.getAddress())
+        .simulate({ from: l2Client.getAddress() });
       console.log(`Final sender balance (${l2Client.getAddress()}): ${finalSenderBalance}`);
     });
 }

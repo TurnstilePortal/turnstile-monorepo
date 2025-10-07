@@ -57,16 +57,16 @@ export interface IL2Token {
   /**
    * Gets the public balance of an account
    * @param address The address to check
-   * @returns The token balance
+   * @returns Contract function interaction for checking public balance
    */
-  balanceOfPublic(address: AztecAddress): Promise<bigint>;
+  balanceOfPublic(address: AztecAddress): ContractFunctionInteraction;
 
   /**
    * Gets the private balance of an account
    * @param address The address to check
-   * @returns The token balance
+   * @returns Contract function interaction for checking private balance
    */
-  balanceOfPrivate(address: AztecAddress): Promise<bigint>;
+  balanceOfPrivate(address: AztecAddress): ContractFunctionInteraction;
 
   /**
    * Transfers tokens publicly to an account
@@ -236,45 +236,19 @@ export class L2Token implements IL2Token {
   /**
    * Gets the public balance of an account
    * @param address The address to check
-   * @returns The token balance
+   * @returns Contract function interaction for checking public balance
    */
-  async balanceOfPublic(address: AztecAddress): Promise<bigint> {
-    try {
-      return await this.token.methods.balance_of_public(address).simulate({ from: this.client.getAddress() });
-    } catch (error) {
-      throw createError(
-        ErrorCode.L2_INSUFFICIENT_BALANCE,
-        `Failed to get public balance for token ${this.token.address} for address ${address}`,
-        {
-          tokenAddress: this.token.address.toString(),
-          userAddress: address.toString(),
-          balanceType: 'public',
-        },
-        error,
-      );
-    }
+  balanceOfPublic(address: AztecAddress): ContractFunctionInteraction {
+    return this.token.methods.balance_of_public(address);
   }
 
   /**
    * Gets the private balance of an account
    * @param address The address to check
-   * @returns The token balance
+   * @returns Contract function interaction for checking private balance
    */
-  async balanceOfPrivate(address: AztecAddress): Promise<bigint> {
-    try {
-      return await this.token.methods.balance_of_private(address).simulate({ from: this.client.getAddress() });
-    } catch (error) {
-      throw createError(
-        ErrorCode.L2_INSUFFICIENT_BALANCE,
-        `Failed to get private balance for token ${this.token.address} for address ${address}`,
-        {
-          tokenAddress: this.token.address.toString(),
-          userAddress: address.toString(),
-          balanceType: 'private',
-        },
-        error,
-      );
-    }
+  balanceOfPrivate(address: AztecAddress): ContractFunctionInteraction {
+    return this.token.methods.balance_of_private(address);
   }
 
   /**

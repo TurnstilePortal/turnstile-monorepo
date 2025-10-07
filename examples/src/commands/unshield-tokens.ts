@@ -8,7 +8,7 @@ async function doUnshield(l2Client: L2Client, token: L2Token, amount: bigint) {
   const symbol = await token.getSymbol();
   console.log(`Unshielding ${amount} ${symbol}...`);
 
-  const balance = await token.balanceOfPrivate(l2Client.getAddress());
+  const balance = await token.balanceOfPrivate(l2Client.getAddress()).simulate({ from: l2Client.getAddress() });
   console.log(`Current private balance: ${balance}`);
   if (balance < amount) {
     throw new Error('Insufficient balance.');
@@ -51,8 +51,12 @@ export function registerUnshieldTokens(program: Command) {
       // Create token & ensure it is registered in the PXE
       const token = await factory.createL2Token(l2Client, tokenInfo);
 
-      const startingBalance = await token.balanceOfPublic(l2Client.getAddress());
-      const startingPrivateBalance = await token.balanceOfPrivate(l2Client.getAddress());
+      const startingBalance = await token
+        .balanceOfPublic(l2Client.getAddress())
+        .simulate({ from: l2Client.getAddress() });
+      const startingPrivateBalance = await token
+        .balanceOfPrivate(l2Client.getAddress())
+        .simulate({ from: l2Client.getAddress() });
       // Note: shieldedSupply is not available in the new API
 
       const tx = await doUnshield(l2Client, token, amount);
@@ -65,8 +69,10 @@ export function registerUnshieldTokens(program: Command) {
       console.log('Unshielding successful!');
 
       // Check the balance after the unshield
-      const finalBalance = await token.balanceOfPublic(l2Client.getAddress());
-      const finalPrivateBalance = await token.balanceOfPrivate(l2Client.getAddress());
+      const finalBalance = await token.balanceOfPublic(l2Client.getAddress()).simulate({ from: l2Client.getAddress() });
+      const finalPrivateBalance = await token
+        .balanceOfPrivate(l2Client.getAddress())
+        .simulate({ from: l2Client.getAddress() });
 
       console.log(`Starting public balance: ${startingBalance}`);
       console.log(`Starting private balance: ${startingPrivateBalance}`);

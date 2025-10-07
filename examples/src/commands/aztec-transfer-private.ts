@@ -110,22 +110,32 @@ export function registerAztecTransferPrivate(program: Command) {
       console.log(`Registering Token in RECIPIENT PXE: ${tokenAddr.toString()}`);
       const recipientToken = await factory.createL2Token(recipientClient, tokenInfo);
 
-      const initialRecipientBalance = await recipientToken.balanceOfPrivate(recipient);
+      const initialRecipientBalance = await recipientToken
+        .balanceOfPrivate(recipient)
+        .simulate({ from: recipientClient.getAddress() });
       console.log(`Initial recipient balance (${recipient}): ${initialRecipientBalance}`);
 
-      const initialSenderBalance = await senderToken.balanceOfPrivate(senderClient.getAddress());
+      const initialSenderBalance = await senderToken
+        .balanceOfPrivate(senderClient.getAddress())
+        .simulate({ from: senderClient.getAddress() });
       console.log(`Initial sender balance (${senderClient.getAddress()}): ${initialSenderBalance}`);
 
-      const balance = await senderToken.balanceOfPrivate(senderClient.getAddress());
+      const balance = await senderToken
+        .balanceOfPrivate(senderClient.getAddress())
+        .simulate({ from: senderClient.getAddress() });
       if (balance < amount) {
         throw new Error('Insufficient balance');
       }
 
       await doTransfer(senderClient, senderToken, recipient, amount);
 
-      const endingRecipientBalance = await recipientToken.balanceOfPrivate(recipient);
+      const endingRecipientBalance = await recipientToken
+        .balanceOfPrivate(recipient)
+        .simulate({ from: recipientClient.getAddress() });
       console.log(`Final recipient balance (${recipient}): ${endingRecipientBalance}`);
-      const endingSenderBalance = await senderToken.balanceOfPrivate(senderClient.getAddress());
+      const endingSenderBalance = await senderToken
+        .balanceOfPrivate(senderClient.getAddress())
+        .simulate({ from: senderClient.getAddress() });
       console.log(`Final sender balance (${senderClient.getAddress()}): ${endingSenderBalance}`);
     });
 }

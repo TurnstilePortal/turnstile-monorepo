@@ -9,8 +9,8 @@ async function doBatchOperations(l2Client: L2Client, token: L2Token) {
   console.log(`Performing batch operations with ${symbol}...`);
 
   const address = l2Client.getAddress();
-  const publicBalance = await token.balanceOfPublic(address);
-  const privateBalance = await token.balanceOfPrivate(address);
+  const publicBalance = await token.balanceOfPublic(address).simulate({ from: address });
+  const privateBalance = await token.balanceOfPrivate(address).simulate({ from: address });
   console.log(`Initial public balance: ${publicBalance}`);
   console.log(`Initial private balance: ${privateBalance}`);
 
@@ -81,8 +81,12 @@ export function registerBatchTokenOperations(program: Command) {
         console.log('Batch operations successful!');
 
         // Check final balances
-        const finalPublicBalance = await token.balanceOfPublic(l2Client.getAddress());
-        const finalPrivateBalance = await token.balanceOfPrivate(l2Client.getAddress());
+        const finalPublicBalance = await token
+          .balanceOfPublic(l2Client.getAddress())
+          .simulate({ from: l2Client.getAddress() });
+        const finalPrivateBalance = await token
+          .balanceOfPrivate(l2Client.getAddress())
+          .simulate({ from: l2Client.getAddress() });
         console.log(`Final public balance: ${finalPublicBalance}`);
         console.log(`Final private balance: ${finalPrivateBalance}`);
       }

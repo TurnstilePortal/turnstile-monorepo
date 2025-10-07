@@ -138,7 +138,7 @@ async function batchClaimDeposits({
   for (const deposit of deposits) {
     const tokenInfo = factory.getTokenInfo(deposit.tokenSymbol);
     const l2Token = await factory.createL2Token(l2Client, tokenInfo);
-    const balance = await l2Token.balanceOfPublic(l2Client.getAddress());
+    const balance = await l2Token.balanceOfPublic(l2Client.getAddress()).simulate({ from: l2Client.getAddress() });
     console.log(`${deposit.tokenSymbol}: ${balance}`);
   }
 }

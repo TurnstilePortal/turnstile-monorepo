@@ -272,7 +272,8 @@ describe('L2Token', () => {
 
   describe('balanceOfPublic', () => {
     it('should return the public balance of an account', async () => {
-      const balance = await token.balanceOfPublic(accountAddr);
+      const balanceInteraction = token.balanceOfPublic(accountAddr);
+      const balance = await balanceInteraction.simulate({ from: mockL2Client.getAddress() });
 
       // Check that the contract method was called with the correct parameters
       expect(mockTokenContract.methods.balance_of_public).toHaveBeenCalledWith(accountAddr);
@@ -282,21 +283,21 @@ describe('L2Token', () => {
       expect(balance).toBe(BigInt(1000));
     });
 
-    it('should throw an error when contract interaction fails', async () => {
-      // Mock the error
-      mockTokenContract.methods.balance_of_public().simulate.mockRejectedValueOnce(new Error('Simulation failed'));
+    it('should return a contract function interaction', () => {
+      const interaction = token.balanceOfPublic(accountAddr);
 
-      // Check that the error is thrown with the correct code
-      await expect(token.balanceOfPublic(accountAddr)).rejects.toMatchObject({
-        code: ErrorCode.L2_INSUFFICIENT_BALANCE,
-        message: expect.stringContaining('Failed to get public balance'),
-      });
+      // Check that the contract method was called with the correct parameters
+      expect(mockTokenContract.methods.balance_of_public).toHaveBeenCalledWith(accountAddr);
+
+      // Check that it returns the interaction object
+      expect(interaction).toBe(mockTokenContract.methods.balance_of_public());
     });
   });
 
   describe('balanceOfPrivate', () => {
     it('should return the private balance of an account', async () => {
-      const balance = await token.balanceOfPrivate(accountAddr);
+      const balanceInteraction = token.balanceOfPrivate(accountAddr);
+      const balance = await balanceInteraction.simulate({ from: mockL2Client.getAddress() });
 
       // Check that the contract method was called with the correct parameters
       expect(mockTokenContract.methods.balance_of_private).toHaveBeenCalledWith(accountAddr);
@@ -306,15 +307,14 @@ describe('L2Token', () => {
       expect(balance).toBe(BigInt(2000));
     });
 
-    it('should throw an error when contract interaction fails', async () => {
-      // Mock the error
-      mockTokenContract.methods.balance_of_private().simulate.mockRejectedValueOnce(new Error('Simulation failed'));
+    it('should return a contract function interaction', () => {
+      const interaction = token.balanceOfPrivate(accountAddr);
 
-      // Check that the error is thrown with the correct code
-      await expect(token.balanceOfPrivate(accountAddr)).rejects.toMatchObject({
-        code: ErrorCode.L2_INSUFFICIENT_BALANCE,
-        message: expect.stringContaining('Failed to get private balance'),
-      });
+      // Check that the contract method was called with the correct parameters
+      expect(mockTokenContract.methods.balance_of_private).toHaveBeenCalledWith(accountAddr);
+
+      // Check that it returns the interaction object
+      expect(interaction).toBe(mockTokenContract.methods.balance_of_private());
     });
   });
 
