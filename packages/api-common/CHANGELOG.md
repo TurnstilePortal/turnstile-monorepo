@@ -1,5 +1,11 @@
 # @turnstile-portal/api-common
 
+## 0.2.5
+
+### Patch Changes
+
+- 4c00c6c: Add more l1->l2 token registration metadata
+
 ## 0.2.4
 
 ## 0.2.3
