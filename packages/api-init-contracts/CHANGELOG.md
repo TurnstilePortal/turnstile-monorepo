@@ -1,5 +1,12 @@
 # @turnstile-portal/api-init-contracts
 
+## 0.2.5
+
+### Patch Changes
+
+- Updated dependencies [4c00c6c]
+  - @turnstile-portal/api-common@0.2.5
+
 ## 0.2.4
 
 ### Patch Changes

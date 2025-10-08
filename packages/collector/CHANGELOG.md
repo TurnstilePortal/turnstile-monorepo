@@ -1,5 +1,13 @@
 # @turnstile-portal/collector
 
+## 0.2.5
+
+### Patch Changes
+
+- 4c00c6c: Add more l1->l2 token registration metadata
+- Updated dependencies [4c00c6c]
+  - @turnstile-portal/api-common@0.2.5
+
 ## 0.2.4
 
 ### Patch Changes
