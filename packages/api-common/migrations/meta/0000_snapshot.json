@@ -1,5 +1,5 @@
 {
-  "id": "5a894367-0379-4e47-bede-b6df52afa4f3",
+  "id": "2d7fc714-95b7-4fa3-9315-25f31677f147",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -87,6 +87,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "l1_to_l2_message_hash": {
+          "name": "l1_to_l2_message_hash",
+          "type": "char(66)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "l1_to_l2_message_index": {
+          "name": "l1_to_l2_message_index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "l2_registration_available_block": {
           "name": "l2_registration_available_block",
           "type": "bigint",
@@ -166,6 +178,13 @@
           "nullsNotDistinct": false,
           "columns": [
             "l2_address"
+          ]
+        },
+        "tokens_l1_to_l2_message_hash_unique": {
+          "name": "tokens_l1_to_l2_message_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "l1_to_l2_message_hash"
           ]
         }
       },

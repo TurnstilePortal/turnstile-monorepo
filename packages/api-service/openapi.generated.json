@@ -146,6 +146,15 @@
                           "l2_registration_log_index": {
                             "nullable": true,
                             "type": "number"
+                          },
+                          "l1_to_l2_message_hash": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_to_l2_message_index": {
+                            "nullable": true,
+                            "type": "number"
                           }
                         },
                         "required": [
@@ -329,6 +338,15 @@
                       "type": "number"
                     },
                     "l2_registration_log_index": {
+                      "nullable": true,
+                      "type": "number"
+                    },
+                    "l1_to_l2_message_hash": {
+                      "nullable": true,
+                      "type": "string",
+                      "pattern": "^0x[a-fA-F0-9]{64}$"
+                    },
+                    "l1_to_l2_message_index": {
                       "nullable": true,
                       "type": "number"
                     }
@@ -539,6 +557,15 @@
                           "l2_registration_log_index": {
                             "nullable": true,
                             "type": "number"
+                          },
+                          "l1_to_l2_message_hash": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_to_l2_message_index": {
+                            "nullable": true,
+                            "type": "number"
                           }
                         },
                         "required": [
@@ -737,6 +764,15 @@
                             "type": "number"
                           },
                           "l2_registration_log_index": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l1_to_l2_message_hash": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_to_l2_message_index": {
                             "nullable": true,
                             "type": "number"
                           }
@@ -939,6 +975,15 @@
                           "l2_registration_log_index": {
                             "nullable": true,
                             "type": "number"
+                          },
+                          "l1_to_l2_message_hash": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_to_l2_message_index": {
+                            "nullable": true,
+                            "type": "number"
                           }
                         },
                         "required": [
@@ -1137,6 +1182,15 @@
                             "type": "number"
                           },
                           "l2_registration_log_index": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "l1_to_l2_message_hash": {
+                            "nullable": true,
+                            "type": "string",
+                            "pattern": "^0x[a-fA-F0-9]{64}$"
+                          },
+                          "l1_to_l2_message_index": {
                             "nullable": true,
                             "type": "number"
                           }

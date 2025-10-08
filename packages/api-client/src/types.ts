@@ -59,6 +59,8 @@ export interface paths {
                 l2_registration_tx?: string | null;
                 l2_registration_tx_index?: number | null;
                 l2_registration_log_index?: number | null;
+                l1_to_l2_message_hash?: string | null;
+                l1_to_l2_message_index?: number | null;
               }[];
               pagination: {
                 limit: number;
@@ -141,6 +143,8 @@ export interface paths {
               l2_registration_tx?: string | null;
               l2_registration_tx_index?: number | null;
               l2_registration_log_index?: number | null;
+              l1_to_l2_message_hash?: string | null;
+              l1_to_l2_message_index?: number | null;
             };
           };
         };
@@ -242,6 +246,8 @@ export interface paths {
                 l2_registration_tx?: string | null;
                 l2_registration_tx_index?: number | null;
                 l2_registration_log_index?: number | null;
+                l1_to_l2_message_hash?: string | null;
+                l1_to_l2_message_index?: number | null;
               }[];
               pagination: {
                 limit: number;
@@ -328,6 +334,8 @@ export interface paths {
                 l2_registration_tx?: string | null;
                 l2_registration_tx_index?: number | null;
                 l2_registration_log_index?: number | null;
+                l1_to_l2_message_hash?: string | null;
+                l1_to_l2_message_index?: number | null;
               }[];
               pagination: {
                 limit: number;
@@ -414,6 +422,8 @@ export interface paths {
                 l2_registration_tx?: string | null;
                 l2_registration_tx_index?: number | null;
                 l2_registration_log_index?: number | null;
+                l1_to_l2_message_hash?: string | null;
+                l1_to_l2_message_index?: number | null;
               }[];
               pagination: {
                 limit: number;
@@ -500,6 +510,8 @@ export interface paths {
                 l2_registration_tx?: string | null;
                 l2_registration_tx_index?: number | null;
                 l2_registration_log_index?: number | null;
+                l1_to_l2_message_hash?: string | null;
+                l1_to_l2_message_index?: number | null;
               }[];
               pagination: {
                 limit: number;

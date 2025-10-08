@@ -159,6 +159,8 @@ export class L1Collector {
           .getTransactionReceipt({ hash: portalLog.transactionHash })
           .then((r) => r.from),
         l2RegistrationAvailableBlock: Number(correlatedInboxLog.args.l2BlockNumber),
+        l1ToL2MessageHash: correlatedInboxLog.args.hash,
+        l1ToL2MessageIndex: correlatedInboxLog.logIndex,
       };
 
       registrations.push(reg);

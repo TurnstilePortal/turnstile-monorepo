@@ -79,6 +79,12 @@ export const tokenSchema = z.object({
     .optional(),
   l2_registration_tx_index: z.number().nullable().optional(),
   l2_registration_log_index: z.number().nullable().optional(),
+  l1_to_l2_message_hash: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{64}$/)
+    .nullable()
+    .optional(),
+  l1_to_l2_message_index: z.number().nullable().optional(),
 });
 
 // For runtime validation with transforms

@@ -24,6 +24,8 @@ export const tokens = pgTable('tokens', {
   l1AllowListResolutionTx: varchar('l1_allow_list_resolution_tx', { length: 66 }),
   l1RegistrationSubmitter: varchar('l1_portal_registration_submitter', { length: 42 }),
   l1RegistrationBlock: bigint('l1_registration_block', { mode: 'number' }),
+  l1ToL2MessageHash: char('l1_to_l2_message_hash', { length: 66 }).unique(),
+  l1ToL2MessageIndex: integer('l1_to_l2_message_index'),
   l2RegistrationAvailableBlock: bigint('l2_registration_available_block', { mode: 'number' }),
   l2RegistrationBlock: bigint('l2_registration_block', { mode: 'number' }),
   l2RegistrationSubmitter: varchar('l2_portal_registration_submitter', { length: 66 }),

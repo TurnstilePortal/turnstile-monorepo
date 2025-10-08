@@ -13,6 +13,8 @@ CREATE TABLE "tokens" (
 	"l1_allow_list_resolution_tx" varchar(66),
 	"l1_portal_registration_submitter" varchar(42),
 	"l1_registration_block" bigint,
+	"l1_to_l2_message_hash" char(66),
+	"l1_to_l2_message_index" integer,
 	"l2_registration_available_block" bigint,
 	"l2_registration_block" bigint,
 	"l2_portal_registration_submitter" varchar(66),
@@ -24,7 +26,8 @@ CREATE TABLE "tokens" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "tokens_l1_address_unique" UNIQUE("l1_address"),
-	CONSTRAINT "tokens_l2_address_unique" UNIQUE("l2_address")
+	CONSTRAINT "tokens_l2_address_unique" UNIQUE("l2_address"),
+	CONSTRAINT "tokens_l1_to_l2_message_hash_unique" UNIQUE("l1_to_l2_message_hash")
 );
 --> statement-breakpoint
 CREATE TABLE "block_progress" (

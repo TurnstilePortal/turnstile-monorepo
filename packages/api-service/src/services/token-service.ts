@@ -25,6 +25,8 @@ export interface Token {
   l2_registration_tx?: string | null;
   l2_registration_tx_index?: number | null;
   l2_registration_log_index?: number | null;
+  l1_to_l2_message_hash?: string | null;
+  l1_to_l2_message_index?: number | null;
 }
 
 export function convertDbTokenToApi(dbToken: typeof tokens.$inferSelect, includeId = false): Token {
@@ -104,6 +106,14 @@ export function convertDbTokenToApi(dbToken: typeof tokens.$inferSelect, include
 
   if (dbToken.l2RegistrationLogIndex) {
     token.l2_registration_log_index = dbToken.l2RegistrationLogIndex;
+  }
+
+  if (dbToken.l1ToL2MessageHash) {
+    token.l1_to_l2_message_hash = dbToken.l1ToL2MessageHash;
+  }
+
+  if (dbToken.l1ToL2MessageIndex) {
+    token.l1_to_l2_message_index = dbToken.l1ToL2MessageIndex;
   }
 
   return token;

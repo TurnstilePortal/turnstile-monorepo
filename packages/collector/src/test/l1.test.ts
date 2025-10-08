@@ -131,6 +131,7 @@ describe('L1Collector', () => {
           },
           blockNumber: 1001n,
           transactionHash: '0xtx1',
+          logIndex: 1,
         },
       ];
 
@@ -151,6 +152,8 @@ describe('L1Collector', () => {
         l1RegistrationBlock: 1001,
         l1RegistrationTx: '0xtx1',
         l1RegistrationSubmitter: '0xsubmitter',
+        l1ToL2MessageHash: '0xhash',
+        l1ToL2MessageIndex: 1,
         l2RegistrationAvailableBlock: 100,
       });
     });
