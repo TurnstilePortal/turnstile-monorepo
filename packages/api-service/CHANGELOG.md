@@ -1,5 +1,13 @@
 # @turnstile-portal/api-service
 
+## 0.2.6
+
+### Patch Changes
+
+- 352a549: dependency cleanup
+- Updated dependencies [352a549]
+  - @turnstile-portal/api-common@0.2.6
+
 ## 0.2.5
 
 ### Patch Changes

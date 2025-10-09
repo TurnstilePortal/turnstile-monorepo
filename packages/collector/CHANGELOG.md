@@ -1,5 +1,16 @@
 # @turnstile-portal/collector
 
+## 0.2.6
+
+### Patch Changes
+
+- 352a549: dependency cleanup
+- Updated dependencies [352a549]
+  - @turnstile-portal/turnstile.js@0.6.5
+  - @turnstile-portal/api-common@0.2.6
+  - @turnstile-portal/aztec-artifacts@0.6.5
+  - @turnstile-portal/l1-artifacts-abi@0.6.5
+
 ## 0.2.5
 
 ### Patch Changes

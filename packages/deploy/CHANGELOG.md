@@ -1,5 +1,18 @@
 # @turnstile-portal/deploy
 
+## 0.6.5
+
+### Patch Changes
+
+- 352a549: dependency cleanup
+- Updated dependencies [352a549]
+  - @turnstile-portal/turnstile-dev@0.6.5
+  - @turnstile-portal/turnstile.js@0.6.5
+  - @turnstile-portal/aztec-artifacts@0.6.5
+  - @turnstile-portal/l1-artifacts-abi@0.6.5
+  - @turnstile-portal/l1-artifacts-bytecode@0.6.5
+  - @turnstile-portal/l1-artifacts-dev@0.6.5
+
 ## 0.6.4
 
 ### Patch Changes
