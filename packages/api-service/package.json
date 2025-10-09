@@ -1,6 +1,6 @@
 {
   "name": "@turnstile-portal/api-service",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "API server built with TypeScript and Fastify",
   "private": true,
   "main": "dist/index.js",
