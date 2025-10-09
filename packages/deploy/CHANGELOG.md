@@ -1,5 +1,17 @@
 # @turnstile-portal/deploy
 
+## 0.6.6
+
+### Patch Changes
+
+- Updated dependencies [cf27aa4]
+  - @turnstile-portal/turnstile.js@0.6.6
+  - @turnstile-portal/aztec-artifacts@0.6.6
+  - @turnstile-portal/l1-artifacts-abi@0.6.6
+  - @turnstile-portal/l1-artifacts-bytecode@0.6.6
+  - @turnstile-portal/l1-artifacts-dev@0.6.6
+  - @turnstile-portal/turnstile-dev@0.6.6
+
 ## 0.6.5
 
 ### Patch Changes
