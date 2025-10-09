@@ -22,9 +22,7 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@aztec/accounts": "2.0.3",
     "@aztec/aztec.js": "2.0.3",
-    "@aztec/cli": "2.0.3",
     "@aztec/constants": "2.0.3",
     "@aztec/entrypoints": "2.0.3",
     "@aztec/ethereum": "2.0.3",
@@ -36,9 +34,9 @@
     "@turnstile-portal/api-client": "workspace:^",
     "@turnstile-portal/aztec-artifacts": "workspace:^",
     "@turnstile-portal/l1-artifacts-abi": "workspace:^",
-    "viem": "^2.37.5"
+    "viem": "^2.38.0"
   },
   "devDependencies": {
-    "typedoc": "^0.28.11"
+    "typedoc": "^0.28.13"
   }
 }

@@ -23,20 +23,15 @@
   "dependencies": {
     "@aztec/accounts": "2.0.3",
     "@aztec/aztec.js": "2.0.3",
-    "@aztec/cli": "2.0.3",
     "@aztec/ethereum": "2.0.3",
     "@aztec/kv-store": "2.0.3",
     "@aztec/l1-artifacts": "2.0.3",
-    "@aztec/noir-contracts.js": "2.0.3",
     "@aztec/noir-test-contracts.js": "2.0.3",
     "@aztec/pxe": "2.0.3",
     "@aztec/stdlib": "2.0.3",
-    "@turnstile-portal/aztec-artifacts": "workspace:^",
-    "@turnstile-portal/l1-artifacts-abi": "workspace:^",
-    "@turnstile-portal/l1-artifacts-bytecode": "workspace:^",
     "@turnstile-portal/l1-artifacts-dev": "workspace:^",
     "@turnstile-portal/turnstile.js": "workspace:^",
-    "viem": "^2.37.5"
+    "viem": "^2.38.0"
   },
   "publishConfig": {
     "access": "public"
