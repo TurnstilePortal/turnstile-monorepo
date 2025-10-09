@@ -100,11 +100,11 @@ export function convertDbTokenToApi(dbToken: typeof tokens.$inferSelect, include
     token.l2_registration_tx = dbToken.l2RegistrationTx;
   }
 
-  if (dbToken.l2RegistrationTxIndex) {
+  if (dbToken.l2RegistrationTxIndex !== null) {
     token.l2_registration_tx_index = dbToken.l2RegistrationTxIndex;
   }
 
-  if (dbToken.l2RegistrationLogIndex) {
+  if (dbToken.l2RegistrationLogIndex !== null) {
     token.l2_registration_log_index = dbToken.l2RegistrationLogIndex;
   }
 
@@ -112,7 +112,7 @@ export function convertDbTokenToApi(dbToken: typeof tokens.$inferSelect, include
     token.l1_to_l2_message_hash = dbToken.l1ToL2MessageHash;
   }
 
-  if (dbToken.l1ToL2MessageIndex) {
+  if (dbToken.l1ToL2MessageIndex !== null) {
     token.l1_to_l2_message_index = dbToken.l1ToL2MessageIndex;
   }
 
