@@ -1,5 +1,12 @@
 # @turnstile-portal/collector
 
+## 0.2.7
+
+### Patch Changes
+
+- 9ece281: fix: store the l1ToL2MessageHash & Index
+  - @turnstile-portal/api-common@0.2.7
+
 ## 0.2.6
 
 ### Patch Changes
