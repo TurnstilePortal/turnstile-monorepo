@@ -68,6 +68,8 @@ export async function storeL1TokenRegistrations(registrations: NewToken[]): Prom
         l1RegistrationTx: registration.l1RegistrationTx,
         l1RegistrationSubmitter: registration.l1RegistrationSubmitter,
         l2RegistrationAvailableBlock: registration.l2RegistrationAvailableBlock,
+        l1ToL2MessageHash: registration.l1ToL2MessageHash,
+        l1ToL2MessageIndex: registration.l1ToL2MessageIndex,
         updatedAt: new Date(),
       })
       .where(eq(tokens.l1Address, registration.l1Address as string));
