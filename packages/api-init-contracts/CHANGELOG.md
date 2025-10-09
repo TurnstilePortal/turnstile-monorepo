@@ -1,5 +1,7 @@
 # @turnstile-portal/api-init-contracts
 
+## 0.2.7
+
 ## 0.2.6
 
 ### Patch Changes
