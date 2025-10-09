@@ -1,5 +1,14 @@
 # @turnstile-portal/turnstile.js
 
+## 0.6.6
+
+### Patch Changes
+
+- cf27aa4: fix(api-service): include index values in the response when they are 0
+  - @turnstile-portal/aztec-artifacts@0.6.6
+  - @turnstile-portal/l1-artifacts-abi@0.6.6
+  - @turnstile-portal/api-client@0.2.8
+
 ## 0.6.5
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @turnstile-portal/api-service
 
+## 0.2.8
+
+### Patch Changes
+
+- cf27aa4: fix(api-service): include index values in the response when they are 0
+  - @turnstile-portal/api-common@0.2.8
+
 ## 0.2.7
 
 ### Patch Changes

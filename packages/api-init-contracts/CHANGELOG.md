@@ -1,5 +1,13 @@
 # @turnstile-portal/api-init-contracts
 
+## 0.2.8
+
+### Patch Changes
+
+- Updated dependencies [cf27aa4]
+  - @turnstile-portal/turnstile.js@0.6.6
+  - @turnstile-portal/aztec-artifacts@0.6.6
+
 ## 0.2.7
 
 ## 0.2.6
