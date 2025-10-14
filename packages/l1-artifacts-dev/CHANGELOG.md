@@ -1,5 +1,11 @@
 # @turnstile-portal/l1-artifacts-dev
 
+## 0.6.7
+
+### Patch Changes
+
+- ccc00d0: patch bump to test updated deployment workflow
+
 ## 0.6.6
 
 ## 0.6.5

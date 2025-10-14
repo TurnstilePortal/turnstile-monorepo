@@ -1,6 +1,6 @@
 {
   "name": "@turnstile-portal/collector",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "Blockchain data collector for Ethereum L1 and Aztec L2",
   "private": true,
   "type": "module",

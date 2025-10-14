@@ -1,5 +1,11 @@
 # @turnstile-portal/api-client
 
+## 0.2.9
+
+### Patch Changes
+
+- ccc00d0: patch bump to test updated deployment workflow
+
 ## 0.2.8
 
 ## 0.2.7

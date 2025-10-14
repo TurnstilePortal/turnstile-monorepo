@@ -1,5 +1,15 @@
 # @turnstile-portal/turnstile.js
 
+## 0.6.7
+
+### Patch Changes
+
+- ccc00d0: patch bump to test updated deployment workflow
+- Updated dependencies [ccc00d0]
+  - @turnstile-portal/api-client@0.2.9
+  - @turnstile-portal/aztec-artifacts@0.6.7
+  - @turnstile-portal/l1-artifacts-abi@0.6.7
+
 ## 0.6.6
 
 ### Patch Changes
