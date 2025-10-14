@@ -2,11 +2,9 @@
 
 This package provides tools for deploying Turnstile contracts to various environments including local sandbox and testnets.
 
-> **New! Unified Config-Based Deployment** - See the [Unified Deployment](#unified-deployment) section for the recommended approach to deployment.
-
 ## Architecture
 
-The deploy package has been redesigned to use an environment-based architecture that makes it easy to support different deployment environments. The main components are:
+The deploy package is designed with an environment-based architecture that makes it easy to support different deployment environments. The main components are:
 
 - **Environment Configuration** - JSON files that specify how to connect to different environments
 - **Environment Implementations** - Code specific to each environment (local, testnet, etc.)
@@ -56,7 +54,7 @@ Each environment is configured using a JSON file. Example configuration files ar
 
 ### Key Files
 
-Private keys and account information are stored in separate JSON files for security reasons:
+Private keys and account information are stored in separate JSON files:
 
 ```json
 {
@@ -81,29 +79,6 @@ To add support for a new environment:
 - `DeploymentEnvironment` - Base class that defines the interface for all environments
 - `LocalEnvironment` - Implementation for local sandbox environments
 - `TestnetEnvironment` - Implementation for testnet environments
-
-## Design Philosophy
-
-The architecture follows these principles:
-
-1. **Separation of Concerns** - Environment-specific code is isolated from the common deployment logic
-2. **Configuration Driven** - Environments are configured via external config files
-3. **Composable** - The deployment workflow is built from smaller, reusable components
-4. **Extensible** - New environment types can be added without changing the core workflow
-
-## Unified Deployment
-
-This new approach simplifies deployment by using a standardized configuration directory structure and a single command for all environments.
-
-### Directory Structure
-
-```
-config/
-├── [env_name]/           # One directory per environment (sandbox, devnet, testnet)
-│   ├── config.json       # Main configuration file for this environment
-│   ├── keys.json         # Keys for this environment (optional, can be generated)
-│   └── deployment.json   # Deployment results (generated)
-```
 
 ### Configuration File Structure
 
