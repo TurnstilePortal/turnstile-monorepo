@@ -34,6 +34,9 @@ jobs:
           node-version: '22.x'
           registry-url: 'https://registry.npmjs.org'
 
+      - name: update npm
+        run: npm install -g npm@latest && npm --version && npm ping && npm config get registry
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
 
