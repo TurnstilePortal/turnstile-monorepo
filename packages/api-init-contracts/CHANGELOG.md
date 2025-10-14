@@ -1,5 +1,14 @@
 # @turnstile-portal/api-init-contracts
 
+## 0.2.9
+
+### Patch Changes
+
+- ccc00d0: patch bump to test updated deployment workflow
+- Updated dependencies [ccc00d0]
+  - @turnstile-portal/aztec-artifacts@0.6.7
+  - @turnstile-portal/turnstile.js@0.6.7
+
 ## 0.2.8
 
 ### Patch Changes
