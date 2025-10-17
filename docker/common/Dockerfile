@@ -1,4 +1,4 @@
-FROM node:trixie-slim AS builder
+FROM node:lts-trixie-slim AS builder
 ARG SERVICE
 RUN test -n "$SERVICE" || (echo "❌ ERROR: --build-arg SERVICE=<package name> is required" && exit 1)
 WORKDIR /repo
@@ -19,7 +19,7 @@ RUN pnpm install --filter ${SERVICE}... --frozen-lockfile
 RUN pnpm --filter ${SERVICE}... build
 RUN pnpm deploy --legacy --filter ${SERVICE} --prod /out
 
-FROM node:trixie-slim AS runtime
+FROM node:lts-trixie-slim AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
   curl \

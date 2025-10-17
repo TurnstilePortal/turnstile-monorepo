@@ -13,6 +13,11 @@ on:
         required: false
         type: string
         default: all
+      release_channel:
+        description: Release channel triggering the build (stable or alpha)
+        required: false
+        type: string
+        default: stable
   workflow_dispatch: # Allow manual trigger
     inputs:
       push_images:
@@ -23,6 +28,10 @@ on:
         description: Comma-separated list of images to build (migrations, collector, api-service, api-init-contracts, turnstile-sandbox-deployer) or 'all'
         required: false
         default: all
+      release_channel:
+        description: Release channel triggering the build (stable or alpha)
+        required: false
+        default: stable
 
 jobs:
   build:
@@ -39,6 +48,8 @@ jobs:
       ORG: turnstileportal
       PUSH_IMAGES: ${{ fromJSON(format('{0}', inputs.push_images)) && 'true' || 'false' }}
       IMAGES: ${{ inputs.images && inputs.images || 'all' }}
+      RELEASE_CHANNEL: ${{ inputs.release_channel && inputs.release_channel || 'stable' }}
+      CHANNEL_TAG: ${{ inputs.release_channel == 'alpha' && 'alpha' || 'latest' }}
 
     steps:
       - name: Checkout
@@ -74,8 +85,8 @@ jobs:
           build-args: |
             SERVICE=@turnstile-portal/api-common
           tags: |
-            ${{ env.REGISTRY }}/${{ env.ORG }}/migrations:latest
             ${{ env.REGISTRY }}/${{ env.ORG }}/migrations:${{ steps.versions.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.ORG }}/migrations:${{ env.CHANNEL_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -89,8 +100,8 @@ jobs:
           build-args: |
             SERVICE=@turnstile-portal/collector
           tags: |
-            ${{ env.REGISTRY }}/${{ env.ORG }}/collector:latest
             ${{ env.REGISTRY }}/${{ env.ORG }}/collector:${{ steps.versions.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.ORG }}/collector:${{ env.CHANNEL_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -104,8 +115,8 @@ jobs:
           build-args: |
             SERVICE=@turnstile-portal/api-service
           tags: |
-            ${{ env.REGISTRY }}/${{ env.ORG }}/api-service:latest
             ${{ env.REGISTRY }}/${{ env.ORG }}/api-service:${{ steps.versions.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.ORG }}/api-service:${{ env.CHANNEL_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -119,8 +130,8 @@ jobs:
           build-args: |
             SERVICE=@turnstile-portal/api-init-contracts
           tags: |
-            ${{ env.REGISTRY }}/${{ env.ORG }}/api-init-contracts:latest
             ${{ env.REGISTRY }}/${{ env.ORG }}/api-init-contracts:${{ steps.versions.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.ORG }}/api-init-contracts:${{ env.CHANNEL_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -134,7 +145,7 @@ jobs:
           build-args: |
             SERVICE=@turnstile-portal/deploy
           tags: |
-            ${{ env.REGISTRY }}/${{ env.ORG }}/turnstile-sandbox-deployer:latest
             ${{ env.REGISTRY }}/${{ env.ORG }}/turnstile-sandbox-deployer:${{ steps.versions.outputs.deploy_version }}
+            ${{ env.REGISTRY }}/${{ env.ORG }}/turnstile-sandbox-deployer:${{ env.CHANNEL_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

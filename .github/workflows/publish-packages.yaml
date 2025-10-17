@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - release/alpha
   workflow_dispatch:
 
 permissions:
@@ -16,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       published: ${{ steps.changesets.outputs.published }}
+      release_channel: ${{ steps.release_channel.outputs.release_channel }}
     permissions:
       contents: write
       packages: write
@@ -46,11 +48,26 @@ jobs:
       - name: Build packages
         run: pnpm build
 
+      - name: Select npm dist-tag
+        id: release_channel
+        run: |
+          if [ "${GITHUB_REF}" = "refs/heads/release/alpha" ]; then
+            echo "NPM_DIST_TAG=alpha" >> "$GITHUB_ENV"
+            echo "RELEASE_CHANNEL=alpha" >> "$GITHUB_ENV"
+            echo "npm_dist_tag=alpha" >> "$GITHUB_OUTPUT"
+            echo "release_channel=alpha" >> "$GITHUB_OUTPUT"
+          else
+            echo "NPM_DIST_TAG=latest" >> "$GITHUB_ENV"
+            echo "RELEASE_CHANNEL=stable" >> "$GITHUB_ENV"
+            echo "npm_dist_tag=latest" >> "$GITHUB_OUTPUT"
+            echo "release_channel=stable" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create Release Pull Request or Publish
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: pnpm changeset publish
+          publish: pnpm changeset publish --tag ${{ steps.release_channel.outputs.npm_dist_tag }}
           version: pnpm run version
           commit: "chore: version packages"
           title: "chore: version packages"
@@ -69,3 +86,4 @@ jobs:
     uses: ./.github/workflows/docker.yaml  # Call docker workflow
     with:
       push_images: true
+      release_channel: ${{ needs.release.outputs.release_channel }}
