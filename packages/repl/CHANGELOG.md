@@ -1,5 +1,14 @@
 # @turnstile-portal/repl
 
+## 0.6.8
+
+### Patch Changes
+
+- Updated dependencies [a532aaf]
+  - @turnstile-portal/turnstile-dev@0.6.8
+  - @turnstile-portal/turnstile.js@0.6.8
+  - @turnstile-portal/aztec-artifacts@0.6.8
+
 ## 0.6.7
 
 ### Patch Changes

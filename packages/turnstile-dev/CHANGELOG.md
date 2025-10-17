@@ -1,5 +1,14 @@
 # @turnstile-portal/turnstile-dev
 
+## 0.6.8
+
+### Patch Changes
+
+- a532aaf: remove unused code
+- Updated dependencies [a532aaf]
+  - @turnstile-portal/turnstile.js@0.6.8
+  - @turnstile-portal/l1-artifacts-dev@0.6.8
+
 ## 0.6.7
 
 ### Patch Changes
