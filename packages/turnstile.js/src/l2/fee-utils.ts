@@ -15,7 +15,7 @@ import { SPONSORED_FPC_SALT } from '@aztec/constants';
 import { ExecutionPayload } from '@aztec/entrypoints/payload';
 import type { ExtendedViemWalletClient } from '@aztec/ethereum';
 import { InboxAbi } from '@aztec/l1-artifacts';
-import { SponsoredFPCContract, SponsoredFPCContractArtifact } from '@aztec/noir-contracts.js/SponsoredFPC';
+import { SponsoredFPCContract } from '@aztec/noir-contracts.js/SponsoredFPC';
 import { getCanonicalFeeJuice } from '@aztec/protocol-contracts/fee-juice';
 import { GasSettings } from '@aztec/stdlib/gas';
 import type { BlockNumber, BlockTag } from 'viem';
@@ -125,11 +125,6 @@ export async function getSponsoredFPCInstance() {
 
 export async function getSponsoredFPCAddress() {
   return (await getSponsoredFPCInstance()).address;
-}
-
-export async function registerSponsoredFPC(l2Client: L2Client) {
-  const instance = await getSponsoredFPCInstance();
-  await l2Client.getWallet().registerContract({ instance, artifact: SponsoredFPCContractArtifact });
 }
 
 export async function claimFeeJuiceOnL2(l2Client: L2Client, claim: L2AmountClaim) {

@@ -14,14 +14,6 @@ import type { Hex } from './types.js';
 // Re-export the Token type from the Turnstile API client for external use.
 export { Token as ApiToken } from '@turnstile-portal/api-client';
 
-export type BridgedTokenInfo = {
-  l1TokenAddress: Hex;
-  l2TokenAddress: Hex;
-  symbol: string;
-  name: string;
-  decimals: number;
-};
-
 /**
  * Get the appropriate Turnstile API client based on the L1 client's chain ID.
  * @param l1Client - The L1 client to determine the chain ID from.
