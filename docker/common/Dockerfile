@@ -27,10 +27,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-RUN corepack enable
 ENV NODE_ENV=production
 COPY --from=builder /out/ .
 
 # Drop root privileges
 USER node
-CMD ["pnpm","start"]
+CMD ["npm","start"]
