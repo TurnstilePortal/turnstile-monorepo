@@ -1,5 +1,12 @@
 # @turnstile-portal/collector
 
+## 0.2.11
+
+### Patch Changes
+
+- Updated dependencies [1e1e76e]
+  - @turnstile-portal/api-common@0.2.11
+
 ## 0.2.10
 
 ### Patch Changes
