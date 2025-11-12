@@ -1,5 +1,15 @@
 # @turnstile-portal/turnstile.js
 
+## 0.6.9
+
+### Patch Changes
+
+- 3f44a06: version bump to force rebuild
+- Updated dependencies [3f44a06]
+  - @turnstile-portal/api-client@0.2.10
+  - @turnstile-portal/aztec-artifacts@0.6.9
+  - @turnstile-portal/l1-artifacts-abi@0.6.9
+
 ## 0.6.8
 
 ### Patch Changes

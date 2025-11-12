@@ -1,5 +1,14 @@
 # @turnstile-portal/turnstile-dev
 
+## 0.6.9
+
+### Patch Changes
+
+- 3f44a06: version bump to force rebuild
+- Updated dependencies [3f44a06]
+  - @turnstile-portal/l1-artifacts-dev@0.6.9
+  - @turnstile-portal/turnstile.js@0.6.9
+
 ## 0.6.8
 
 ### Patch Changes
