@@ -1,5 +1,11 @@
 # @turnstile-portal/l1-artifacts-bytecode
 
+## 0.6.9
+
+### Patch Changes
+
+- 3f44a06: version bump to force rebuild
+
 ## 0.6.8
 
 ## 0.6.7

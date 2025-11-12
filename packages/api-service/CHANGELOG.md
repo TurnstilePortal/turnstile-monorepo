@@ -1,5 +1,13 @@
 # @turnstile-portal/api-service
 
+## 0.2.10
+
+### Patch Changes
+
+- 3f44a06: version bump to force rebuild
+- Updated dependencies [3f44a06]
+  - @turnstile-portal/api-common@0.2.10
+
 ## 0.2.9
 
 ### Patch Changes
